@@ -1,3 +1,4 @@
+import Search from 'antd/es/transfer/search'
 import React, { PureComponent } from 'react'
 
 function Header() {
