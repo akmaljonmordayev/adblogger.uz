@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --font-primary: "Outfit", sans-serif;
+  --color-brand: oklch(0.6 0.25 260);
+  --color-brand-muted: oklch(0.6 0.25 260 / 0.1);
+}
+
+:root {
+  background-color: oklch(0.98 0.005 260);
+  color: oklch(0.2 0.02 260);
+  font-family: var(--font-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+button {
+  cursor: pointer;
+}

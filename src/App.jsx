@@ -1,9 +1,8 @@
-import React from 'react'
+import { RouterProvider } from "react-router-dom";
+import { router } from "./routes";
 
 function App() {
-  return (
-    <div>ADBLOGER PROJECT STARTED</div>
-  )
+  return <RouterProvider router={router} />;
 }
 
-export default App
+export default App;
