@@ -1,16 +1,26 @@
-# React + Vite
+adbloger.uz
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+adbloger.uz – bu 💼 biznes egalari va ✍️ blogerlarni birlashtiruvchi zamonaviy platforma. Platforma yordamida blogerlar o‘z kontentini targ‘ib qiladi, reklama beruvchilar esa maqsadli auditoriyaga tez va samarali yetib boradi.
 
-Currently, two official plugins are available:
+🔹 Nega adbloger.uz?
+✍️ Blogerlar uchun: O‘z profilingizni boshqaring, kontentingizni targ‘ib qiling va daromadingizni oshiring.
+💼 Reklama beruvchilar uchun: Muvaffaqiyatli kampaniyalarni yaratish, statistika va auditoriyani kuzatish.
+⚡ Tez va intuitiv interfeys: Minimal vaqt, maksimal natija.
+🔹 Asosiy xususiyatlar:
+🧑‍💻 Foydalanuvchi va bloger profili
+📢 Reklama kampaniyalarini yaratish va kuzatish
+📊 Real vaqt statistikasi
+💻 Zamonaviy texnologiyalar: React, Redux, Zustand, React Query, Tailwind CSS, Sass, Node.js, Express.js
+🚀 CI/CD va hosting: GitHub Actions, Vercel, Netlify
+🔹 Texnologiya stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Frontend: ⚛️ React, 🎨 Tailwind CSS, Sass, Redux, Zustand, React Query
+Backend: 🟢 Node.js, ⚡ Express.js
+Deployment & CI/CD: 🚀 Vercel, Netlify, GitHub Actions
 
-## React Compiler
+🔹 Kimlar uchun?
+✍️ Blogerlar va kontent yaratuvchilar
+💼 Marketing va reklama mutaxassislari
+📈 Biznes egalari va startuplar
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+adbloger.uz – ijodingizni auditoriyaga yetkazish va reklama kampaniyangizni professional darajada boshqarish uchun ideal platforma.
