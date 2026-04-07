@@ -9,6 +9,8 @@ export const useAds = (params) => {
   });
 };
 
+
+
 export const useAdDetail = (id) => {
   return useQuery({
     queryKey: ["ad", id],
