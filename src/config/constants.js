@@ -13,4 +13,6 @@ export const ROUTE_PATHS = {
   LOGIN: "/auth/login",
   REGISTER: "/auth/register",
   PROFILE: "/profile",
+  BLOGGER: "/bloggers",
+  ABOUT: "/about",
 };
