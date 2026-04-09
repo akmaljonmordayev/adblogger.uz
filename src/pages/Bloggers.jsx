@@ -235,7 +235,7 @@ const initialBloggers = [
   }
 ];
 
-export default function Blogger() {
+export default function Bloggers() {
   const [bloggers, setBloggers] = useState(initialBloggers);
 const [isFilterOpen, setIsFilterOpen] = useState(false);
   const handleBron = (name) => toast.info(`${name} uchun bron qilindi!`);
