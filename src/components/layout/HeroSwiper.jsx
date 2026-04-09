@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-
 const fontLink = document.createElement("link");
 fontLink.rel = "stylesheet";
 fontLink.href = "https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@400;500;600&display=swap";
