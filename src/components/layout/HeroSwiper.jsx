@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+
 const fontLink = document.createElement("link");
 fontLink.rel = "stylesheet";
 fontLink.href = "https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@400;500;600&display=swap";
@@ -9,53 +10,62 @@ const INTER = { fontFamily: "'Inter', sans-serif" };
 
 const slides = [
   {
-    badge: "🥇 O'zbekiston #1",
+    badge: "O'ZBEKISTON #1",
+    badgeIcon: "🥇",
     title: ["Eng yirik", "Bloger Marketplace"],
     desc: "500+ tasdiqlangan bloger bir platformada. Toping, solishtiring va reklama bering — tez va oson.",
-    btn1: "Blogerlarni ko'rish →",
+    btn1: "Blogerlarni ko'rish",
     btn2: "Reklama berish",
+    trust: "Ro'yxatdan o'tish bepul · Kredit karta shart emas",
     stats: [
-      { num: "500+", label: "Bloger", sub: "Tasdiqlangan" },
-      { num: "12M+", label: "Auditoriya", sub: "Faol foydalanuvchi" },
-      { num: "3x", label: "O'rtacha ROI", sub: "Kafolatlangan" },
+      { num: "500+", icon: "👤", label: "Tasdiqlangan Bloger" },
+      { num: "12M+", icon: "👁️", label: "Faol Auditoriya" },
+      { num: "3×",   icon: "📈", label: "O'rtacha ROI" },
     ],
-    bg: "linear-gradient(135deg, #c0392b 0%, #e74c3c 40%, #a93226 100%)",
-    blob1: "#ff6b6b", blob2: "#ff9999",
-    numColor: "#ffd700", spanColor: "#ffd700", btnColor: "#c0392b",
+    gradient: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 45%, #991b1b 100%)",
+    accent: "#fbbf24",
+    glow: "rgba(220,38,38,0.45)",
+    btnColor: "#1a0a00",
   },
   {
-    badge: "✦ Premium xizmat",
+    badge: "PREMIUM XIZMAT",
+    badgeIcon: "✦",
     title: ["Brendingizni", "Kuchaytiring"],
     desc: "AI yordamida eng mos blogerlarni toping. Kampaniyangizni boshqaring va natijalarni real vaqtda kuzating.",
-    btn1: "Bepul boshlash →",
+    btn1: "Bepul boshlash",
     btn2: "Demo ko'rish",
+    trust: "2 daqiqada sozlab oling · Texnik bilim kerak emas",
     stats: [
-      { num: "98%", label: "Mamnuniyat", sub: "Mijozlar reytingi" },
-      { num: "48h", label: "Tezlik", sub: "Kampaniya ishlashi" },
-      { num: "200+", label: "Brendlar", sub: "Ishonch bildirgan" },
+      { num: "98%",  icon: "⭐", label: "Mijozlar Mamnuniyati" },
+      { num: "48h",  icon: "⚡", label: "Kampaniya Tezligi" },
+      { num: "200+", icon: "🏢", label: "Ishonch Bildirgan Brend" },
     ],
-    bg: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
-    blob1: "#4fc3f7", blob2: "#7c4dff",
-    numColor: "#4fc3f7", spanColor: "#4fc3f7", btnColor: "#16213e",
+    gradient: "linear-gradient(135deg, #0b1120 0%, #0f2d52 55%, #0c1f3a 100%)",
+    accent: "#38bdf8",
+    glow: "rgba(56,189,248,0.3)",
+    btnColor: "#001322",
   },
   {
-    badge: "※ Yangi imkoniyat",
+    badge: "YANGI IMKONIYAT",
+    badgeIcon: "🚀",
     title: ["Bloger bo'lib", "Daromad Oling"],
     desc: "O'z auditoriyangizni monetizatsiya qiling. Brendlar bilan to'g'ridan-to'g'ri ishlang va daromadingizni oshiring.",
-    btn1: "Ro'yxatdan o'tish →",
+    btn1: "Ro'yxatdan o'tish",
     btn2: "Ko'proq bilish",
+    trust: "1 oy komissiyasiz · Istalgan vaqt bekor qilish",
     stats: [
-      { num: "5M+", label: "To'lovlar", sub: "Blogerlarga berilgan" },
-      { num: "30%", label: "O'sish", sub: "Oylik daromad" },
-      { num: "0%", label: "Komissiya", sub: "1 oy bepul" },
+      { num: "5M+", icon: "💰", label: "Blogerlarga To'lovlar" },
+      { num: "30%", icon: "🔥", label: "Oylik Daromad O'sishi" },
+      { num: "0%",  icon: "🎁", label: "Komissiya (1 oy)" },
     ],
-    bg: "linear-gradient(135deg, #f39c12 0%, #e67e22 50%, #d35400 100%)",
-    blob1: "#fff176", blob2: "#ffcc02",
-    numColor: "#ffffff", spanColor: "#ffffff", btnColor: "#d35400",
+    gradient: "linear-gradient(135deg, #78350f 0%, #d97706 50%, #92400e 100%)",
+    accent: "#fef08a",
+    glow: "rgba(217,119,6,0.45)",
+    btnColor: "#1a0e00",
   },
 ];
 
-const DURATION = 4500;
+const DURATION = 5000;
 
 export default function HeroSwiper() {
   const [cur, setCur] = useState(0);
@@ -63,16 +73,23 @@ export default function HeroSwiper() {
   const [paused, setPaused] = useState(false);
   const progRef = useRef(null);
   const touchStartX = useRef(0);
+  const [w, setW] = useState(window.innerWidth);
 
   const goTo = (n) => { setCur(n); setProgress(0); };
   const next = () => goTo((cur + 1) % slides.length);
   const prev = () => goTo((cur - 1 + slides.length) % slides.length);
 
   useEffect(() => {
+    const onResize = () => setW(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
     if (paused) return;
     setProgress(0);
-    const step = 100 / (DURATION / 100);
     let val = 0;
+    const step = 100 / (DURATION / 50);
     progRef.current = setInterval(() => {
       val += step;
       setProgress(Math.min(val, 100));
@@ -81,7 +98,7 @@ export default function HeroSwiper() {
         setCur((c) => (c + 1) % slides.length);
         setProgress(0);
       }
-    }, 100);
+    }, 50);
     return () => clearInterval(progRef.current);
   }, [cur, paused]);
 
@@ -92,197 +109,257 @@ export default function HeroSwiper() {
     else if (dx > 50) prev();
   };
 
-  // Inline responsive styles
-  const getSlideStyle = () => {
-    const w = window.innerWidth;
-    if (w < 480) return {
-      flexDirection: "column", padding: "28px 16px 72px", gap: "16px", minHeight: "640px", alignItems: "flex-start",
-    };
-    if (w < 768) return {
-      flexDirection: "column", padding: "32px 24px 68px", gap: "20px", minHeight: "560px", alignItems: "flex-start",
-    };
-    return {
-      flexDirection: "row", padding: "48px 56px", gap: "40px", minHeight: "420px", alignItems: "center",
-    };
-  };
-
-  const [slideStyle, setSlideStyle] = useState(getSlideStyle());
-
-  useEffect(() => {
-    const handleResize = () => setSlideStyle(getSlideStyle());
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const isMobile = slideStyle.flexDirection === "column";
+  const isMobile = w < 768;
+  const isSmall  = w < 480;
+  const slide    = slides[cur];
 
   return (
-    <div style={{ width: "100%", overflow: "hidden", borderRadius: "20px", ...INTER }}>
+    <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden", ...INTER }}>
       <div
-        style={{ position: "relative", width: "100%", overflow: "hidden" }}
+        style={{ position: "relative", flex: 1, minHeight: 0, overflow: "hidden" }}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Slides wrapper */}
-        <div
-          style={{
-            display: "flex",
-            transition: "transform 0.7s cubic-bezier(0.77,0,0.175,1)",
-            transform: `translateX(-${cur * 100}%)`,
-          }}
-        >
-          {slides.map((slide, i) => (
-            <div
-              key={i}
-              style={{
-                minWidth: "100%",
-                position: "relative",
-                overflow: "hidden",
-                display: "flex",
-                background: slide.bg,
-                ...slideStyle,
-              }}
-            >
-              {/* Blob 1 */}
+        {/* ─── Slides track ─────────────────────────────────── */}
+        <div style={{
+          display: "flex", height: "100%",
+          transition: "transform 0.75s cubic-bezier(0.77,0,0.175,1)",
+          transform: `translateX(-${cur * 100}%)`,
+        }}>
+          {slides.map((s, i) => (
+            <div key={i} style={{
+              minWidth: "100%", height: "100%",
+              position: "relative", overflow: "hidden",
+              background: s.gradient,
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "flex-start" : "center",
+              justifyContent: "space-between",
+              padding: isSmall
+                ? "28px 18px 80px"
+                : isMobile
+                ? "32px 28px 80px"
+                : "0 72px",
+              gap: isMobile ? "20px" : "48px",
+              boxSizing: "border-box",
+            }}>
+
+              {/* ── Decorations ── */}
+              {/* Dot-grid overlay */}
               <div style={{
-                position: "absolute", borderRadius: "50%", opacity: 0.18,
-                pointerEvents: "none", background: slide.blob1,
-                width: isMobile ? "200px" : "320px",
-                height: isMobile ? "200px" : "320px",
+                position: "absolute", inset: 0, pointerEvents: "none",
+                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
+                backgroundSize: "30px 30px",
+              }} />
+
+              {/* Big ring right */}
+              <div style={{
+                position: "absolute", borderRadius: "50%", pointerEvents: "none",
+                width: isMobile ? "340px" : "600px",
+                height: isMobile ? "340px" : "600px",
+                right: isMobile ? "-120px" : "-100px",
+                top: "50%", transform: "translateY(-50%)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }} />
+              {/* Inner ring */}
+              <div style={{
+                position: "absolute", borderRadius: "50%", pointerEvents: "none",
+                width: isMobile ? "200px" : "380px",
+                height: isMobile ? "200px" : "380px",
+                right: isMobile ? "-60px" : "-20px",
+                top: "50%", transform: "translateY(-50%)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }} />
+
+              {/* Glow blob bottom-left */}
+              <div style={{
+                position: "absolute", borderRadius: "50%", pointerEvents: "none",
+                width: "500px", height: "500px",
+                left: "-120px", bottom: "-200px",
+                background: s.glow, filter: "blur(80px)", opacity: 0.7,
+              }} />
+              {/* Glow blob top-right */}
+              <div style={{
+                position: "absolute", borderRadius: "50%", pointerEvents: "none",
+                width: "300px", height: "300px",
                 right: "-60px", top: "-60px",
+                background: s.glow, filter: "blur(60px)", opacity: 0.5,
               }} />
-              {/* Blob 2 */}
+
+              {/* ── LEFT — Main content ── */}
               <div style={{
-                position: "absolute", borderRadius: "50%", opacity: 0.15,
-                pointerEvents: "none", background: slide.blob2,
-                width: isMobile ? "140px" : "200px",
-                height: isMobile ? "140px" : "200px",
-                right: isMobile ? "60px" : "120px", bottom: "-80px",
-              }} />
-
-              {/* Left content */}
-              <div style={{ position: "relative", zIndex: 2, flex: 1, width: "100%" }}>
-                {/* Badge */}
-                <span style={{
-                  display: "inline-block",
-                  background: "rgba(255,255,255,0.18)",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  color: "#fff", borderRadius: "20px",
-                  fontSize: "11px", fontWeight: 600,
-                  letterSpacing: "1.5px", textTransform: "uppercase",
-                  padding: "5px 14px", marginBottom: "18px",
+                position: "relative", zIndex: 2,
+                flex: isMobile ? "unset" : 1,
+                maxWidth: isMobile ? "100%" : "540px",
+                width: "100%",
+              }}>
+                {/* Badge pill */}
+                <div style={{
+                  display: "inline-flex", alignItems: "center", gap: "7px",
+                  background: "rgba(255,255,255,0.1)",
+                  border: `1px solid ${s.accent}55`,
+                  borderRadius: "100px",
+                  padding: "5px 16px 5px 10px",
+                  marginBottom: isMobile ? "16px" : "24px",
                 }}>
-                  {slide.badge}
-                </span>
+                  <span style={{ fontSize: "15px", lineHeight: 1 }}>{s.badgeIcon}</span>
+                  <span style={{
+                    fontSize: "10px", fontWeight: 700,
+                    letterSpacing: "2px", color: s.accent,
+                    textTransform: "uppercase",
+                  }}>{s.badge}</span>
+                </div>
 
-                {/* Title */}
+                {/* Headline */}
                 <h1 style={{
-                  ...SYNE, fontWeight: 800, color: "#fff",
-                  lineHeight: 1.1, marginBottom: "14px",
-                  fontSize: isMobile ? (window.innerWidth < 480 ? "24px" : "28px") : "38px",
+                  ...SYNE, fontWeight: 800, color: "#fff", margin: "0 0 16px",
+                  lineHeight: 1.06, letterSpacing: "-0.5px",
+                  fontSize: isSmall ? "28px" : isMobile ? "34px" : "52px",
                 }}>
-                  {slide.title[0]}<br />
-                  <span style={{ color: slide.spanColor }}>{slide.title[1]}</span>
+                  {s.title[0]}<br />
+                  <span style={{
+                    color: s.accent,
+                    textShadow: `0 0 40px ${s.accent}66`,
+                  }}>{s.title[1]}</span>
                 </h1>
 
                 {/* Description */}
                 <p style={{
-                  fontSize: isMobile ? "13px" : "14px",
-                  color: "rgba(255,255,255,0.78)",
-                  lineHeight: 1.65,
-                  maxWidth: isMobile ? "100%" : "360px",
-                  marginBottom: "28px",
-                }}>
-                  {slide.desc}
-                </p>
+                  color: "rgba(255,255,255,0.68)",
+                  fontSize: isSmall ? "13px" : isMobile ? "14px" : "15.5px",
+                  lineHeight: 1.75, margin: "0 0 28px",
+                  maxWidth: "420px",
+                }}>{s.desc}</p>
 
                 {/* Buttons */}
                 <div style={{
-                  display: "flex",
-                  gap: "12px",
-                  flexDirection: isMobile && window.innerWidth < 480 ? "column" : "row",
-                  flexWrap: "wrap",
+                  display: "flex", gap: "12px", flexWrap: "wrap",
+                  flexDirection: isSmall ? "column" : "row",
+                  marginBottom: "18px",
                 }}>
                   <button
                     style={{
-                      background: "#fff", color: slide.btnColor,
+                      background: s.accent, color: s.btnColor,
                       fontSize: "13px", fontWeight: 700,
-                      padding: "12px 24px", borderRadius: "10px",
-                      border: "none", cursor: "pointer",
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+                      padding: isSmall ? "12px 20px" : "13px 30px",
+                      borderRadius: "10px", border: "none", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      gap: "6px",
+                      boxShadow: `0 4px 28px ${s.accent}55`,
                       transition: "transform 0.2s, box-shadow 0.2s",
-                      width: isMobile && window.innerWidth < 480 ? "100%" : "auto",
+                      width: isSmall ? "100%" : "auto",
+                      letterSpacing: "0.2px",
                     }}
-                    onMouseEnter={e => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 8px 28px rgba(0,0,0,0.3)"; }}
-                    onMouseLeave={e => { e.target.style.transform = "none"; e.target.style.boxShadow = "0 4px 20px rgba(0,0,0,0.2)"; }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = `0 10px 36px ${s.accent}77`;
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.boxShadow = `0 4px 28px ${s.accent}55`;
+                    }}
                   >
-                    {slide.btn1}
+                    {s.btn1}
+                    <span style={{ fontSize: "15px" }}>→</span>
                   </button>
+
                   <button
                     style={{
-                      background: "transparent", color: "#fff",
+                      background: "rgba(255,255,255,0.09)",
+                      backdropFilter: "blur(10px)",
+                      color: "#fff",
                       fontSize: "13px", fontWeight: 600,
-                      padding: "12px 24px", borderRadius: "10px",
-                      border: "2px solid rgba(255,255,255,0.5)", cursor: "pointer",
-                      transition: "all 0.2s",
-                      width: isMobile && window.innerWidth < 480 ? "100%" : "auto",
+                      padding: isSmall ? "12px 20px" : "13px 30px",
+                      borderRadius: "10px",
+                      border: "1px solid rgba(255,255,255,0.22)",
+                      cursor: "pointer", transition: "all 0.2s",
+                      width: isSmall ? "100%" : "auto",
+                      letterSpacing: "0.2px",
                     }}
-                    onMouseEnter={e => { e.target.style.background = "rgba(255,255,255,0.12)"; e.target.style.borderColor = "#fff"; }}
-                    onMouseLeave={e => { e.target.style.background = "transparent"; e.target.style.borderColor = "rgba(255,255,255,0.5)"; }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.18)";
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.45)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.09)";
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)";
+                    }}
                   >
-                    {slide.btn2}
+                    {s.btn2}
                   </button>
                 </div>
+
+                {/* Trust line */}
+                <p style={{
+                  fontSize: "11px", color: "rgba(255,255,255,0.4)",
+                  display: "flex", alignItems: "center", gap: "5px",
+                  margin: 0,
+                }}>
+                  <span style={{ color: s.accent, fontSize: "12px" }}>✓</span>
+                  {s.trust}
+                </p>
               </div>
 
-              {/* Stats */}
+              {/* ── RIGHT — Stat cards ── */}
               <div style={{
                 position: "relative", zIndex: 2,
-                display: "flex", flexDirection: "column",
-                gap: "14px",
-                width: isMobile ? "100%" : "auto",
-                minWidth: isMobile ? "unset" : "220px",
+                display: "flex",
+                flexDirection: isMobile ? "row" : "column",
+                gap: isMobile ? "8px" : "10px",
+                width: isMobile ? "100%" : "250px",
+                flexShrink: 0,
               }}>
-                {slide.stats.map((s, j) => (
-                  <div
-                    key={j}
+                {s.stats.map((st, j) => (
+                  <div key={j}
                     style={{
-                      background: "rgba(255,255,255,0.12)",
-                      backdropFilter: "blur(8px)",
-                      border: "1px solid rgba(255,255,255,0.22)",
-                      borderRadius: "14px",
-                      padding: isMobile ? "12px 16px" : "14px 20px",
-                      display: "flex", alignItems: "center",
-                      gap: "14px",
-                      transition: "transform 0.2s",
+                      flex: isMobile ? 1 : "unset",
+                      background: "rgba(255,255,255,0.07)",
+                      backdropFilter: "blur(14px)",
+                      border: "1px solid rgba(255,255,255,0.13)",
+                      borderRadius: "16px",
+                      padding: isMobile
+                        ? (isSmall ? "10px 6px" : "12px 10px")
+                        : "16px 20px",
+                      display: "flex",
+                      flexDirection: isMobile ? "column" : "row",
+                      alignItems: "center",
+                      gap: isMobile ? "4px" : "14px",
+                      transition: "transform 0.22s, border-color 0.22s, background 0.22s",
                       cursor: "default",
+                      textAlign: isMobile ? "center" : "left",
                     }}
-                    onMouseEnter={e => e.currentTarget.style.transform = "translateX(-4px)"}
-                    onMouseLeave={e => e.currentTarget.style.transform = "none"}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.transform = isMobile ? "translateY(-4px)" : "translateX(-5px)";
+                      e.currentTarget.style.borderColor = `${s.accent}55`;
+                      e.currentTarget.style.background = "rgba(255,255,255,0.12)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.13)";
+                      e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+                    }}
                   >
-                    <span style={{
-                      ...SYNE, fontWeight: 800,
-                      fontSize: isMobile ? "22px" : "26px",
-                      lineHeight: 1, color: slide.numColor,
-                      minWidth: isMobile ? "52px" : "60px",
-                    }}>
-                      {s.num}
-                    </span>
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <span style={{
-                        fontSize: "10px", color: "rgba(255,255,255,0.65)",
-                        fontWeight: 500, letterSpacing: "0.5px", textTransform: "uppercase",
-                      }}>
-                        {s.label}
-                      </span>
-                      <span style={{
-                        fontSize: "12px", color: "rgba(255,255,255,0.9)",
-                        fontWeight: 500, marginTop: "2px",
-                      }}>
-                        {s.sub}
-                      </span>
+                    {/* Icon */}
+                    <div style={{
+                      fontSize: isSmall ? "18px" : isMobile ? "22px" : "26px",
+                      lineHeight: 1, flexShrink: 0,
+                    }}>{st.icon}</div>
+
+                    {/* Text */}
+                    <div>
+                      <div style={{
+                        ...SYNE, fontWeight: 800, color: s.accent,
+                        fontSize: isSmall ? "18px" : isMobile ? "22px" : "26px",
+                        lineHeight: 1,
+                        textShadow: `0 0 20px ${s.accent}55`,
+                      }}>{st.num}</div>
+                      <div style={{
+                        fontSize: isSmall ? "9px" : "11px",
+                        color: "rgba(255,255,255,0.55)",
+                        marginTop: "4px", lineHeight: 1.3, fontWeight: 500,
+                      }}>{st.label}</div>
                     </div>
                   </div>
                 ))}
@@ -291,65 +368,71 @@ export default function HeroSwiper() {
           ))}
         </div>
 
-        {/* Progress bar */}
+        {/* ─── Progress bar ────────────────────────────────── */}
         <div style={{
           position: "absolute", bottom: 0, left: 0,
-          height: "3px", background: "rgba(255,255,255,0.6)",
-          transition: "width 0.1s linear", zIndex: 10,
+          height: "2px", zIndex: 10,
+          background: slide.accent,
+          boxShadow: `0 0 10px ${slide.accent}`,
+          transition: "width 0.05s linear",
           width: `${progress}%`,
         }} />
 
-        {/* Pagination */}
+        {/* ─── Bottom controls ─────────────────────────────── */}
         <div style={{
-          position: "absolute", bottom: "20px",
-          left: "50%", transform: "translateX(-50%)",
-          display: "flex", gap: "8px", zIndex: 10,
+          position: "absolute", bottom: "18px", left: 0, right: 0, zIndex: 10,
+          padding: isSmall ? "0 18px" : isMobile ? "0 28px" : "0 72px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goTo(i)}
-              style={{
-                height: "8px", borderRadius: "4px", border: "none",
-                cursor: "pointer", transition: "all 0.35s",
-                width: i === cur ? "28px" : "8px",
-                background: i === cur ? "#fff" : "rgba(255,255,255,0.4)",
-              }}
-            />
-          ))}
-        </div>
+          {/* Slide counter */}
+          <span style={{
+            ...SYNE, fontSize: "12px", color: "rgba(255,255,255,0.4)",
+            letterSpacing: "1px", fontWeight: 600,
+          }}>
+            <span style={{ color: "#fff", fontSize: "15px", fontWeight: 800 }}>
+              {String(cur + 1).padStart(2, "0")}
+            </span>
+            {" / "}
+            {String(slides.length).padStart(2, "0")}
+          </span>
 
-        {/* Nav buttons — faqat desktop */}
-        {!isMobile && (
-          <>
-            <button onClick={prev} style={{
-              position: "absolute", left: "16px", top: "50%",
-              transform: "translateY(-50%)", zIndex: 10,
-              width: "44px", height: "44px", borderRadius: "50%",
-              background: "rgba(255,255,255,0.15)",
-              border: "1px solid rgba(255,255,255,0.3)",
-              color: "#fff", fontSize: "22px", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              backdropFilter: "blur(4px)", transition: "all 0.2s",
-            }}
-              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.28)"}
-              onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
-            >‹</button>
-            <button onClick={next} style={{
-              position: "absolute", right: "16px", top: "50%",
-              transform: "translateY(-50%)", zIndex: 10,
-              width: "44px", height: "44px", borderRadius: "50%",
-              background: "rgba(255,255,255,0.15)",
-              border: "1px solid rgba(255,255,255,0.3)",
-              color: "#fff", fontSize: "22px", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              backdropFilter: "blur(4px)", transition: "all 0.2s",
-            }}
-              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.28)"}
-              onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
-            >›</button>
-          </>
-        )}
+          {/* Dots */}
+          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+            {slides.map((_, i) => (
+              <button key={i} onClick={() => goTo(i)} style={{
+                height: "4px", borderRadius: "2px", border: "none",
+                cursor: "pointer", transition: "all 0.35s",
+                width: i === cur ? "32px" : "14px",
+                background: i === cur ? slide.accent : "rgba(255,255,255,0.28)",
+                boxShadow: i === cur ? `0 0 8px ${slide.accent}` : "none",
+              }} />
+            ))}
+          </div>
+
+          {/* Arrow buttons */}
+          <div style={{ display: "flex", gap: "8px" }}>
+            {[{ fn: prev, icon: "‹" }, { fn: next, icon: "›" }].map(({ fn, icon }) => (
+              <button key={icon} onClick={fn} style={{
+                width: "36px", height: "36px", borderRadius: "50%", border: "none",
+                background: "rgba(255,255,255,0.1)",
+                outline: "1px solid rgba(255,255,255,0.2)",
+                color: "#fff", fontSize: "22px", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                backdropFilter: "blur(6px)", transition: "all 0.2s",
+                lineHeight: 1,
+              }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = slide.accent + "33";
+                  e.currentTarget.style.outlineColor = slide.accent + "88";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+                  e.currentTarget.style.outlineColor = "rgba(255,255,255,0.2)";
+                }}
+              >{icon}</button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

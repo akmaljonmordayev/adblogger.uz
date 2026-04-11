@@ -218,12 +218,12 @@ export default function Footer() {
         <div className={revealClass("delay-100")}>
           <ColTitle dotColor="red">Platforma</ColTitle>
           <ul className="space-y-0.5">
-            <NavItem href="/blogerlar" badge="500+" badgeType="gold">
+            <NavItem href="/bloggers" badge="500+" badgeType="gold">
               Blogerlar
             </NavItem>
-            <NavItem href="/kategoriyalar">Kategoriyalar</NavItem>
-            <NavItem href="/narxlar">Narxlar</NavItem>
-            <NavItem href="/bloger-bolish" badge="NEW" badgeType="red">
+            <NavItem href="/categories">Kategoriyalar</NavItem>
+            <NavItem href="/pricing">Narxlar</NavItem>
+            <NavItem href="/become-blogger" badge="NEW" badgeType="red">
               Bloger bo'lish
             </NavItem>
           </ul>
@@ -233,12 +233,12 @@ export default function Footer() {
         <div className={revealClass("delay-200")}>
           <ColTitle dotColor="yellow">Kompaniya</ColTitle>
           <ul className="space-y-0.5">
-            <NavItem href="/biz-haqimizda">Biz haqimizda</NavItem>
+            <NavItem href="/about">Biz haqimizda</NavItem>
             <NavItem href="/blog">Blog</NavItem>
-            <NavItem href="/karriera" badge="OCHIQ" badgeType="red">
+            <NavItem href="/career" badge="OCHIQ" badgeType="red">
               Karriera
             </NavItem>
-            <NavItem href="/boglanish">Bog'lanish</NavItem>
+            <NavItem href="/contact">Bog'lanish</NavItem>
           </ul>
           <div className="mt-5 h-px bg-gradient-to-r from-yellow-600 via-yellow-400 to-transparent" />
         </div>
@@ -302,14 +302,14 @@ export default function Footer() {
 
           <div className="flex gap-2 mt-5 flex-wrap">
             <Link
-              to="/boglanish"
+              to="/contact"
               className="relative inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-red-400 border border-red-700 rounded overflow-hidden group transition-colors duration-300 hover:text-white"
             >
               <span className="absolute inset-0 bg-red-600 -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out" />
               <span className="relative z-10">Bog'lanish →</span>
             </Link>
             <Link
-              to="/bloger-bolish"
+              to="/become-blogger"
               className="relative inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-yellow-400 border border-yellow-600 rounded overflow-hidden group transition-colors duration-300 hover:text-black"
             >
               <span className="absolute inset-0 bg-yellow-400 -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out" />
@@ -328,13 +328,13 @@ export default function Footer() {
           </span>
           <div className="flex items-center gap-4">
             <Link
-              to="/maxfiylik"
+              to="/privacy"
               className="hover:text-red-400 transition-colors duration-200"
             >
               Maxfiylik
             </Link>
             <Link
-              to="/shartlar"
+              to="/terms"
               className="hover:text-yellow-400 transition-colors duration-200"
             >
               Shartlar

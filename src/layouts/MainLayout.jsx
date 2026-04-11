@@ -18,7 +18,7 @@ const MainLayout = () => {
     <Header/>
       
       {/* Dynamic Content */}
-      <main className="flex-grow container mx-auto px-6 py-12 animate-fade-in">
+      <main className="flex-grow container mx-auto px-6 py-6 animate-fade-in">
         <Outlet />
       </main>
       
