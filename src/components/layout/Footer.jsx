@@ -226,12 +226,12 @@ export default function Footer() {
         <div className={revealClass("delay-100")}>
           <ColTitle dotColor="yellow">Platforma</ColTitle>
           <ul className="space-y-0.5">
-            <NavItem href="/blogerlar" badge="500+" badgeType="gold">
+            <NavItem href="/bloggers" badge="500+" badgeType="gold">
               Blogerlar
             </NavItem>
-            <NavItem href="/kategoriyalar">Kategoriyalar</NavItem>
-            <NavItem href="/narxlar">Narxlar</NavItem>
-            <NavItem href="/bloger-bolish" badge="NEW" badgeType="red">
+            <NavItem href="/categories">Kategoriyalar</NavItem>
+            <NavItem href="/pricing">Narxlar</NavItem>
+            <NavItem href="/become-blogger" badge="NEW" badgeType="red">
               Bloger bo'lish
             </NavItem>
           </ul>
@@ -242,12 +242,12 @@ export default function Footer() {
         <div className={revealClass("delay-200")}>
           <ColTitle dotColor="red">Kompaniya</ColTitle>
           <ul className="space-y-0.5">
-            <NavItem href="/biz-haqimizda">Biz haqimizda</NavItem>
+            <NavItem href="/about">Biz haqimizda</NavItem>
             <NavItem href="/blog">Blog</NavItem>
-            <NavItem href="/karriera" badge="OCHIQ" badgeType="red">
+            <NavItem href="/career" badge="OCHIQ" badgeType="red">
               Karriera
             </NavItem>
-            <NavItem href="/boglanish">Bog'lanish</NavItem>
+            <NavItem href="/contact">Bog'lanish</NavItem>
           </ul>
           <div className="mt-5 h-px bg-gradient-to-r from-white/30 via-yellow-400/40 to-transparent" />
         </div>

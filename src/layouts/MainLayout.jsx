@@ -1,7 +1,6 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { ROUTE_PATHS } from "../config/constants";
 import Header from "../components/layout/Header"
-import CategorySection from "../components/layout/CategorySection"
 import Footer from "../components/layout/Footer";
 
 const MainLayout = () => {
@@ -17,10 +16,9 @@ const MainLayout = () => {
     <div className="min-h-screen flex flex-col bg-[#f8fafc]">
       {/* Premium Header */}
     <Header/>
-    <CategorySection/>
       
       {/* Dynamic Content */}
-      <main className="flex-grow container mx-auto px-6 py-12 animate-fade-in">
+      <main className="flex-grow container mx-auto px-6 py-6 animate-fade-in">
         <Outlet />
       </main>
       

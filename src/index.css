@@ -38,3 +38,80 @@ body {
 button {
   cursor: pointer;
 }
+
+/* ─── Hero full height ─────────────────────────────── */
+.hero-full-height {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* ─── Header responsive ────────────────────────────── */
+
+/* Search bar — hidden on small screens */
+.search-bar {
+  display: flex;
+}
+
+/* Desktop nav — visible on lg+ */
+.desktop-nav {
+  display: flex;
+}
+
+/* Hamburger — hidden on desktop */
+.hamburger {
+  display: none !important;
+}
+
+/* Mobile drawer — hidden by default (JS controls max-height) */
+.mobile-drawer {
+  display: block;
+}
+
+/* topbar secondary text — hide on small/medium */
+.hidden-sm {
+  display: flex;
+}
+.hidden-md {
+  display: flex;
+}
+
+/* ── Tablet: hide search, keep nav ── */
+@media (max-width: 1024px) {
+  .search-bar {
+    max-width: 280px;
+  }
+}
+
+/* ── Tablet: ≤ 1024px — hide "12M+" stat ── */
+@media (max-width: 1024px) {
+  .hidden-md {
+    display: none !important;
+  }
+}
+
+/* ── Mobile: ≤ 768px ── */
+@media (max-width: 768px) {
+  .hero-full-height {
+    height: 100svh;
+  }
+
+  .search-bar {
+    display: none !important;
+  }
+  .desktop-nav {
+    display: none !important;
+  }
+  .hamburger {
+    display: flex !important;
+  }
+  .hidden-sm {
+    display: none !important;
+  }
+}
+
+/* ── Small mobile: ≤ 480px ── */
+@media (max-width: 480px) {
+  .mobile-drawer > div {
+    padding: 14px 16px 18px;
+  }
+}
