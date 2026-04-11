@@ -17,7 +17,7 @@ const Home = () => {
              Boshlash <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-700" />
           </Link>
-          <Link to={ROUTE_PATHS.BLOG} className="px-10 py-5 bg-white text-gray-800 font-black text-lg rounded-2xl border-2 border-gray-100 shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
+          <Link to={ROUTE_PATHS.BLOGS} className="px-10 py-5 bg-white text-gray-800 font-black text-lg rounded-2xl border-2 border-gray-100 shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
              Blogimizni o'qish
           </Link>
         </div>
