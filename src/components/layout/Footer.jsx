@@ -24,11 +24,13 @@ function NavItem({ href, children, badge, badgeType = "gold" }) {
         to={href}
         className={({ isActive }) =>
           `group flex items-center gap-2 text-sm py-1.5 transition-colors duration-200 ${
-            isActive ? "text-yellow-400" : "text-zinc-500 hover:text-red-400"
+            isActive
+              ? "text-yellow-300"
+              : "text-red-100/70 hover:text-yellow-300"
           }`
         }
       >
-        <span className="inline-block w-0 h-[1.5px] bg-red-500 group-hover:w-3 transition-all duration-300 ease-out rounded-full" />
+        <span className="inline-block w-0 h-[1.5px] bg-yellow-400 group-hover:w-3 transition-all duration-300 ease-out rounded-full" />
         <span className="group-hover:translate-x-0.5 transition-transform duration-200">
           {children}
         </span>
@@ -37,7 +39,7 @@ function NavItem({ href, children, badge, badgeType = "gold" }) {
             className={`text-[10px] px-1.5 py-0.5 rounded font-bold leading-none ${
               badgeType === "gold"
                 ? "bg-yellow-400 text-black animate-bounce"
-                : "bg-red-600 text-white animate-pulse"
+                : "bg-white/20 text-white animate-pulse border border-white/30"
             }`}
           >
             {badge}
@@ -51,15 +53,15 @@ function NavItem({ href, children, badge, badgeType = "gold" }) {
 function ContactItem({ icon, iconColor = "yellow", children }) {
   return (
     <li
-      className={`flex items-start gap-3 text-sm text-zinc-500 transition-colors duration-200 group cursor-default ${
-        iconColor === "red" ? "hover:text-red-400" : "hover:text-yellow-400"
+      className={`flex items-start gap-3 text-sm text-red-100/60 transition-colors duration-200 group cursor-default ${
+        iconColor === "red" ? "hover:text-white" : "hover:text-yellow-300"
       }`}
     >
       <span
         className={`w-4 h-4 mt-0.5 shrink-0 transition-colors duration-200 ${
           iconColor === "red"
-            ? "text-red-500 group-hover:text-red-300"
-            : "text-yellow-500 group-hover:text-yellow-300"
+            ? "text-red-200/70 group-hover:text-white"
+            : "text-yellow-400 group-hover:text-yellow-300"
         }`}
       >
         {icon}
@@ -70,32 +72,35 @@ function ContactItem({ icon, iconColor = "yellow", children }) {
 }
 
 function SocialBtn({ href, label, color = "yellow", children }) {
-  const hoverBg = color === "red" ? "bg-red-600" : "bg-yellow-400";
-  const hoverBorder =
-    color === "red" ? "hover:border-red-500" : "hover:border-yellow-400";
+  const hoverBg = color === "red" ? "bg-white" : "bg-yellow-400";
+  const hoverText = color === "red" ? "hover:text-red-600" : "hover:text-black";
   return (
     <a
       href={href}
       aria-label={label}
-      className={`relative w-8 h-8 rounded-md border border-zinc-700 flex items-center justify-center text-zinc-500 overflow-hidden group transition-colors duration-200 ${hoverBorder} hover:text-white`}
+      className={`relative w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-white/60 overflow-hidden group transition-all duration-300 hover:border-transparent ${hoverText}`}
     >
       <span
-        className={`absolute inset-0 ${hoverBg} scale-y-0 group-hover:scale-y-100 origin-bottom transition-transform duration-250 ease-out`}
+        className={`absolute inset-0 ${hoverBg} scale-0 group-hover:scale-100 transition-transform duration-300 ease-out rounded-full`}
       />
-      <span className="relative z-10 w-[15px] h-[15px]">{children}</span>
+      <span className="relative z-10 w-[15px] h-[15px] group-hover:scale-110 transition-transform duration-200">
+        {children}
+      </span>
     </a>
   );
 }
 
 function ColTitle({ children, dotColor = "yellow" }) {
   return (
-    <h4 className="flex items-center gap-2 text-white font-bold text-[11px] uppercase tracking-widest mb-4">
+    <h4 className="flex items-center gap-2 font-bold text-[11px] uppercase tracking-widest mb-4">
       <span
-        className={`inline-block w-1.5 h-1.5 rounded-full animate-pulse ${
-          dotColor === "red" ? "bg-red-500" : "bg-yellow-400"
+        className={`inline-block w-1.5 h-1.5 rounded-full ${
+          dotColor === "red"
+            ? "bg-white/60 animate-pulse"
+            : "bg-yellow-400 animate-pulse"
         }`}
       />
-      {children}
+      <span className="text-white/90">{children}</span>
     </h4>
   );
 }
@@ -103,20 +108,20 @@ function ColTitle({ children, dotColor = "yellow" }) {
 function StatCard({ num, label, color = "yellow" }) {
   return (
     <div
-      className={`bg-zinc-900 border rounded-lg px-3 py-2 text-center transition-all duration-300 hover:-translate-y-0.5 cursor-default ${
+      className={`rounded-xl px-3 py-2 text-center transition-all duration-300 hover:-translate-y-1 cursor-default border ${
         color === "red"
-          ? "border-zinc-800 hover:border-red-600"
-          : "border-zinc-800 hover:border-yellow-500"
+          ? "bg-white/10 border-white/20 hover:bg-white/15 hover:border-white/30"
+          : "bg-yellow-400/20 border-yellow-400/30 hover:bg-yellow-400/30 hover:border-yellow-400/50"
       }`}
     >
       <span
         className={`block text-lg font-bold font-mono leading-tight ${
-          color === "red" ? "text-red-400" : "text-yellow-400"
+          color === "red" ? "text-white" : "text-yellow-300"
         }`}
       >
         {num}
       </span>
-      <span className="block text-[10px] text-zinc-600 uppercase tracking-wider mt-0.5">
+      <span className="block text-[10px] text-white/50 uppercase tracking-wider mt-0.5">
         {label}
       </span>
     </div>
@@ -150,42 +155,44 @@ export default function Footer() {
   return (
     <footer
       ref={ref}
-      className="bg-[#0d0d0d] text-zinc-400 relative overflow-hidden"
+      className="relative overflow-hidden bg-gradient-to-br from-red-700 via-red-600 to-red-800"
     >
+      {/* yumshoq sariq glow — o'ng yuqori burchak */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-yellow-400/10 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2" />
+      {/* to'q qizil glow — chap pastki burchak */}
+      <div className="absolute bottom-0 left-0 w-80 h-80 bg-red-900/40 rounded-full blur-3xl pointer-events-none translate-y-1/2 -translate-x-1/2" />
+      {/* markazda sariq nuqta */}
+      <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-yellow-500/5 rounded-full blur-3xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
+
+      {/* diagonal pattern overlay */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 opacity-5 pointer-events-none"
         style={{
-          backgroundImage:
-            "repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(229,57,53,.025) 80px, rgba(229,57,53,.025) 81px)",
+          backgroundImage: `repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 20px,
+            rgba(255,255,255,0.8) 20px,
+            rgba(255,255,255,0.8) 21px
+          )`,
         }}
       />
 
-      <div
-        className="h-[3px] w-full"
-        style={{
-          background:
-            "linear-gradient(90deg, #b71c1c, #e53935, #f5a623, #ffd166, #f5a623, #e53935, #b71c1c)",
-          backgroundSize: "200% 100%",
-          animation: "barSlide 3.5s linear infinite",
-        }}
-      />
+      {/* yuqori chiziq — sariq-oq-sariq */}
+      <div className="relative h-[3px] w-full bg-gradient-to-r from-red-600 via-yellow-400 to-red-600" />
 
-      <style>{`
-        @keyframes barSlide {
-          0%   { background-position: 0% 0% }
-          100% { background-position: 200% 0% }
-        }
-      `}</style>
-
-      <div className="max-w-6xl mx-auto px-6 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+      {/* asosiy kontent */}
+      <div className="relative z-10 max-w-6xl mx-auto px-6 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+        {/* ── BRAND ── */}
         <div className={revealClass("delay-0")}>
           <Link
             to="/"
-            className="inline-block font-extrabold text-3xl text-white tracking-tight leading-none"
+            className="inline-block font-extrabold text-3xl tracking-tight leading-none"
           >
-            add<span className="text-yellow-400">Bloger</span>
+            <span className="text-white">ad</span>
+            <span className="text-yellow-300">Blogger</span>
           </Link>
-          <p className="text-xs text-zinc-500 leading-relaxed mt-3 max-w-[220px]">
+          <p className="text-xs text-red-100/60 leading-relaxed mt-3 max-w-[220px]">
             O'zbekistonning birinchi blogger marketplace platformasi. 500+
             bloger bir joyda.
           </p>
@@ -215,8 +222,9 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* ── PLATFORMA ── */}
         <div className={revealClass("delay-100")}>
-          <ColTitle dotColor="red">Platforma</ColTitle>
+          <ColTitle dotColor="yellow">Platforma</ColTitle>
           <ul className="space-y-0.5">
             <NavItem href="/bloggers" badge="500+" badgeType="gold">
               Blogerlar
@@ -227,11 +235,12 @@ export default function Footer() {
               Bloger bo'lish
             </NavItem>
           </ul>
-          <div className="mt-5 h-px bg-gradient-to-r from-red-700 via-red-500 to-transparent" />
+          <div className="mt-5 h-px bg-gradient-to-r from-yellow-400/60 via-white/20 to-transparent" />
         </div>
 
+        {/* ── KOMPANIYA ── */}
         <div className={revealClass("delay-200")}>
-          <ColTitle dotColor="yellow">Kompaniya</ColTitle>
+          <ColTitle dotColor="red">Kompaniya</ColTitle>
           <ul className="space-y-0.5">
             <NavItem href="/about">Biz haqimizda</NavItem>
             <NavItem href="/blog">Blog</NavItem>
@@ -240,11 +249,12 @@ export default function Footer() {
             </NavItem>
             <NavItem href="/contact">Bog'lanish</NavItem>
           </ul>
-          <div className="mt-5 h-px bg-gradient-to-r from-yellow-600 via-yellow-400 to-transparent" />
+          <div className="mt-5 h-px bg-gradient-to-r from-white/30 via-yellow-400/40 to-transparent" />
         </div>
 
+        {/* ── ALOQA ── */}
         <div className={revealClass("delay-300")}>
-          <ColTitle dotColor="red">Aloqa</ColTitle>
+          <ColTitle dotColor="yellow">Aloqa</ColTitle>
           <ul className="space-y-3">
             <ContactItem
               iconColor="yellow"
@@ -295,53 +305,53 @@ export default function Footer() {
             >
               <span className="flex items-center gap-2">
                 Du-Ju 9:00–18:00
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
               </span>
             </ContactItem>
           </ul>
 
           <div className="flex gap-2 mt-5 flex-wrap">
             <Link
-              to="/contact"
-              className="relative inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-red-400 border border-red-700 rounded overflow-hidden group transition-colors duration-300 hover:text-white"
+              to="/boglanish"
+              className="relative overflow-hidden inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white border border-white/30 rounded-full group hover:border-white/60 transition-all duration-300"
             >
-              <span className="absolute inset-0 bg-red-600 -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out" />
+              <span className="absolute inset-0 bg-white/10 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 ease-out rounded-full" />
               <span className="relative z-10">Bog'lanish →</span>
             </Link>
             <Link
-              to="/become-blogger"
-              className="relative inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-yellow-400 border border-yellow-600 rounded overflow-hidden group transition-colors duration-300 hover:text-black"
+              to="/bloger-bolish"
+              className="relative overflow-hidden inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-black bg-yellow-400 border border-yellow-400 rounded-full group hover:bg-yellow-300 hover:border-yellow-300 transition-all duration-300"
             >
-              <span className="absolute inset-0 bg-yellow-400 -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out" />
               <span className="relative z-10">Bloger bo'lish →</span>
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="border-t border-zinc-800">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-600">
+      {/* ── BOTTOM BAR ── */}
+      <div className="relative z-10 border-t border-white/10">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/40">
           <span>
-            © 2025 <span className="text-yellow-500 font-semibold">add</span>
-            <span className="text-red-500 font-semibold">Bloger</span>. Barcha
-            huquqlar himoyalangan.
+            © 2025 <span className="text-white font-semibold">add</span>
+            <span className="text-yellow-300 font-semibold">Bloger</span>.{" "}
+            Barcha huquqlar himoyalangan.
           </span>
           <div className="flex items-center gap-4">
             <Link
-              to="/privacy"
-              className="hover:text-red-400 transition-colors duration-200"
+              to="/maxfiylik"
+              className="hover:text-white transition-colors duration-200"
             >
               Maxfiylik
             </Link>
             <Link
-              to="/terms"
-              className="hover:text-yellow-400 transition-colors duration-200"
+              to="/shartlar"
+              className="hover:text-yellow-300 transition-colors duration-200"
             >
               Shartlar
             </Link>
             <Link
               to="/cookies"
-              className="hover:text-red-400 transition-colors duration-200"
+              className="hover:text-white transition-colors duration-200"
             >
               Cookies
             </Link>
