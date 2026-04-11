@@ -1,5 +1,5 @@
 import React from 'react'
-
+import Categories from '../../pages/Categories'
 function CategoryCard() {
   return (
     <>
@@ -22,43 +22,43 @@ function CategoryCard() {
       </div>
 
 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4">
-  <Category 
+  <Categories 
   nomi={"Texnologiya"} 
   icon={"fa-laptop-code"} 
   soni={87} />
-  <Category 
+  <Categories 
   nomi={"Lifestyle"}  
   icon={"fa-magic"}       
   soni={120} />
-  <Category 
+  <Categories 
   nomi={"Go'zallik"}   
   icon={"fa-face-smile"}  
   soni={64} />
-  <Category 
+  <Categories 
   nomi={"Ovqat"}       
   icon={"fa-utensils"}    
   soni={45} />
-  <Category
+  <Categories
   nomi={"Sport"}
   icon={"fa-solid fa-futbol"}
   soni={52}/>
-  <Category
+  <Categories
   nomi={"Sayohat"}
   icon={"fa-solid fa-plane"}
   soni={38}/>
-  <Category
+  <Categories
   nomi={"Biznes"}
   icon={"fa-solid fa-briefcase"}
   soni={71}/>
-  <Category
+  <Categories
   nomi={"Gaming"}
   icon={"fa-solid fa-gamepad"}
   soni={33}/>
-   <Category
+   <Categories
   nomi={"Ta'lim"}
   icon={"fa-solid fa-book"}
   soni={58}/>
-   <Category
+   <Categories
   nomi={"Musiqa"}
   icon={"fa-solid fa-music"}
   soni={29}/>
