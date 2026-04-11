@@ -110,8 +110,15 @@ const PriceRangeSlider = ({ minVal, maxVal, onChange }) => {
     };
     const onUp = () => { dragging.current = null; };
     window.addEventListener("mousemove", onMove);
+    window.addEventListener("touchmove", onMove, { passive: false }); // Mobilda ishlashi uchun
     window.addEventListener("mouseup", onUp);
-    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+    window.addEventListener("touchend", onUp);
+    return () => { 
+        window.removeEventListener("mousemove", onMove); 
+        window.removeEventListener("touchmove", onMove);
+        window.removeEventListener("mouseup", onUp); 
+        window.removeEventListener("touchend", onUp);
+    };
   }, [minVal, maxVal, getValueFromEvent, onChange]);
 
   const minPct = toPercent(minVal);
@@ -128,8 +135,8 @@ const PriceRangeSlider = ({ minVal, maxVal, onChange }) => {
       </div>
       <div className="relative h-1.5 bg-gray-200 rounded-full mx-2 mt-3">
         <div className="absolute h-full bg-red-500 rounded-full" style={{ left: `${minPct}%`, width: `${maxPct - minPct}%` }} />
-        <button onMouseDown={startDrag("min")} className="absolute w-4 h-4 bg-white border-2 border-red-500 rounded-full shadow -translate-x-1/2 -translate-y-1/2 top-1/2 z-10" style={{ left: `${minPct}%` }} />
-        <button onMouseDown={startDrag("max")} className="absolute w-4 h-4 bg-white border-2 border-red-500 rounded-full shadow -translate-x-1/2 -translate-y-1/2 top-1/2 z-10" style={{ left: `${maxPct}%` }} />
+        <button onTouchStart={startDrag("min")} onMouseDown={startDrag("min")} className="absolute w-5 h-5 bg-white border-2 border-red-500 rounded-full shadow -translate-x-1/2 -translate-y-1/2 top-1/2 z-10 focus:outline-none" style={{ left: `${minPct}%` }} />
+        <button onTouchStart={startDrag("max")} onMouseDown={startDrag("max")} className="absolute w-5 h-5 bg-white border-2 border-red-500 rounded-full shadow -translate-x-1/2 -translate-y-1/2 top-1/2 z-10 focus:outline-none" style={{ left: `${maxPct}%` }} />
       </div>
       <div className="flex justify-between mt-4">
         <div className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">{formatPriceFull(minVal)}</div>
@@ -226,12 +233,13 @@ export default function FilterSidebar({ onApplyFilter, usersList = [] }) {
   };
 
   return (
-    <div className="flex justify-center p-4 bg-gray-50 min-h-screen font-sans items-start">
+    <div className="flex justify-center p-2 sm:p-4 bg-gray-50 min-h-screen font-sans items-center">
       <ComponentStyles />
-      <div className="w-[330px] bg-white rounded-3xl shadow-xl border border-gray-100 flex flex-col overflow-visible">
+      
+      <div className="w-full max-w-[330px] max-h-[95vh] h-full bg-white rounded-3xl shadow-xl border border-gray-100 flex flex-col">
         
-        {/* Header */}
-        <div className="bg-red-600 text-white p-5 flex items-center justify-between rounded-t-3xl shadow-md z-10 relative">
+        {/* Header (O'zgarmadi) */}
+        <div className="bg-red-600 text-white p-5 flex items-center justify-between rounded-t-3xl shadow-md z-10 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -245,8 +253,7 @@ export default function FilterSidebar({ onApplyFilter, usersList = [] }) {
           </button>
         </div>
 
-        {/* Scrollable Body */}
-        <div className="p-5 overflow-y-auto max-h-[75vh] slim-scroll">
+        <div className="p-5 overflow-y-auto flex-1 slim-scroll relative">
           
           <Section title="FOYDALANUVCHI">
             <UserSelector users={usersList} selectedUser={selectedUser} onSelect={setSelectedUser} />
@@ -285,8 +292,7 @@ export default function FilterSidebar({ onApplyFilter, usersList = [] }) {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-5 bg-gray-50/50 border-t border-gray-100 rounded-b-3xl">
+        <div className="p-5 bg-gray-50/50 border-t border-gray-100 rounded-b-3xl flex-shrink-0">
           <button onClick={handleSubmit} className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl font-black transition-all shadow-xl shadow-red-100 active:scale-95 flex items-center justify-center gap-2">
             Natijalarni ko'rsatish
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
