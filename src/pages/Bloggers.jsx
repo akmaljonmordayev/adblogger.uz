@@ -1,8 +1,8 @@
 import React, { use, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import BloggerCard from "../blogerCard/BlogerCard"; 
-import FilterSidebar from "../components/layout/filterSiderbar"; 
+import BloggerCard from "../components/ui/BlogerCard";
+import FilterSidebar from '../components/layout/FilterSidebar';
 
 const initialBloggers = [
   {
