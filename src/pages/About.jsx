@@ -1,354 +1,159 @@
 import React from "react";
+import { motion } from "framer-motion";
 
-const bloggers = [
-  {
-    name: "Sardor Raximov",
-    username: "sardortech",
-    category: "Tech",
-    followers: "450K",
-    engagement: "8.4%",
-    price: "2,500,000",
-    gradient: "from-blue-500 to-blue-700",
-  },
-  {
-    name: "Sherzod Qodirov",
-    username: "sherzod_sport",
-    category: "Sport",
-    followers: "380K",
-    engagement: "7.8%",
-    price: "2,100,000",
-    gradient: "from-green-500 to-green-700",
-  },
-  {
-    name: "Nilufar Hasanova",
-    username: "nilufarlife",
-    category: "Lifestyle",
-    followers: "320K",
-    engagement: "6.2%",
-    price: "1,800,000",
-    gradient: "from-pink-500 to-pink-700",
-  },
-  {
-    name: "Jasur Ergashev",
-    username: "jasur_tech",
-    category: "Tech",
-    followers: "310K",
-    engagement: "7.2%",
-    price: "1,900,000",
-    gradient: "from-blue-400 to-blue-600",
-  },
-   {
-    name: "Jasur Ergashev",
-    username: "jasur_tech",
-    category: "Tech",
-    followers: "310K",
-    engagement: "7.2%",
-    price: "1,900,000",
-    gradient: "from-blue-400 to-blue-600",
-  },
-   {
-    name: "Jasur Ergashev",
-    username: "jasur_tech",
-    category: "Tech",
-    followers: "310K",
-    engagement: "7.2%",
-    price: "1,900,000",
-    gradient: "from-blue-400 to-blue-600",
-  },
-   {
-    name: "Jasur Ergashev",
-    username: "jasur_tech",
-    category: "Tech",
-    followers: "310K",
-    engagement: "7.2%",
-    price: "1,900,000",
-    gradient: "from-blue-400 to-blue-600",
-  },
-   {
-    name: "Jasur Ergashev",
-    username: "jasur_tech",
-    category: "Tech",
-    followers: "310K",
-    engagement: "7.2%",
-    price: "1,900,000",
-    gradient: "from-blue-400 to-blue-600",
-  },
-   {
-    name: "Jasur Ergashev",
-    username: "jasur_tech",
-    category: "Tech",
-    followers: "310K",
-    engagement: "7.2%",
-    price: "1,900,000",
-    gradient: "from-blue-400 to-blue-600",
-  },
-   {
-    name: "Jasur Ergashev",
-    username: "jasur_tech",
-    category: "Tech",
-    followers: "310K",
-    engagement: "7.2%",
-    price: "1,900,000",
-    gradient: "from-blue-400 to-blue-600",
-  },
-   {
-    name: "Jasur Ergashev",
-    username: "jasur_tech",
-    category: "Tech",
-    followers: "310K",
-    engagement: "7.2%",
-    price: "1,900,000",
-    gradient: "from-blue-400 to-blue-600",
-  },
-   {
-    name: "Jasur Ergashev",
-    username: "jasur_tech",
-    category: "Tech",
-    followers: "310K",
-    engagement: "7.2%",
-    price: "1,900,000",
-    gradient: "from-blue-400 to-blue-600",
-  },
-   {
-    name: "Jasur Ergashev",
-    username: "jasur_tech",
-    category: "Tech",
-    followers: "310K",
-    engagement: "7.2%",
-    price: "1,900,000",
-    gradient: "from-blue-400 to-blue-600",
-  },
-   {
-    name: "Jasur Ergashev",
-    username: "jasur_tech",
-    category: "Tech",
-    followers: "310K",
-    engagement: "7.2%",
-    price: "1,900,000",
-    gradient: "from-blue-400 to-blue-600",
-  },
-   {
-    name: "Jasur Ergashev",
-    username: "jasur_tech",
-    category: "Tech",
-    followers: "310K",
-    engagement: "7.2%",
-    price: "1,900,000",
-    gradient: "from-blue-400 to-blue-600",
-  },
-   {
-    name: "Jasur Ergashev",
-    username: "jasur_tech",
-    category: "Tech",
-    followers: "310K",
-    engagement: "7.2%",
-    price: "1,900,000",
-    gradient: "from-blue-400 to-blue-600",
-  },
-  ];
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+};
 
-function Card({ item }) {
+export default function AboutPage() {
   return (
-    <div className="bg-white rounded-2xl shadow overflow-hidden aspect-square flex flex-col hover:scale-105 transition duration-300">
+    <div className="min-h-screen bg-white text-gray-800 overflow-x-hidden">
+      {/* HERO */}
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="show"
+        className="bg-red-600 text-white py-24 text-center px-6"
+      >
+        <h1 className="text-5xl md:text-6xl font-bold mb-6">Adbloger</h1>
+        <p className="max-w-3xl mx-auto text-lg md:text-xl">
+          Biz — Adbloger jamoasi, zamonaviy web saytlar va digital platformalar yaratamiz 🚀
+        </p>
+      </motion.div>
 
-      {/* Header */}
-      <div className={`bg-gradient-to-r ${item.gradient} h-1/3 relative`}>
-        <span className="absolute top-2 right-2 bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full">
-          ✓ Tasdiqlangan
-        </span>
-
-        {/* Avatar */}
-        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2">
-          <div className="w-16 h-16 bg-white rounded-full shadow flex items-center justify-center text-xl">
-            👤
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-between pt-10 pb-4 px-4">
-
-        {/* Name */}
-        <div className="text-center">
-          <h3 className="font-semibold text-lg">{item.name}</h3>
-          <p className="text-gray-400 text-sm">@{item.username}</p>
-
-          <span className="inline-block mt-1 text-xs bg-red-100 text-red-500 px-2 py-0.5 rounded">
-            {item.category}
-          </span>
-        </div>
-
-        {/* Stats */}
-        <div className="flex gap-2 w-full mt-3">
-          <div className="flex-1 bg-gray-100 rounded-lg p-2 text-center">
-            <p className="text-red-500 font-semibold">{item.followers}</p>
-            <p className="text-xs text-gray-500">Followers</p>
-          </div>
-          <div className="flex-1 bg-gray-100 rounded-lg p-2 text-center">
-            <p className="text-green-500 font-semibold">{item.engagement}</p>
-            <p className="text-xs text-gray-500">Engagement</p>
-          </div>
-        </div>
-
-        {/* Price */}
-        <div className="flex items-center justify-between w-full mt-3">
-          <p className="text-red-500 font-semibold">
-            {item.price} so‘m
+      {/* ABOUT */}
+      <div className="max-w-6xl mx-auto py-16 px-6 grid md:grid-cols-2 gap-12 items-center">
+        <motion.div variants={fadeUp} initial="hidden" whileInView="show">
+          <h2 className="text-3xl font-bold text-red-600 mb-4">Biz kimmiz?</h2>
+          <p className="mb-4">
+            Adbloger — kreativ developerlar jamoasi. Biz kuchli va chiroyli web mahsulotlar yaratamiz.
           </p>
-          <button className="bg-red-500 text-white px-3 py-1 rounded-lg">
-            Bron
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+          <p>
+            Har bir loyiha ustida sifat va tezlik bilan ishlaymiz.
+          </p>
+        </motion.div>
 
-function Sidebar() {
-  return (
-    <div className="w-72 bg-white rounded-2xl shadow p-4 space-y-6">
-
-      {/* Header */}
-      <div className="bg-red-500 text-white px-4 py-3 rounded-xl font-semibold">
-        🔻 Filtr
+        <motion.img
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="show"
+          src="https://images.unsplash.com/photo-1551434678-e076c223a692"
+          className="rounded-2xl shadow-xl"
+        />
       </div>
 
-      {/* Kategoriya */}
-      <div>
-        <p className="text-gray-400 text-sm mb-2 font-semibold">
-          KATEGORIYA
-        </p>
+      {/* SERVICES */}
+      <div className="bg-red-50 py-16">
+        <div className="max-w-6xl mx-auto px-6">
+          <motion.h2
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            className="text-3xl font-bold text-center text-red-600 mb-10"
+          >
+            Xizmatlarimiz
+          </motion.h2>
 
-        {[
-          ["Texnologiya", 87],
-          ["Lifestyle", 120],
-          ["Go'zallik", 64],
-          ["Ovqat", 45],
-          ["Sport", 52],
-          ["Sayohat", 38],
-        ].map(([name, count]) => (
-          <label key={name} className="flex justify-between py-1 items-center">
-            <div className="flex gap-2 items-center">
-              <input type="checkbox" className="accent-red-500" />
-              <span>{name}</span>
-            </div>
-            <span className="text-gray-400 text-sm">{count}</span>
-          </label>
-        ))}
-      </div>
-
-      {/* Platform */}
-      <div>
-        <p className="text-gray-400 text-sm mb-2 font-semibold">
-          PLATFORMA
-        </p>
-
-        {["YouTube", "Instagram", "Telegram", "TikTok"].map((p) => (
-          <label key={p} className="flex gap-2 py-1">
-            <input type="checkbox" className="accent-red-500" />
-            {p}
-          </label>
-        ))}
-      </div>
-
-      {/* Obunachilar */}
-      <div>
-        <p className="text-gray-400 text-sm mb-2 font-semibold">
-          OBUNACHILAR
-        </p>
-
-        {["10K - 50K", "50K - 200K", "200K - 500K", "500K+"].map((o) => (
-          <label key={o} className="flex gap-2 py-1">
-            <input type="checkbox" className="accent-red-500" />
-            {o}
-          </label>
-        ))}
-      </div>
-
-      {/* Narx */}
-      <div>
-        <p className="text-gray-400 text-sm mb-2 font-semibold">
-          NARX (SO'M)
-        </p>
-
-        <div className="flex gap-2">
-          <input
-            type="number"
-            placeholder="50000"
-            className="w-full border rounded-lg px-2 py-1"
-          />
-          <input
-            type="number"
-            placeholder="Max"
-            className="w-full border rounded-lg px-2 py-1"
-          />
+          <div className="grid md:grid-cols-3 gap-8">
+            {["Web Development","Reklama Platforma","UI/UX Dizayn"].map((item, i) => (
+              <motion.div
+                key={i}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="show"
+                whileHover={{ scale: 1.05 }}
+                className="bg-white p-6 rounded-2xl shadow hover:shadow-xl transition"
+              >
+                <h3 className="text-xl font-bold mb-2">{item}</h3>
+                <p>Professional xizmat va zamonaviy yechimlar.</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Holat */}
-      <div>
-        <p className="text-gray-400 text-sm mb-2 font-semibold">
-          HOLAT
-        </p>
+      {/* PROJECTS */}
+      <div className="max-w-6xl mx-auto py-16 px-6">
+        <motion.h2
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="show"
+          className="text-3xl font-bold text-center text-red-600 mb-10"
+        >
+          Loyihalarimiz
+        </motion.h2>
 
-        <label className="flex gap-2 py-1">
-          <input type="checkbox" className="accent-red-500" />
-          Tasdiqlangan
-        </label>
-
-        <label className="flex gap-2 py-1">
-          <input type="checkbox" />
-          Barchasi
-        </label>
-      </div>
-
-      {/* Button */}
-      <button className="w-full bg-red-500 text-white py-2 rounded-xl font-semibold">
-        Filtrlash
-      </button>
-
-      {/* Reklama */}
-      <div className="bg-red-500 text-white p-4 rounded-xl">
-        <p className="font-semibold mb-2">📢 Reklama ber</p>
-        <p className="text-sm mb-3">
-          Eng mos blogerga bir zumda so‘rov yuboring
-        </p>
-        <button className="bg-white text-red-500 w-full py-2 rounded-lg font-semibold">
-          So‘rov yuborish
-        </button>
-      </div>
-    </div>
-  );
-}
-
-export default function App() {
-  return (
-    <div className="bg-gray-100 min-h-screen p-6 flex gap-6">
-
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Right */}
-      <div className="flex-1">
-
-        {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-xl font-semibold">
-            Barcha blogerlar
-          </h1>
-
-          <select className="border rounded-lg px-3 py-1">
-            <option>Eng mashhur</option>
-          </select>
-        </div>
-
-        {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {bloggers.map((item, i) => (
-            <Card key={i} item={item} />
+        <div className="grid md:grid-cols-3 gap-6">
+          {[1,2,3].map((i) => (
+            <motion.div
+              key={i}
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="show"
+              whileHover={{ scale: 1.05 }}
+              className="rounded-2xl overflow-hidden shadow-lg"
+            >
+              <img
+                src={`https://picsum.photos/400/300?random=${i}`}
+                className="w-full h-48 object-cover"
+              />
+              <div className="p-4 bg-white">
+                <h3 className="font-bold">Project {i}</h3>
+                <p className="text-sm text-gray-500">Zamonaviy loyiha</p>
+              </div>
+            </motion.div>
           ))}
         </div>
       </div>
+
+      {/* TEAM */}
+      <div className="bg-red-50 py-16">
+        <div className="max-w-6xl mx-auto px-6">
+          <motion.h2
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            className="text-3xl font-bold text-center text-red-600 mb-10"
+          >
+            Jamoamiz
+          </motion.h2>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[1,2,3].map((i) => (
+              <motion.div
+                key={i}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="show"
+                whileHover={{ scale: 1.05 }}
+                className="bg-white p-6 rounded-2xl text-center shadow"
+              >
+                <img
+                  src={`https://randomuser.me/api/portraits/men/${i+20}.jpg`}
+                  className="w-24 h-24 mx-auto rounded-full mb-4"
+                />
+                <h3 className="font-bold">Developer {i}</h3>
+                <p className="text-gray-500">Frontend Developer</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="show"
+        className="text-center py-16 px-6"
+      >
+        <h2 className="text-3xl font-bold mb-4">Biz bilan ishlashni boshlang 🚀</h2>
+        <p className="text-gray-600 mb-6">Adbloger bilan biznesingizni yangi bosqichga olib chiqing</p>
+        <button className="bg-red-600 text-white px-10 py-4 rounded-xl hover:bg-red-700 transition">
+          Bog'lanish
+        </button>
+      </motion.div>
     </div>
   );
 }
