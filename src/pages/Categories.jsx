@@ -18,10 +18,10 @@ function Categories({ nomi, icon, soni, index = 0 }) {
 
   return (
     <div
-      className="relative flex flex-col items-center justify-end gap-2 rounded-2xl px-4 pb-12 min-h-[200px] cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-2xl overflow-hidden"
+      className="relative flex flex-col items-center justify-end gap-2 rounded-2xl px-4 pb-12 min-h-[150px] w-[300px] cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-2xl overflow-hidden"
       style={{ background: gradient }}
     >
-      <i className={`fa-solid ${icon} text-[42px] text-black/25 absolute top-14 left-1/2 -translate-x-1/2`}></i>
+      <i className={`fa-solid ${icon} text-[35px] text-black/25 absolute top-14 left-1/2 -translate-x-1/2`}></i>
       <span className="font-nunito font-black text-[15px] text-white z-10">{nomi}</span>
       <span className="font-rubik text-xs text-white/75 z-10">{soni} ta bloger</span>
     </div>
