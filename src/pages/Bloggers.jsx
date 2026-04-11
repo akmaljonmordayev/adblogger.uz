@@ -1,8 +1,8 @@
 import React, { use, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import BloggerCard from '../components/ui/BlogerCard';
-import FilterSidebar from '../components/layout/FilterSidebar';
+import BloggerCard from "../blogerCard/BlogerCard"; 
+import FilterSidebar from "../components/layout/filterSiderbar"; 
 
 const initialBloggers = [
   {
@@ -235,7 +235,7 @@ const initialBloggers = [
   }
 ];
 
-export default function Bloggers() {
+export default function Blogger() {
   const [bloggers, setBloggers] = useState(initialBloggers);
 const [isFilterOpen, setIsFilterOpen] = useState(false);
   const handleBron = (name) => toast.info(`${name} uchun bron qilindi!`);
@@ -281,7 +281,8 @@ const [isFilterOpen, setIsFilterOpen] = useState(false);
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] p-4 sm:p-8 relative">
+    // h-screen va overflow-hidden olib tashlandi yoki min-h-screen ga almashtirildi
+    <div className="min-h-screen bg-[#fafafa] p-4 sm:p-8"> 
       
       <button 
         onClick={() => setIsFilterOpen(true)}
@@ -295,8 +296,9 @@ const [isFilterOpen, setIsFilterOpen] = useState(false);
 
       <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row gap-8 items-start">
         
+        {/* Sidebar konteyneri sticky qilindi */}
         <div className={`
-          fixed inset-0 z-[100] lg:relative lg:inset-auto lg:z-[50] lg:block
+          fixed inset-0 z-[100] lg:sticky lg:top-8 lg:z-[50] lg:block
           ${isFilterOpen ? 'block' : 'hidden'}
         `}>
           <div 
@@ -304,7 +306,7 @@ const [isFilterOpen, setIsFilterOpen] = useState(false);
             onClick={() => setIsFilterOpen(false)}
           ></div>
 
-          <div className="relative w-[310px] h-full lg:h-auto bg-white lg:bg-transparent overflow-y-auto lg:overflow-visible ml-auto lg:ml-0 lg:sticky lg:top-8 p-4 lg:p-0">
+          <div className="relative w-[310px] h-full lg:h-auto bg-white lg:bg-transparent overflow-y-auto ml-auto lg:ml-0 p-4 lg:p-0">
              <button 
                onClick={() => setIsFilterOpen(false)} 
                className="lg:hidden absolute top-4 right-4 text-gray-400 hover:text-black font-bold text-xl p-2"
@@ -317,11 +319,12 @@ const [isFilterOpen, setIsFilterOpen] = useState(false);
           </div>
         </div>
 
-        <div className="flex-1 w-full flex flex-wrap justify-center lg:justify-start gap-6 relative z-0">
+        {/* Bloggerlar ro'yxati */}
+        <div className="flex-1 flex flex-wrap gap-6 content-start">
           {bloggers.length > 0 ? (
-            bloggers.map((blogger, index) => (
+            bloggers.map((blogger) => (
               <BloggerCard
-                key={index}
+                key={blogger.id}
                 {...blogger}
                 headerGradient={blogger.gradient}
                 onBronClick={() => handleBron(blogger.name)}
