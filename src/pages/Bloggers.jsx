@@ -3,8 +3,9 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import BloggerCard from "../components/ui/BlogerCard";
 import FilterSidebar from '../components/layout/FilterSidebar';
-
-const initialBloggers = [
+import {useNavigate} from "react-router-dom";
+import {ROUTE_PATHS} from "../config/constants";
+ export const initialBloggers = [
   {
     id: 1,
     name: "Sardor Raximov",
@@ -236,9 +237,15 @@ const initialBloggers = [
 ];
 
 export default function Blogger() {
+  const navigate = useNavigate(); 
   const [bloggers, setBloggers] = useState(initialBloggers);
 const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const handleBron = (name) => toast.info(`${name} uchun bron qilindi!`);
+
+  const handleBron = (id) =>{
+    toast.success(`${id} bloggeri bron qilindi!`);
+    const path = ROUTE_PATHS.BLOGGER_DETAIL.replace(":id", id); 
+    navigate(path);
+  }
 
   const applyFilters = (filters, selectedUser) => {
     let result = [...initialBloggers];
@@ -279,6 +286,7 @@ const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     setBloggers(result);
   };
+  
 
   return (
     // h-screen va overflow-hidden olib tashlandi yoki min-h-screen ga almashtirildi
@@ -327,7 +335,7 @@ const [isFilterOpen, setIsFilterOpen] = useState(false);
                 key={blogger.id}
                 {...blogger}
                 headerGradient={blogger.gradient}
-                onBronClick={() => handleBron(blogger.name)}
+                onBronClick={() => handleBron(blogger.id)}
               />
             ))
           ) : (
