@@ -31,6 +31,7 @@ export const ROUTE_PATHS = {
   PRIVACY:        "/privacy",
   TERMS:          "/terms",
   COOKIES:        "/cookies",
+  FAQ:            "/faq",
 
   // Auth & foydalanuvchi
   LOGIN:          "/login",

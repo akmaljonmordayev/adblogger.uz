@@ -1,21 +1,23 @@
-import { useState } from "react";
-
-const fontLink = document.createElement("link");
-fontLink.rel = "stylesheet";
-fontLink.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap";
-if (!document.head.querySelector('link[href*="Inter"]')) document.head.appendChild(fontLink);
+import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 const CATEGORIES = [
-  { key: "all",    label: "Barchasi" },
-  { key: "bloger", label: "Blogerlar" },
-  { key: "reklam", label: "Reklam beruvchilar" },
-  { key: "tolov",  label: "To'lov" },
+  { key: "all",    label: "Barchasi",          count: 11 },
+  { key: "bloger", label: "Blogerlar",          count: 4  },
+  { key: "reklam", label: "Reklam beruvchilar", count: 4  },
+  { key: "tolov",  label: "To'lov",             count: 3  },
 ];
 
-const TAG = {
-  bloger: { bg: "bg-blue-50 text-blue-700",   label: "Blogerlar" },
-  reklam: { bg: "bg-green-50 text-green-700",  label: "Reklam beruvchi" },
-  tolov:  { bg: "bg-amber-50 text-amber-700",  label: "To'lov" },
+const TAG_COLORS = {
+  bloger: "bg-blue-50 text-blue-600 border-blue-100",
+  reklam: "bg-emerald-50 text-emerald-600 border-emerald-100",
+  tolov:  "bg-amber-50 text-amber-600 border-amber-100",
+};
+
+const TAG_LABELS = {
+  bloger: "Blogerlar",
+  reklam: "Reklam beruvchi",
+  tolov:  "To'lov",
 };
 
 const FAQS = [
@@ -76,37 +78,86 @@ const FAQS = [
   },
 ];
 
-function FaqItem({ faq, isOpen, onToggle }) {
+function AccordionItem({ faq, index, isOpen, onToggle }) {
+  const bodyRef = useRef(null);
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    if (bodyRef.current) {
+      setHeight(isOpen ? bodyRef.current.scrollHeight : 0);
+    }
+  }, [isOpen]);
+
   return (
-    <div className="border-b border-gray-200">
+    <div
+      className={`group relative rounded-2xl border transition-all duration-300 ${
+        isOpen
+          ? "border-red-200 bg-white shadow-lg shadow-red-500/5"
+          : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"
+      }`}
+    >
+      {/* left accent bar */}
+      <div
+        className={`absolute left-0 top-4 bottom-4 w-0.75 rounded-full transition-all duration-300 ${
+          isOpen ? "bg-linear-to-b from-red-500 to-red-700 opacity-100" : "opacity-0"
+        }`}
+      />
+
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between gap-3 py-4 text-left group"
+        className="w-full flex items-start gap-4 px-6 py-5 text-left"
       >
-        <span className="text-[15px] font-medium text-gray-900 leading-snug group-hover:text-gray-700 transition-colors">
-          {faq.q}
-        </span>
+        {/* number */}
         <span
-          className={`flex-shrink-0 w-6 h-6 rounded-full border border-gray-300 bg-gray-100 flex items-center justify-center text-gray-500 text-sm transition-transform duration-300 ${
-            isOpen ? "rotate-45" : ""
+          className={`shrink-0 mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black transition-all duration-300 ${
+            isOpen
+              ? "bg-red-600 text-white shadow-[0_0_12px_rgba(220,38,38,0.25)]"
+              : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"
           }`}
         >
-          +
+          {String(index + 1).padStart(2, "0")}
+        </span>
+
+        <span
+          className={`flex-1 text-[15px] font-semibold leading-snug transition-colors duration-200 ${
+            isOpen ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900"
+          }`}
+        >
+          {faq.q}
+        </span>
+
+        {/* chevron */}
+        <span
+          className={`shrink-0 mt-1 w-5 h-5 flex items-center justify-center transition-transform duration-300 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        >
+          <svg
+            className={`w-4 h-4 transition-colors duration-200 ${
+              isOpen ? "text-red-500" : "text-slate-400 group-hover:text-slate-600"
+            }`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
         </span>
       </button>
 
+      {/* body */}
       <div
-        className={`overflow-hidden transition-all duration-300 ${
-          isOpen ? "max-h-64" : "max-h-0"
-        }`}
+        style={{ height }}
+        className="overflow-hidden transition-[height] duration-300 ease-in-out"
       >
-        <div className="pb-4">
+        <div ref={bodyRef} className="px-6 pb-5 pl-17">
           <span
-            className={`inline-block text-[11px] font-medium px-2.5 py-0.5 rounded-full mb-2 ${TAG[faq.cat].bg}`}
+            className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full border mb-3 uppercase tracking-wider ${TAG_COLORS[faq.cat]}`}
           >
-            {TAG[faq.cat].label}
+            {TAG_LABELS[faq.cat]}
           </span>
-          <p className="text-sm text-gray-600 leading-relaxed">{faq.a}</p>
+          <p className="text-sm text-slate-500 leading-relaxed">{faq.a}</p>
         </div>
       </div>
     </div>
@@ -115,80 +166,191 @@ function FaqItem({ faq, isOpen, onToggle }) {
 
 export default function FAQ() {
   const [activeCat, setActiveCat] = useState("all");
-  const [openIdx, setOpenIdx] = useState(null);
+  const [openIdx, setOpenIdx]     = useState(null);
+  const [search, setSearch]       = useState("");
 
-  const filtered = FAQS.filter(
-    (f) => activeCat === "all" || f.cat === activeCat
-  );
+  const filtered = FAQS.filter((f) => {
+    const matchCat    = activeCat === "all" || f.cat === activeCat;
+    const matchSearch =
+      search.trim() === "" ||
+      f.q.toLowerCase().includes(search.toLowerCase()) ||
+      f.a.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
 
-  const handleToggle = (i) => setOpenIdx(openIdx === i ? null : i);
+  const handleToggle    = (i)   => setOpenIdx(openIdx === i ? null : i);
+  const handleCatChange = (key) => { setActiveCat(key); setOpenIdx(null); };
 
   return (
-    <section
-      className="w-full max-w-2xl mx-auto px-4 py-12"
-      style={{ fontFamily: "'Inter', sans-serif" }}
-    >
-      {/* Header */}
-      <div className="mb-8">
-        <p className="text-xs font-semibold tracking-widest uppercase text-red-600 mb-2">
-          FAQ
-        </p>
-        <h2 className="text-3xl font-bold text-gray-900 leading-tight">
-          Ko'p beriladigan savollar
-        </h2>
-        <p className="text-gray-500 text-sm mt-2">
-          Platformamiz haqida eng ko'p so'raladigan savollar va javoblar.
-        </p>
+    <div className="max-w-3xl mx-auto py-6">
+
+      {/* ── HERO ── */}
+      <div className="relative rounded-3xl overflow-hidden bg-linear-to-br from-red-600 via-red-600 to-red-700 px-8 py-12 mb-10 text-center">
+        {/* decorative glows */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-400/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-red-900/30 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+        {/* diagonal pattern */}
+        <div
+          className="absolute inset-0 opacity-5 pointer-events-none"
+          style={{
+            backgroundImage: `repeating-linear-gradient(-45deg,transparent,transparent 20px,rgba(255,255,255,0.8) 20px,rgba(255,255,255,0.8) 21px)`,
+          }}
+        />
+
+        <div className="relative z-10">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 text-white/90 text-[10px] font-black uppercase tracking-[0.3em] mb-5">
+            <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
+            Yordam markazi
+          </div>
+
+          <h1 className="text-4xl md:text-5xl font-black text-white uppercase leading-tight tracking-tighter mb-3">
+            Ko'p so'raladigan{" "}
+            <span className="text-yellow-300">savollar</span>
+          </h1>
+
+          <p className="text-red-100/70 text-sm max-w-md mx-auto leading-relaxed mb-8">
+            Platformamiz haqida eng tez-tez beriladigan savollar va ularga aniq javoblar.
+          </p>
+
+          {/* stats row */}
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
+            {[
+              { v: "11", l: "Savol" },
+              { v: "3",  l: "Bo'lim" },
+              { v: "24h", l: "Javob vaqti" },
+            ].map(({ v, l }) => (
+              <div key={l} className="px-5 py-3 rounded-xl bg-white/10 border border-white/20 text-center">
+                <span className="block text-xl font-black text-yellow-300">{v}</span>
+                <span className="block text-[10px] text-white/60 uppercase tracking-wider mt-0.5">{l}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* search */}
+          <div className="relative max-w-md mx-auto">
+            <svg
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+            </svg>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setOpenIdx(null); }}
+              placeholder="Savol yoki kalit so'z qidiring..."
+              className="w-full bg-white/10 border border-white/20 rounded-xl pl-11 pr-10 py-3 text-sm text-white placeholder-white/40 outline-none focus:bg-white/15 focus:border-white/40 transition-all duration-200"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Filter tabs */}
+      {/* ── CATEGORY TABS ── */}
       <div className="flex flex-wrap gap-2 mb-6">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.key}
-            onClick={() => {
-              setActiveCat(cat.key);
-              setOpenIdx(null);
-            }}
-            className={`text-xs px-4 py-2 rounded-full border transition-all duration-200 cursor-pointer ${
+            onClick={() => handleCatChange(cat.key)}
+            className={`flex items-center gap-2 text-[12px] font-bold px-4 py-2 rounded-xl border transition-all duration-200 cursor-pointer ${
               activeCat === cat.key
-                ? "bg-gray-900 text-white border-gray-900"
-                : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                ? "bg-red-600 border-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.3)]"
+                : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700"
             }`}
           >
             {cat.label}
+            <span
+              className={`text-[10px] font-black px-1.5 py-0.5 rounded-md ${
+                activeCat === cat.key ? "bg-white/20 text-white" : "bg-slate-100 text-slate-400"
+              }`}
+            >
+              {cat.count}
+            </span>
           </button>
         ))}
       </div>
 
-      {/* FAQ items */}
-      <div>
-        {filtered.map((faq, i) => (
-          <FaqItem
-            key={faq.q}
-            faq={faq}
-            isOpen={openIdx === i}
-            onToggle={() => handleToggle(i)}
-          />
-        ))}
-      </div>
+      {/* ── ACCORDION ── */}
+      {filtered.length > 0 ? (
+        <div className="flex flex-col gap-3 mb-10">
+          {filtered.map((faq, i) => (
+            <AccordionItem
+              key={faq.q}
+              faq={faq}
+              index={i}
+              isOpen={openIdx === i}
+              onToggle={() => handleToggle(i)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16 mb-10">
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+            </svg>
+          </div>
+          <p className="text-slate-400 text-sm">Hech narsa topilmadi</p>
+          <button
+            onClick={() => { setSearch(""); setActiveCat("all"); }}
+            className="mt-3 text-red-600 text-xs hover:text-red-500 transition-colors underline underline-offset-2"
+          >
+            Filterni tozalash
+          </button>
+        </div>
+      )}
 
-      {/* Bottom note */}
-      <div className="mt-8 p-4 bg-gray-50 rounded-2xl flex items-start gap-3">
-        <span className="text-gray-400 text-lg mt-0.5">?</span>
-        <div>
-          <p className="text-sm font-medium text-gray-800">
-            Boshqa savolingiz bormi?
-          </p>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Bizga{" "}
-            <a href="mailto:support@example.com" className="text-red-600 underline">
-              support@example.com
-            </a>{" "}
-            orqali yozing — 24 soat ichida javob beramiz.
-          </p>
+      {/* ── BOTTOM CTA ── */}
+      <div className="relative rounded-3xl border border-slate-200 bg-white overflow-hidden p-8 shadow-sm">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-red-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-6 justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center">
+                <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-base font-black text-slate-800">Savolingiz javobsiz qoldimi?</h3>
+            </div>
+            <p className="text-sm text-slate-400 max-w-xs leading-relaxed">
+              Bizning jamoa 24 soat ichida sizga javob beradi.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3 shrink-0">
+            <a
+              href="mailto:hello@addbloger.uz"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-100 hover:border-slate-300 transition-all duration-200"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+              </svg>
+              Email
+            </a>
+            <Link
+              to="/contact"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 border border-red-600 text-white text-sm font-bold hover:bg-red-500 transition-all duration-200 shadow-[0_4px_14px_rgba(220,38,38,0.25)]"
+            >
+              Bog'lanish
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
+          </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

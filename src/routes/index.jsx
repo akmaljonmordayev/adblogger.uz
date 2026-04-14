@@ -25,6 +25,7 @@ import BlogerBolish  from "../pages/BlogerBolish";
 import Privacy       from "../pages/Privacy";
 import Terms         from "../pages/Terms";
 import Cookies       from "../pages/Cookies";
+import FAQ           from "../pages/FAQ";
 
 import Auth          from "../pages/Auth";
 import Profile       from "../pages/Profile";
@@ -65,6 +66,7 @@ export const router = createBrowserRouter([
       { path: ROUTE_PATHS.PRIVACY,        element: <Privacy /> },
       { path: ROUTE_PATHS.TERMS,          element: <Terms /> },
       { path: ROUTE_PATHS.COOKIES,        element: <Cookies /> },
+      { path: ROUTE_PATHS.FAQ,            element: <FAQ /> },
 
       // Auth
       { path: ROUTE_PATHS.LOGIN,          element: <Auth /> },
