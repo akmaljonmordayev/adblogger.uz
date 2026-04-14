@@ -110,7 +110,7 @@ const PriceRangeSlider = ({ minVal, maxVal, onChange }) => {
     };
     const onUp = () => { dragging.current = null; };
     window.addEventListener("mousemove", onMove);
-    window.addEventListener("touchmove", onMove, { passive: false }); // Mobilda ishlashi uchun
+    window.addEventListener("touchmove", onMove, { passive: false });
     window.addEventListener("mouseup", onUp);
     window.addEventListener("touchend", onUp);
     return () => { 
@@ -233,12 +233,17 @@ export default function FilterSidebar({ onApplyFilter, usersList = [] }) {
   };
 
   return (
-    <div className="flex justify-center p-2 sm:p-4 bg-gray-50 min-h-screen font-sans items-center">
+    // ASOSIY O'ZGARISH MANA SHU YERDA:
+    // md:w-[330px] orqali katta ekranda qotadi, w-full orqali mobilda moslashadi.
+    <div className="w-full lg:w-[330px] flex-shrink-0 font-sans">
       <ComponentStyles />
       
-      <div className="w-full max-w-[330px] max-h-[95vh] h-full bg-white rounded-3xl shadow-xl border border-gray-100 flex flex-col">
+      {/* sticky top-4 -> Ekranda qotib turishini ta'minlaydi 
+        max-h-[calc(100vh-2rem)] -> Balandligi ekrandan oshib ketmaydi
+      */}
+      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 flex flex-col sticky top-4 max-h-[calc(100vh-2rem)]">
         
-        {/* Header (O'zgarmadi) */}
+        {/* Header - flex-shrink-0 orqali kichrayib ketmaydi */}
         <div className="bg-red-600 text-white p-5 flex items-center justify-between rounded-t-3xl shadow-md z-10 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
@@ -253,7 +258,10 @@ export default function FilterSidebar({ onApplyFilter, usersList = [] }) {
           </button>
         </div>
 
-        <div className="p-5 overflow-y-auto flex-1 slim-scroll relative">
+        {/* Asosiy Scroll Qismi - flex-1 uni bo'sh joyni egallashga majbur qiladi.
+          min-h-0 juda muhim! Busiz kontent pastga qarab toshib ketadi va footerni yo'qotadi. 
+        */}
+        <div className="p-5 overflow-y-auto flex-1 slim-scroll min-h-0 relative">
           
           <Section title="FOYDALANUVCHI">
             <UserSelector users={usersList} selectedUser={selectedUser} onSelect={setSelectedUser} />
@@ -292,6 +300,7 @@ export default function FilterSidebar({ onApplyFilter, usersList = [] }) {
           )}
         </div>
 
+        {/* Footer - flex-shrink-0 orqali joyida doimiy turadi */}
         <div className="p-5 bg-gray-50/50 border-t border-gray-100 rounded-b-3xl flex-shrink-0">
           <button onClick={handleSubmit} className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl font-black transition-all shadow-xl shadow-red-100 active:scale-95 flex items-center justify-center gap-2">
             Natijalarni ko'rsatish
