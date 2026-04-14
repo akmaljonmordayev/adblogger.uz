@@ -1,5 +1,6 @@
 import { NavLink, Link } from "react-router-dom";
 import React, { useEffect, useRef, useState } from "react";
+import { ROUTE_PATHS } from "../../config/constants";
 
 function useCountUp(target, duration = 1200, start = false) {
   const [value, setValue] = useState(0);
@@ -312,14 +313,14 @@ export default function Footer() {
 
           <div className="flex gap-2 mt-5 flex-wrap">
             <Link
-              to="/boglanish"
-              className="relative overflow-hidden inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white border border-white/30 rounded-full group hover:border-white/60 transition-all duration-300"
-            >
+    to={ROUTE_PATHS.CONTACT}
+    className="relative overflow-hidden inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white border border-white/30 rounded-full group hover:border-white/60 transition-all duration-300"
+  >
               <span className="absolute inset-0 bg-white/10 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 ease-out rounded-full" />
               <span className="relative z-10">Bog'lanish →</span>
             </Link>
             <Link
-              to="/bloger-bolish"
+              to={ROUTE_PATHS.BLOGER_BOLISH}
               className="relative overflow-hidden inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-black bg-yellow-400 border border-yellow-400 rounded-full group hover:bg-yellow-300 hover:border-yellow-300 transition-all duration-300"
             >
               <span className="relative z-10">Bloger bo'lish →</span>
