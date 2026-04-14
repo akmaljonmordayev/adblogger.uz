@@ -248,6 +248,7 @@ export default function Footer() {
             <NavItem href="/career" badge="OCHIQ" badgeType="red">
               Karriera
             </NavItem>
+            <NavItem href="/faq">Ko'p so'raladigan savollar</NavItem>
             <NavItem href="/contact">Bog'lanish</NavItem>
           </ul>
           <div className="mt-5 h-px bg-gradient-to-r from-white/30 via-yellow-400/40 to-transparent" />
@@ -339,22 +340,28 @@ export default function Footer() {
           </span>
           <div className="flex items-center gap-4">
             <Link
-              to="/maxfiylik"
+              to={ROUTE_PATHS.PRIVACY}
               className="hover:text-white transition-colors duration-200"
             >
               Maxfiylik
             </Link>
             <Link
-              to="/shartlar"
+              to={ROUTE_PATHS.TERMS}
               className="hover:text-yellow-300 transition-colors duration-200"
             >
               Shartlar
             </Link>
             <Link
-              to="/cookies"
+              to={ROUTE_PATHS.COOKIES}
               className="hover:text-white transition-colors duration-200"
             >
               Cookies
+            </Link>
+            <Link
+              to={ROUTE_PATHS.FAQ}
+              className="hover:text-yellow-300 transition-colors duration-200"
+            >
+              FAQ
             </Link>
           </div>
         </div>
