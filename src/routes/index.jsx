@@ -32,6 +32,20 @@ import Profile       from "../pages/Profile";
 
 import NotFound      from "../pages/NotFound";
 
+// Admin
+import AdminLayout      from "../admin/layouts/AdminLayout";
+import AdminDashboard   from "../admin/pages/AdminDashboard";
+import AdminUsers       from "../admin/pages/AdminUsers";
+import AdminBloggers    from "../admin/pages/AdminBloggers";
+import AdminAds         from "../admin/pages/AdminAds";
+import AdminBlogs       from "../admin/pages/AdminBlogs";
+import AdminCategories  from "../admin/pages/AdminCategories";
+import AdminPricing     from "../admin/pages/AdminPricing";
+import AdminCareer      from "../admin/pages/AdminCareer";
+import AdminContact     from "../admin/pages/AdminContact";
+import AdminFAQ         from "../admin/pages/AdminFAQ";
+import AdminSettings    from "../admin/pages/AdminSettings";
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -72,6 +86,24 @@ export const router = createBrowserRouter([
       { path: ROUTE_PATHS.LOGIN,          element: <Auth /> },
       { path: ROUTE_PATHS.REGISTER,       element: <Auth /> },
       { path: ROUTE_PATHS.PROFILE,        element: <Profile /> },
+    ],
+  },
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      { index: true,                                    element: <AdminDashboard /> },
+      { path: ROUTE_PATHS.ADMIN_DASHBOARD,              element: <AdminDashboard /> },
+      { path: ROUTE_PATHS.ADMIN_USERS,                  element: <AdminUsers /> },
+      { path: ROUTE_PATHS.ADMIN_BLOGGERS,               element: <AdminBloggers /> },
+      { path: ROUTE_PATHS.ADMIN_ADS,                    element: <AdminAds /> },
+      { path: ROUTE_PATHS.ADMIN_BLOGS,                  element: <AdminBlogs /> },
+      { path: ROUTE_PATHS.ADMIN_CATEGORIES,             element: <AdminCategories /> },
+      { path: ROUTE_PATHS.ADMIN_PRICING,                element: <AdminPricing /> },
+      { path: ROUTE_PATHS.ADMIN_CAREER,                 element: <AdminCareer /> },
+      { path: ROUTE_PATHS.ADMIN_CONTACT,                element: <AdminContact /> },
+      { path: ROUTE_PATHS.ADMIN_FAQ,                    element: <AdminFAQ /> },
+      { path: ROUTE_PATHS.ADMIN_SETTINGS,               element: <AdminSettings /> },
     ],
   },
   {
