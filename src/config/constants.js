@@ -37,4 +37,18 @@ export const ROUTE_PATHS = {
   LOGIN:          "/login",
   REGISTER:       "/register",
   PROFILE:        "/profile",
+
+  // Admin
+  ADMIN:                "/admin",
+  ADMIN_DASHBOARD:      "/admin/dashboard",
+  ADMIN_USERS:          "/admin/users",
+  ADMIN_BLOGGERS:       "/admin/bloggers",
+  ADMIN_ADS:            "/admin/ads",
+  ADMIN_BLOGS:          "/admin/blogs",
+  ADMIN_CATEGORIES:     "/admin/categories",
+  ADMIN_PRICING:        "/admin/pricing",
+  ADMIN_CAREER:         "/admin/career",
+  ADMIN_CONTACT:        "/admin/contact",
+  ADMIN_FAQ:            "/admin/faq",
+  ADMIN_SETTINGS:       "/admin/settings",
 };
