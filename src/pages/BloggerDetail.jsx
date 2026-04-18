@@ -1,154 +1,214 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { LuArrowLeft, LuUsers, LuTrendingUp, LuStar, LuMapPin, LuCheck, LuMessageCircle } from "react-icons/lu";
-import { initialBloggers } from "./Bloggers"; // Blogers.jsx dagi massiv
+import { 
+  LuArrowLeft, LuUsers, LuTrendingUp, LuStar, LuMapPin, 
+  LuCheck, LuMessageCircle, LuInfo, LuLayoutDashboard, 
+  LuImage, LuVideo, LuX 
+} from "react-icons/lu";
+import { initialBloggers } from "./Bloggers";
 
 export default function BloggerDetail() {
   const { id } = useParams();
-  
-  // 1. Haqiqiy ma'lumotni massivdan qidirib topamiz
+  const [activeTab, setActiveTab] = useState("pricing");
+  const [isOrderOpen, setIsOrderOpen] = useState(false);
+  const [isMsgOpen, setIsMsgOpen] = useState(false);
+
   const blogger = initialBloggers.find((item) => item.id === Number(id));
 
-  // 2. Agar bloger topilmasa, xato bermasligi uchun tekshiramiz
-  if (!blogger) {
-    return (
-      <div className="p-20 text-center">
-        <h2 className="text-xl font-bold">Blogger topilmadi!</h2>
-        <Link to="/bloggers" className="text-red-600 underline">Ro'yxatga qaytish</Link>
-      </div>
-    );
-  }
+  if (!blogger) return <div className="p-20 text-center">Blogger topilmadi!</div>;
 
-  // 3. Statistika uchun blogger ma'lumotlarini tayyorlaymiz
   const stats = [
     { label: "Obunachilar", value: blogger.followers, Icon: LuUsers },
     { label: "Engagement", value: blogger.engagement, Icon: LuTrendingUp },
-    { label: "Reyting", value: "4.9", Icon: LuStar }, // Default qiymat
-    { label: "Bitimlar", value: "40+", Icon: LuCheck }, // Default qiymat
+    { label: "Reyting", value: "4.9", Icon: LuStar },
+    { label: "Bitimlar", value: "40+", Icon: LuCheck },
+  ];
+
+  // Narxni hisoblashda xatolik bermasligi uchun raqamga aylantirish funksiyasi
+  const getPrice = (multiplier) => {
+    const basePrice = parseInt(String(blogger.price).replace(/\s/g, '')) || 0;
+    return (basePrice * multiplier).toLocaleString();
+  };
+
+  const packages = [
+    { id: 1, name: "Stories", price: blogger.price, desc: "15-soniyalik 3ta story + Link", icon: LuImage },
+    { id: 2, name: "Reels / Post", price: getPrice(2.5), desc: "Asosiy lentada doimiy post yoki Reels", icon: LuVideo },
+    { id: 3, name: "Full Integration", price: getPrice(5), desc: "Story + Reels + Telegram kanal", icon: LuLayoutDashboard }, // TO'G'IRLANDI
   ];
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: 900, margin: "0 auto", padding: "0 20px 60px" }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: 1100, margin: "0 auto", padding: "20px" }}>
       
-      {/* Linkni constants dagi /bloggers ga mosladik */}
-      <Link to="/bloggers" style={{
-        display: "inline-flex", alignItems: "center", gap: 6,
-        color: "#64748b", textDecoration: "none", fontSize: 13, fontWeight: 500,
-        marginBottom: 28, marginTop: 20
-      }}>
-        <LuArrowLeft/> Blogerlarga qaytish
+      <Link to="/bloggers" style={{ display: "flex", alignItems: "center", gap: 6, color: "#64748b", textDecoration: "none", fontSize: 13, marginBottom: 20 }}>
+        <LuArrowLeft size={16}/> Blogerlar ro'yxatiga qaytish
       </Link>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 28, alignItems: "start" }}>
-
-        {/* Chap tomon (Asosiy ma'lumotlar) */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 32 }}>
+        
+        {/* LEFT COLUMN */}
         <div>
-          <div style={{
-            background: "#fff", border: "1.5px solid #e2e8f0",
-            borderRadius: 20, padding: "28px", marginBottom: 20,
-          }}>
-            <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
-              <div style={{
-                width: 80, height: 80, borderRadius: "50%",
-                background: blogger.gradient || "#2563eb", // Bloggerning o'z gradiyenti
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#fff", fontSize: 26, fontWeight: 800,
-                flexShrink: 0,
+          <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 24, padding: 32, marginBottom: 24 }}>
+            <div style={{ display: "flex", gap: 24 }}>
+              <div style={{ 
+                width: 100, height: 100, borderRadius: 24, background: blogger.gradient || "#3b82f6",
+                display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 36, fontWeight: 800 
               }}>
                 {blogger.name.charAt(0)}
               </div>
-
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <h1 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", margin: 0 }}>{blogger.name}</h1>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                  <h1 style={{ fontSize: 28, fontWeight: 800, color: "#0f172a", margin: 0 }}>{blogger.name}</h1>
                   {blogger.isVerified && (
-                    <span style={{
-                      background: "#dcfce7", color: "#16a34a",
-                      fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6,
-                      display: "flex", alignItems: "center", gap: 3,
-                    }}>
-                      <LuCheck size={9} strokeWidth={3} /> Tasdiqlangan
+                    <span style={{ background: "#dcfce7", color: "#16a34a", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                      <LuCheck size={12}/> Tasdiqlangan
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 13.5, color: "#64748b", marginBottom: 10 }}>{blogger.username}</div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{
-                    background: "#fef2f2", color: "#dc2626",
-                    fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 8,
-                  }}>{blogger.categoryText}</span>
-                  <span style={{
-                    display: "flex", alignItems: "center", gap: 4,
-                    fontSize: 12, color: "#64748b",
-                  }}>
-                    <LuMapPin size={12} /> O'zbekiston
-                  </span>
+                <p style={{ color: "#64748b", marginBottom: 16 }}>{blogger.username} • {blogger.platform}</p>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <span style={{ background: "#f1f5f9", padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600 }}>{blogger.categoryText}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#64748b", fontSize: 13 }}><LuMapPin size={14}/> O'zbekiston</span>
                 </div>
               </div>
             </div>
 
-            {/* Stats row */}
-            <div style={{
-              display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12,
-              marginTop: 24, paddingTop: 24, borderTop: "1px solid #f1f5f9",
-            }}>
-              {stats.map(({ label, value, Icon }) => (
-                <div key={label} style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a" }}>{value}</div>
-                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                    <Icon size={11} /> {label}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, marginTop: 32, paddingTop: 32, borderTop: "1px solid #f1f5f9" }}>
+              {stats.map(s => (
+                <div key={s.label}>
+                  <div style={{ color: "#94a3b8", fontSize: 12, marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                    <s.Icon size={13}/> {s.label}
                   </div>
+                  <div style={{ fontSize: 20, fontWeight: 800 }}>{s.value}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Bio (Har bir blogger uchun dinamik qilsa bo'ladi) */}
-          <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 16, padding: "24px", marginBottom: 20 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>Bio</h3>
-            <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.75, margin: 0 }}>
-              {blogger.name} - {blogger.categoryText} yo'nalishida {blogger.platform} platformasidagi mashhur ijodkor. 
-              Uning auditoriyasi asosan faol foydalanuvchilardan tashkil topgan.
-            </p>
+          <div style={{ marginBottom: 20, display: "flex", gap: 24, borderBottom: "1px solid #e2e8f0" }}>
+            {["pricing", "audience", "reviews"].map(tab => (
+              <button 
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  padding: "12px 4px", border: "none", background: "none", cursor: "pointer",
+                  fontSize: 14, fontWeight: 600, color: activeTab === tab ? "#dc2626" : "#64748b",
+                  borderBottom: activeTab === tab ? "2px solid #dc2626" : "2px solid transparent",
+                  transition: "0.2s"
+                }}
+              >
+                {tab === "pricing" ? "Tariflar" : tab === "audience" ? "Auditoriya" : "Sharhlar"}
+              </button>
+            ))}
           </div>
+
+          {activeTab === "pricing" && (
+            <div style={{ display: "grid", gap: 16 }}>
+              {packages.map(pkg => (
+                <div key={pkg.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 20, border: "1px solid #e2e8f0", borderRadius: 16, background: "#fff" }}>
+                  <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                    <div style={{ background: "#fef2f2", color: "#dc2626", padding: 10, borderRadius: 12 }}><pkg.icon size={24}/></div>
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{pkg.name}</div>
+                      <div style={{ fontSize: 13, color: "#64748b" }}>{pkg.desc}</div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontWeight: 800, fontSize: 18 }}>{pkg.price} <small style={{ fontSize: 11 }}>UZS</small></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* O'ng tomon (Buyurtma paneli) */}
-        <div style={{ position: "sticky", top: 80 }}>
-          <div style={{
-            background: "#fff", border: "1.5px solid #e2e8f0",
-            borderRadius: 20, padding: "24px",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
-          }}>
-            <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 4 }}>Boshlang'ich narx</div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: "#0f172a" }}>
-                {blogger.price} <span style={{ fontSize: 14, color: "#64748b" }}>so'm</span>
-              </div>
+        {/* RIGHT COLUMN */}
+        <div style={{ position: "sticky", top: 20 }}>
+          <div style={{ background: "#0f172a", borderRadius: 24, padding: 28, color: "#fff" }}>
+            <h3 style={{ fontSize: 18, marginBottom: 8 }}>Reklama berish</h3>
+            <p style={{ color: "#94a3b8", fontSize: 14, marginBottom: 24 }}>Brendingizni {blogger.name} bilan birga rivojlantiring.</p>
+            
+            <button 
+              onClick={() => setIsOrderOpen(true)}
+              style={{ width: "100%", padding: 16, background: "#dc2626", color: "#fff", border: "none", borderRadius: 14, fontWeight: 700, cursor: "pointer", marginBottom: 12 }}>
+              Buyurtma berish
+            </button>
+            <button 
+              onClick={() => setIsMsgOpen(true)}
+              style={{ width: "100%", padding: 16, background: "rgba(255,255,255,0.1)", color: "#fff", border: "none", borderRadius: 14, fontWeight: 700, cursor: "pointer" }}>
+              Xabar yuborish
+            </button>
+
+            <div style={{ marginTop: 24, padding: 16, background: "rgba(255,255,255,0.05)", borderRadius: 12, fontSize: 12, color: "#94a3b8", display: "flex", gap: 8 }}>
+              <LuInfo size={16} style={{ flexShrink: 0 }}/>
+              To'lov xavfsizligi kafolatlanadi. Mablag' bloger ishini tugatgandan so'ng o'tkazib beriladi.
             </div>
-
-            <button style={{
-              width: "100%", padding: "14px",
-              background: "linear-gradient(135deg,#dc2626,#b91c1c)",
-              color: "#fff", fontSize: 14, fontWeight: 700,
-              border: "none", borderRadius: 12, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              boxShadow: "0 4px 20px rgba(220,38,38,0.35)", marginBottom: 10,
-            }}>
-              Reklama buyurtma qilish
-            </button>
-
-            <button style={{
-              width: "100%", padding: "13px",
-              border: "1.5px solid #e2e8f0", borderRadius: 12,
-              background: "#fff", color: "#374151",
-              fontSize: 14, fontWeight: 600, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            }}>
-              <LuMessageCircle size={15} /> Xabar yuborish
-            </button>
           </div>
+        </div>
+      </div>
+
+      {isOrderOpen && <OrderModal onClose={() => setIsOrderOpen(false)} bloggerName={blogger.name} />}
+      {isMsgOpen && <MessageModal onClose={() => setIsMsgOpen(false)} bloggerName={blogger.name} />}
+    </div>
+  );
+}
+
+// --- MODAL KOMPONENTLARI ---
+
+function OrderModal({ onClose, bloggerName }) {
+  return (
+    <div style={modalOverlayStyle}>
+      <div style={modalContentStyle}>
+        <div style={modalHeaderStyle}>
+          <h3 style={{ margin: 0 }}>Reklama buyurtmasi: {bloggerName}</h3>
+          <button onClick={onClose} style={closeBtnStyle}><LuX size={20}/></button>
+        </div>
+        <form style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 20 }}>
+          <div>
+            <label style={labelStyle}>Loyiha yoki Brend nomi</label>
+            <input type="text" placeholder="Masalan: 'Poytaxt' o'quv markazi" style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Reklama formati</label>
+            <select style={inputStyle}>
+              <option>Story (3ta)</option>
+              <option>Post / Reels</option>
+              <option>Full Integration</option>
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>Maqsad va havola</label>
+            <textarea placeholder="Reklama haqida qisqacha ma'lumot va linklar..." style={{ ...inputStyle, height: 100 }}></textarea>
+          </div>
+          <button type="button" onClick={() => { alert("Buyurtma yuborildi!"); onClose(); }} style={primaryBtnStyle}>So'rovni yuborish</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function MessageModal({ onClose, bloggerName }) {
+  return (
+    <div style={modalOverlayStyle}>
+      <div style={modalContentStyle}>
+        <div style={modalHeaderStyle}>
+          <h3 style={{ margin: 0 }}>{bloggerName}ga xabar</h3>
+          <button onClick={onClose} style={closeBtnStyle}><LuX size={20}/></button>
+        </div>
+        <div style={{ marginTop: 20 }}>
+          <p style={{ fontSize: 14, color: "#64748b", marginBottom: 16 }}>Savollaringiz bo'lsa to'g'ridan-to'g'ri blogerga yozishingiz mumkin.</p>
+          <textarea placeholder="Xabaringizni yozing..." style={{ ...inputStyle, height: 150 }}></textarea>
+          <button type="button" onClick={() => { alert("Xabar yuborildi!"); onClose(); }} style={{ ...primaryBtnStyle, marginTop: 16 }}>Xabarni jo'natish</button>
         </div>
       </div>
     </div>
   );
 }
+
+// --- STYLES ---
+const modalOverlayStyle = { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(4px)" };
+const modalContentStyle = { background: "#fff", width: "100%", maxWidth: 500, borderRadius: 24, padding: 32, boxShadow: "0 20px 40px rgba(0,0,0,0.2)" };
+const modalHeaderStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f5f9", paddingBottom: 16 };
+const closeBtnStyle = { border: "none", background: "none", cursor: "pointer", color: "#64748b" };
+const labelStyle = { display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 };
+const inputStyle = { width: "100%", padding: "12px 16px", borderRadius: 12, border: "1.5px solid #e2e8f0", fontSize: 14, outline: "none", boxSizing: "border-box" };
+const primaryBtnStyle = { width: "100%", padding: 16, background: "#dc2626", color: "#fff", border: "none", borderRadius: 14, fontWeight: 700, cursor: "pointer" };
