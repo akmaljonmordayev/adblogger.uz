@@ -1,8 +1,17 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 import AdminSidebar from "../components/AdminSidebar";
 import AdminTopbar from "../components/AdminTopbar";
+import { useAuthStore } from "../../store/useAuthStore";
+import { ROUTE_PATHS } from "../../config/constants";
 
 const AdminLayout = () => {
+  const { token, user } = useAuthStore();
+
+  // Guard: redirect to admin login if not authenticated
+  if (!token || user?.role !== "admin") {
+    return <Navigate to={ROUTE_PATHS.ADMIN_LOGIN} replace />;
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       <AdminSidebar />

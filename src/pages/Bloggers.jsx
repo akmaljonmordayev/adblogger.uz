@@ -1,10 +1,11 @@
-import React, { use, useState } from "react";
+import { useState, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import BloggerCard from "../components/ui/BlogerCard";
 import FilterSidebar from '../components/layout/FilterSidebar';
-import {useNavigate} from "react-router-dom";
-import {ROUTE_PATHS} from "../config/constants";
+import { useNavigate, useLocation } from "react-router-dom";
+import { ROUTE_PATHS } from "../config/constants";
+import { LuSlidersHorizontal, LuX, LuUsers } from "react-icons/lu";
  export const initialBloggers = [
   {
     id: 1,
@@ -237,9 +238,20 @@ import {ROUTE_PATHS} from "../config/constants";
 ];
 
 export default function Blogger() {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
+  const location = useLocation();
   const [bloggers, setBloggers] = useState(initialBloggers);
-const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  useEffect(() => {
+    const categoryFromState = location.state?.category;
+    if (categoryFromState) {
+      const filtered = initialBloggers.filter(
+        (b) => b.categoryText === categoryFromState
+      );
+      setBloggers(filtered.length > 0 ? filtered : initialBloggers);
+    }
+  }, [location.state]);
 
   const handleBron = (id) =>{
     toast.success(`${id} bloggeri bron qilindi!`);
@@ -289,62 +301,180 @@ const [isFilterOpen, setIsFilterOpen] = useState(false);
   
 
   return (
-    // h-screen va overflow-hidden olib tashlandi yoki min-h-screen ga almashtirildi
-    <div className="min-h-screen bg-[#fafafa] p-4 sm:p-8"> 
-      
-      <button 
-        onClick={() => setIsFilterOpen(true)}
-        className="lg:hidden fixed bottom-6 right-6 z-[60] bg-red-600 text-white p-4 rounded-full shadow-2xl flex items-center gap-2 active:scale-95 transition-transform"
-      >
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293.707L3.293 7.293A1 1 0 013 6.586V4z" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        <span className="font-bold">Filtr</span>
-      </button>
+    <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <style>{`
+        /* ── scrollbar ── */
+        .bl-scroll::-webkit-scrollbar { width: 4px; }
+        .bl-scroll::-webkit-scrollbar-track { background: transparent; }
+        .bl-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+        .bl-scroll::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
 
-      <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row gap-8 items-start">
-        
-        {/* Sidebar konteyneri sticky qilindi */}
-        <div className={`
-          fixed inset-0 z-[100] lg:sticky lg:top-8 lg:z-[50] lg:block
-          ${isFilterOpen ? 'block' : 'hidden'}
-        `}>
-          <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm lg:hidden" 
+        /* ── two-panel layout ── */
+        .bl-layout {
+          display: flex;
+          gap: 20px;
+          height: calc(100vh - 128px);   /* viewport - header(100px) - py-6(24px) - 4px */
+          overflow: hidden;
+        }
+        .bl-sidebar {
+          width: 300px;
+          flex-shrink: 0;
+          height: 100%;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: #e2e8f0 transparent;
+        }
+        .bl-sidebar::-webkit-scrollbar { width: 4px; }
+        .bl-sidebar::-webkit-scrollbar-track { background: transparent; }
+        .bl-sidebar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+        .bl-main {
+          flex: 1;
+          min-width: 0;
+          height: 100%;
+          overflow-y: auto;
+          padding-right: 2px;
+        }
+
+        /* ── mobile: hide desktop sidebar, show drawer ── */
+        @media (max-width: 1024px) {
+          .bl-sidebar        { display: none; }
+          .bl-mobile-btn     { display: flex !important; }
+          .bl-layout         { height: auto; overflow: visible; }
+          .bl-main           { height: auto; overflow: visible; }
+        }
+      `}</style>
+
+      {/* ── Mobile drawer overlay ── */}
+      {isFilterOpen && (
+        <div
+          onClick={() => setIsFilterOpen(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 200,
+            background: "rgba(15,23,42,0.5)",
+            backdropFilter: "blur(3px)",
+          }}
+        />
+      )}
+
+      {/* ── Mobile drawer ── */}
+      <div style={{
+        position: "fixed", top: 0, right: 0, bottom: 0,
+        width: 320, zIndex: 201,
+        transform: isFilterOpen ? "translateX(0)" : "translateX(110%)",
+        transition: "transform 0.32s cubic-bezier(0.4,0,0.2,1)",
+        background: "#f8fafc",
+        overflowY: "auto",
+        boxShadow: "-8px 0 40px rgba(0,0,0,0.12)",
+        display: "flex", flexDirection: "column",
+      }}>
+        {/* Drawer header */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "16px 16px 12px",
+          borderBottom: "1px solid #e2e8f0",
+          background: "#fff", flexShrink: 0,
+        }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Filtrlar</span>
+          <button
             onClick={() => setIsFilterOpen(false)}
-          ></div>
+            style={{
+              background: "#f8fafc", border: "1.5px solid #e2e8f0",
+              borderRadius: 8, width: 30, height: 30,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", color: "#64748b",
+            }}
+          >
+            <LuX size={15} />
+          </button>
+        </div>
+        <div style={{ padding: 12 }}>
+          <FilterSidebar
+            onApplyFilter={(f, u) => { applyFilters(f, u); setIsFilterOpen(false); }}
+            usersList={initialBloggers}
+          />
+        </div>
+      </div>
 
-          <div className="relative w-[310px] h-full lg:h-auto bg-white lg:bg-transparent overflow-y-auto ml-auto lg:ml-0 p-4 lg:p-0">
-             <button 
-               onClick={() => setIsFilterOpen(false)} 
-               className="lg:hidden absolute top-4 right-4 text-gray-400 hover:text-black font-bold text-xl p-2"
-             >✕</button>
+      {/* ── Two-panel layout ── */}
+      <div className="bl-layout">
 
-             <FilterSidebar 
-               onApplyFilter={(f, u) => { applyFilters(f, u); setIsFilterOpen(false); }} 
-               usersList={initialBloggers} 
-             />
-          </div>
+        {/* Desktop sidebar (own scroll) */}
+        <div className="bl-sidebar bl-scroll">
+          <FilterSidebar
+            onApplyFilter={applyFilters}
+            usersList={initialBloggers}
+          />
         </div>
 
-        {/* Bloggerlar ro'yxati */}
-        <div className="flex-1 flex flex-wrap gap-6 content-start">
+        {/* Cards panel (own scroll) */}
+        <div className="bl-main bl-scroll">
+
+          {/* Top bar */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginBottom: 16, paddingBottom: 14,
+            borderBottom: "1px solid #f1f5f9",
+            position: "sticky", top: 0, background: "#f8fafc", zIndex: 10,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <LuUsers size={15} style={{ color: "#dc2626" }} />
+              <span style={{ fontSize: 15, fontWeight: 800, color: "#0f172a" }}>
+                Blogerlar
+              </span>
+              <span style={{
+                fontSize: 11, fontWeight: 700,
+                background: "#fef2f2", color: "#dc2626",
+                padding: "2px 8px", borderRadius: 20,
+              }}>
+                {bloggers.length} ta
+              </span>
+            </div>
+
+            {/* Mobile filter trigger */}
+            <button
+              onClick={() => setIsFilterOpen(true)}
+              className="bl-mobile-btn"
+              style={{
+                display: "none",
+                alignItems: "center", gap: 6,
+                background: "#fff", border: "1.5px solid #e2e8f0",
+                borderRadius: 10, padding: "7px 14px",
+                fontSize: 13, fontWeight: 600, color: "#374151",
+                cursor: "pointer",
+              }}
+            >
+              <LuSlidersHorizontal size={14} />
+              Filtr
+            </button>
+          </div>
+
+          {/* Cards */}
           {bloggers.length > 0 ? (
-            bloggers.map((blogger) => (
-              <BloggerCard
-                key={blogger.id}
-                {...blogger}
-                headerGradient={blogger.gradient}
-                onBronClick={() => handleBron(blogger.id)}
-              />
-            ))
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 18, paddingBottom: 24 }}>
+              {bloggers.map((blogger) => (
+                <BloggerCard
+                  key={blogger.id}
+                  {...blogger}
+                  headerGradient={blogger.gradient}
+                  onBronClick={() => handleBron(blogger.id)}
+                />
+              ))}
+            </div>
           ) : (
-            <div className="w-full text-center py-20 text-gray-500 font-medium text-lg bg-white rounded-3xl border-2 border-dashed border-gray-100">
-              🚫 Bunday mezonlarga mos blogger topilmadi.
+            <div style={{
+              background: "#fff", border: "1.5px solid #e2e8f0",
+              borderRadius: 20, padding: "60px 20px", textAlign: "center",
+            }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🚫</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#0f172a", marginBottom: 6 }}>
+                Bloger topilmadi
+              </div>
+              <div style={{ fontSize: 13, color: "#64748b" }}>
+                Boshqa filtr sozlamalarini sinab ko'ring
+              </div>
             </div>
           )}
         </div>
-
       </div>
 
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
