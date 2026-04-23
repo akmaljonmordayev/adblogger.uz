@@ -487,7 +487,7 @@ const AdminFAQ = () => {
           </button>
         ))}
       </div>
-      <div style={styles.addSection}>
+      <div style={{ ...styles.addSection, marginBottom: "1.5rem" }}>
         <div style={styles.addTitle}>
           <span style={styles.addIcon}>+</span> Yangi savol qo'shish
         </div>
@@ -524,7 +524,7 @@ const AdminFAQ = () => {
             />
           </div>
           <div style={{ ...styles.flexEnd}}>
-            <button style={{ ...styles.btnAdd,  marginBottom: "8px" }} onClick={addFaq}>
+            <button style={{ ...styles.btnAdd }} onClick={addFaq}>
               + Qo'shish
             </button>
           </div>
