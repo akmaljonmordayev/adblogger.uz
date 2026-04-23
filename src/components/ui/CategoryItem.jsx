@@ -1,3 +1,4 @@
+
 const gradients = [
   "linear-gradient(135deg, #2979FF, #1565C0)",
   "linear-gradient(135deg, #E91E8C, #C2185B)",

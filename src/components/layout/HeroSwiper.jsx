@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { ROUTE_PATHS } from "../../config/constants";
 
 const fontLink = document.createElement("link");
 fontLink.rel = "stylesheet";
@@ -15,7 +17,9 @@ const slides = [
     title: ["Eng yirik", "Bloger Marketplace"],
     desc: "500+ tasdiqlangan bloger bir platformada. Toping, solishtiring va reklama bering — tez va oson.",
     btn1: "Blogerlarni ko'rish",
+    btn1Route: ROUTE_PATHS.BLOGGERS,
     btn2: "Reklama berish",
+    btn2Route: ROUTE_PATHS.ELON_BERISH,
     trust: "Ro'yxatdan o'tish bepul · Kredit karta shart emas",
     stats: [
       { num: "500+", icon: "👤", label: "Tasdiqlangan Bloger" },
@@ -33,7 +37,9 @@ const slides = [
     title: ["Brendingizni", "Kuchaytiring"],
     desc: "AI yordamida eng mos blogerlarni toping. Kampaniyangizni boshqaring va natijalarni real vaqtda kuzating.",
     btn1: "Bepul boshlash",
+    btn1Route: ROUTE_PATHS.REGISTER,
     btn2: "Demo ko'rish",
+    btn2Route: ROUTE_PATHS.BLOGGERS,
     trust: "2 daqiqada sozlab oling · Texnik bilim kerak emas",
     stats: [
       { num: "98%",  icon: "⭐", label: "Mijozlar Mamnuniyati" },
@@ -51,7 +57,9 @@ const slides = [
     title: ["Bloger bo'lib", "Daromad Oling"],
     desc: "O'z auditoriyangizni monetizatsiya qiling. Brendlar bilan to'g'ridan-to'g'ri ishlang va daromadingizni oshiring.",
     btn1: "Ro'yxatdan o'tish",
+    btn1Route: ROUTE_PATHS.REGISTER,
     btn2: "Ko'proq bilish",
+    btn2Route: ROUTE_PATHS.BLOGER_BOLISH,
     trust: "1 oy komissiyasiz · Istalgan vaqt bekor qilish",
     stats: [
       { num: "5M+", icon: "💰", label: "Blogerlarga To'lovlar" },
@@ -68,6 +76,7 @@ const slides = [
 const DURATION = 5000;
 
 export default function HeroSwiper() {
+  const navigate = useNavigate();
   const [cur, setCur] = useState(0);
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -138,11 +147,11 @@ export default function HeroSwiper() {
               alignItems: isMobile ? "flex-start" : "center",
               justifyContent: "space-between",
               padding: isSmall
-                ? "28px 18px 80px"
+                ? "24px 18px 72px"
                 : isMobile
-                ? "32px 28px 80px"
+                ? "28px 24px 72px"
                 : "0 72px",
-              gap: isMobile ? "20px" : "48px",
+              gap: isSmall ? "10px" : isMobile ? "14px" : "48px",
               boxSizing: "border-box",
             }}>
 
@@ -201,10 +210,10 @@ export default function HeroSwiper() {
                   background: "rgba(255,255,255,0.1)",
                   border: `1px solid ${s.accent}55`,
                   borderRadius: "100px",
-                  padding: "5px 16px 5px 10px",
-                  marginBottom: isMobile ? "16px" : "24px",
+                  padding: "4px 14px 4px 9px",
+                  marginBottom: isSmall ? "10px" : isMobile ? "12px" : "24px",
                 }}>
-                  <span style={{ fontSize: "15px", lineHeight: 1 }}>{s.badgeIcon}</span>
+                  <span style={{ fontSize: isSmall ? "13px" : "15px", lineHeight: 1 }}>{s.badgeIcon}</span>
                   <span style={{
                     fontSize: "10px", fontWeight: 700,
                     letterSpacing: "2px", color: s.accent,
@@ -214,9 +223,10 @@ export default function HeroSwiper() {
 
                 {/* Headline */}
                 <h1 style={{
-                  ...SYNE, fontWeight: 800, color: "#fff", margin: "0 0 16px",
+                  ...SYNE, fontWeight: 800, color: "#fff",
+                  margin: isSmall ? "0 0 10px" : isMobile ? "0 0 12px" : "0 0 16px",
                   lineHeight: 1.06, letterSpacing: "-0.5px",
-                  fontSize: isSmall ? "28px" : isMobile ? "34px" : "52px",
+                  fontSize: isSmall ? "24px" : isMobile ? "30px" : "52px",
                 }}>
                   {s.title[0]}<br />
                   <span style={{
@@ -228,22 +238,28 @@ export default function HeroSwiper() {
                 {/* Description */}
                 <p style={{
                   color: "rgba(255,255,255,0.68)",
-                  fontSize: isSmall ? "13px" : isMobile ? "14px" : "15.5px",
-                  lineHeight: 1.75, margin: "0 0 28px",
+                  fontSize: isSmall ? "12.5px" : isMobile ? "13.5px" : "15.5px",
+                  lineHeight: 1.65,
+                  margin: isSmall ? "0 0 14px" : isMobile ? "0 0 16px" : "0 0 28px",
                   maxWidth: "420px",
+                  display: "-webkit-box",
+                  WebkitLineClamp: isSmall ? 2 : 3,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
                 }}>{s.desc}</p>
 
                 {/* Buttons */}
                 <div style={{
-                  display: "flex", gap: "12px", flexWrap: "wrap",
+                  display: "flex", gap: "10px",
                   flexDirection: isSmall ? "column" : "row",
-                  marginBottom: "18px",
+                  marginBottom: isSmall ? "14px" : "18px",
                 }}>
                   <button
+                    onClick={() => navigate(s.btn1Route)}
                     style={{
                       background: s.accent, color: s.btnColor,
-                      fontSize: "13px", fontWeight: 700,
-                      padding: isSmall ? "12px 20px" : "13px 30px",
+                      fontSize: isSmall ? "13px" : "14px", fontWeight: 700,
+                      padding: isSmall ? "11px 18px" : "13px 30px",
                       borderRadius: "10px", border: "none", cursor: "pointer",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       gap: "6px",
@@ -266,12 +282,13 @@ export default function HeroSwiper() {
                   </button>
 
                   <button
+                    onClick={() => navigate(s.btn2Route)}
                     style={{
                       background: "rgba(255,255,255,0.09)",
                       backdropFilter: "blur(10px)",
                       color: "#fff",
-                      fontSize: "13px", fontWeight: 600,
-                      padding: isSmall ? "12px 20px" : "13px 30px",
+                      fontSize: isSmall ? "13px" : "14px", fontWeight: 600,
+                      padding: isSmall ? "11px 18px" : "13px 30px",
                       borderRadius: "10px",
                       border: "1px solid rgba(255,255,255,0.22)",
                       cursor: "pointer", transition: "all 0.2s",
@@ -292,14 +309,16 @@ export default function HeroSwiper() {
                 </div>
 
                 {/* Trust line */}
-                <p style={{
-                  fontSize: "11px", color: "rgba(255,255,255,0.4)",
-                  display: "flex", alignItems: "center", gap: "5px",
-                  margin: 0,
-                }}>
-                  <span style={{ color: s.accent, fontSize: "12px" }}>✓</span>
-                  {s.trust}
-                </p>
+                {!isSmall && (
+                  <p style={{
+                    fontSize: "11px", color: "rgba(255,255,255,0.4)",
+                    display: "flex", alignItems: "center", gap: "5px",
+                    margin: 0,
+                  }}>
+                    <span style={{ color: s.accent, fontSize: "12px" }}>✓</span>
+                    {s.trust}
+                  </p>
+                )}
               </div>
 
               {/* ── RIGHT — Stat cards ── */}
@@ -307,7 +326,7 @@ export default function HeroSwiper() {
                 position: "relative", zIndex: 2,
                 display: "flex",
                 flexDirection: isMobile ? "row" : "column",
-                gap: isMobile ? "8px" : "10px",
+                gap: isSmall ? "6px" : isMobile ? "8px" : "10px",
                 width: isMobile ? "100%" : "250px",
                 flexShrink: 0,
               }}>
@@ -318,20 +337,22 @@ export default function HeroSwiper() {
                       background: "rgba(255,255,255,0.07)",
                       backdropFilter: "blur(14px)",
                       border: "1px solid rgba(255,255,255,0.13)",
-                      borderRadius: "16px",
-                      padding: isMobile
-                        ? (isSmall ? "10px 6px" : "12px 10px")
+                      borderRadius: isSmall ? "10px" : "16px",
+                      padding: isSmall
+                        ? "7px 4px"
+                        : isMobile
+                        ? "10px 8px"
                         : "16px 20px",
                       display: "flex",
-                      flexDirection: isMobile ? "column" : "row",
+                      flexDirection: "column",
                       alignItems: "center",
-                      gap: isMobile ? "4px" : "14px",
+                      gap: "3px",
                       transition: "transform 0.22s, border-color 0.22s, background 0.22s",
                       cursor: "default",
-                      textAlign: isMobile ? "center" : "left",
+                      textAlign: "center",
                     }}
                     onMouseEnter={e => {
-                      e.currentTarget.style.transform = isMobile ? "translateY(-4px)" : "translateX(-5px)";
+                      e.currentTarget.style.transform = isMobile ? "translateY(-3px)" : "translateX(-5px)";
                       e.currentTarget.style.borderColor = `${s.accent}55`;
                       e.currentTarget.style.background = "rgba(255,255,255,0.12)";
                     }}
@@ -343,24 +364,21 @@ export default function HeroSwiper() {
                   >
                     {/* Icon */}
                     <div style={{
-                      fontSize: isSmall ? "18px" : isMobile ? "22px" : "26px",
+                      fontSize: isSmall ? "16px" : isMobile ? "18px" : "26px",
                       lineHeight: 1, flexShrink: 0,
                     }}>{st.icon}</div>
 
                     {/* Text */}
-                    <div>
-                      <div style={{
-                        ...SYNE, fontWeight: 800, color: s.accent,
-                        fontSize: isSmall ? "18px" : isMobile ? "22px" : "26px",
-                        lineHeight: 1,
-                        textShadow: `0 0 20px ${s.accent}55`,
-                      }}>{st.num}</div>
-                      <div style={{
-                        fontSize: isSmall ? "9px" : "11px",
-                        color: "rgba(255,255,255,0.55)",
-                        marginTop: "4px", lineHeight: 1.3, fontWeight: 500,
-                      }}>{st.label}</div>
-                    </div>
+                    <div style={{ ...SYNE, fontWeight: 800, color: s.accent,
+                      fontSize: isSmall ? "15px" : isMobile ? "18px" : "26px",
+                      lineHeight: 1,
+                      textShadow: `0 0 20px ${s.accent}55`,
+                    }}>{st.num}</div>
+                    <div style={{
+                      fontSize: isSmall ? "8px" : "10px",
+                      color: "rgba(255,255,255,0.55)",
+                      lineHeight: 1.2, fontWeight: 500,
+                    }}>{st.label}</div>
                   </div>
                 ))}
               </div>
