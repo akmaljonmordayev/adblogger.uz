@@ -473,7 +473,6 @@ const AdminFAQ = () => {
         <h1 style={styles.topbarH1}>FAQ boshqaruvi</h1>
         <span style={styles.badgeCount}>{faqs.length} ta savol</span>
       </div>
-
       <div style={styles.tabs}>
         {["all", "bloger", "reklam", "tolov"].map((cat) => (
           <button
@@ -488,6 +487,51 @@ const AdminFAQ = () => {
           </button>
         ))}
       </div>
+      <div style={styles.addSection}>
+        <div style={styles.addTitle}>
+          <span style={styles.addIcon}>+</span> Yangi savol qo'shish
+        </div>
+        <div style={styles.flexColumn}>
+          <div>
+            <label style={styles.labelSmall}>Kategoriya</label>
+            <select
+              value={newCat}
+              onChange={(e) => setNewCat(e.target.value)}
+              style={styles.select}
+            >
+              <option value="bloger">Bloger</option>
+              <option value="reklam">Reklam beruvchi</option>
+              <option value="tolov">To'lov</option>
+            </select>
+          </div>
+          <div>
+            <label style={styles.labelSmall}>Savol</label>
+            <input
+              type="text"
+              value={newQ}
+              onChange={(e) => setNewQ(e.target.value)}
+              placeholder="Savol matnini kiriting..."
+              style={styles.input}
+            />
+          </div>
+          <div>
+            <label style={styles.labelSmall}>Javob</label>
+            <textarea
+              value={newA}
+              onChange={(e) => setNewA(e.target.value)}
+              placeholder="Javob matnini kiriting..."
+              style={styles.textarea}
+            />
+          </div>
+          <div style={{ ...styles.flexEnd}}>
+            <button style={{ ...styles.btnAdd,  marginBottom: "8px" }} onClick={addFaq}>
+              + Qo'shish
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style={styles.toast(showToast)}>{toastMessage}</div>
 
       <div style={styles.faqList}>
         {getFilteredFaqs.length === 0 ? (
@@ -577,52 +621,6 @@ const AdminFAQ = () => {
           })
         )}
       </div>
-
-      <div style={styles.addSection}>
-        <div style={styles.addTitle}>
-          <span style={styles.addIcon}>+</span> Yangi savol qo'shish
-        </div>
-        <div style={styles.flexColumn}>
-          <div>
-            <label style={styles.labelSmall}>Kategoriya</label>
-            <select
-              value={newCat}
-              onChange={(e) => setNewCat(e.target.value)}
-              style={styles.select}
-            >
-              <option value="bloger">Bloger</option>
-              <option value="reklam">Reklam beruvchi</option>
-              <option value="tolov">To'lov</option>
-            </select>
-          </div>
-          <div>
-            <label style={styles.labelSmall}>Savol</label>
-            <input
-              type="text"
-              value={newQ}
-              onChange={(e) => setNewQ(e.target.value)}
-              placeholder="Savol matnini kiriting..."
-              style={styles.input}
-            />
-          </div>
-          <div>
-            <label style={styles.labelSmall}>Javob</label>
-            <textarea
-              value={newA}
-              onChange={(e) => setNewA(e.target.value)}
-              placeholder="Javob matnini kiriting..."
-              style={styles.textarea}
-            />
-          </div>
-          <div style={styles.flexEnd}>
-            <button style={styles.btnAdd} onClick={addFaq}>
-              + Qo'shish
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div style={styles.toast(showToast)}>{toastMessage}</div>
     </div>
   );
 };
