@@ -80,7 +80,7 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center p-4 md:p-10 bg-red-50/30">
+    <div className="min-h-[80vh] flex items-center justify-center p-3 sm:p-6 md:p-10 bg-red-50/30">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -88,17 +88,17 @@ const Contact = () => {
         className="max-w-5xl w-full bg-white rounded-[1.5rem] overflow-hidden border border-red-100 flex flex-col md:flex-row"
         style={{ boxShadow: '0 8px 40px rgba(227,30,36,0.07)' }}
       >
-        <div className="md:w-[300px] flex-shrink-0 bg-[#e31e24] p-10 flex flex-col justify-between">
+        <div className="md:w-[300px] flex-shrink-0 bg-[#e31e24] p-6 sm:p-8 md:p-10 flex flex-col justify-between gap-6 md:gap-0">
           <div>
-            <div className="w-10 h-[3px] bg-white/40 rounded-full mb-6" />
-            <h2 className="text-2xl font-medium text-white mb-2">Aloqa</h2>
-            <p className="text-white/70 text-sm leading-relaxed mb-8">
+            <div className="w-10 h-[3px] bg-white/40 rounded-full mb-5" />
+            <h2 className="text-xl sm:text-2xl font-medium text-white mb-2">Aloqa</h2>
+            <p className="text-white/70 text-sm leading-relaxed mb-6">
               Biz bilan bog'laning va reklamangizni samarali qiling!
             </p>
             <div className="flex flex-col gap-1">
               {[
                 { icon: <FaPhoneAlt size={13}/>, text: '+998 71 200 00 00' },
-                { icon: <FaEnvelope size={13}/>, text: 'info@addblogger.uz' },
+                { icon: <FaEnvelope size={13}/>, text: 'info@adblogger.uz' },
                 { icon: <FaMapMarkerAlt size={13}/>, text: "Toshkent, O'zbekiston" },
               ].map(({ icon, text }, i) => (
                 <motion.div key={i} whileHover={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
@@ -106,7 +106,7 @@ const Contact = () => {
                   <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center text-white flex-shrink-0">
                     {icon}
                   </div>
-                  <span className="text-white text-sm">{text}</span>
+                  <span className="text-white text-sm break-all">{text}</span>
                 </motion.div>
               ))}
             </div>
@@ -125,14 +125,14 @@ const Contact = () => {
           </div>
         </div>
 
-        <div className="flex-1 p-8 md:p-12 bg-white">
-          <div className="mb-6">
-            <h3 className="text-xl font-medium text-gray-800 mb-1">Xabar yuborish</h3>
+        <div className="flex-1 p-6 sm:p-8 md:p-12 bg-white">
+          <div className="mb-5">
+            <h3 className="text-lg sm:text-xl font-medium text-gray-800 mb-1">Xabar yuborish</h3>
             <p className="text-sm text-gray-400">Barcha maydonlarni to'ldiring, tez javob beramiz</p>
           </div>
 
           <label className="block text-xs text-gray-400 tracking-wider uppercase mb-2.5">Siz kimsiz?</label>
-          <div className="flex gap-3 mb-4">
+          <div className="flex gap-2 sm:gap-3 mb-4">
             {roles.map(role => (
               <RoleCard key={role.id} role={role} selected={selectedRole === role.id} onSelect={setSelectedRole} />
             ))}

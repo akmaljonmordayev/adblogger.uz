@@ -227,12 +227,15 @@ export default function Footer() {
         <div className={revealClass("delay-100")}>
           <ColTitle dotColor="yellow">Platforma</ColTitle>
           <ul className="space-y-0.5">
-            <NavItem href="/bloggers" badge="500+" badgeType="gold">
+            <NavItem href={ROUTE_PATHS.BLOGGERS} badge="500+" badgeType="gold">
               Blogerlar
             </NavItem>
-            <NavItem href="/categories">Kategoriyalar</NavItem>
-            <NavItem href="/pricing">Narxlar</NavItem>
-            <NavItem href="/become-blogger" badge="NEW" badgeType="red">
+            <NavItem href={ROUTE_PATHS.CATEGORIES}>Kategoriyalar</NavItem>
+            <NavItem href={ROUTE_PATHS.PRICING}>Narxlar</NavItem>
+            <NavItem href={ROUTE_PATHS.ELON_BERISH} badge="E'lon" badgeType="red">
+              E'lon berish
+            </NavItem>
+            <NavItem href={ROUTE_PATHS.BLOGER_BOLISH} badge="NEW" badgeType="red">
               Bloger bo'lish
             </NavItem>
           </ul>
@@ -243,13 +246,15 @@ export default function Footer() {
         <div className={revealClass("delay-200")}>
           <ColTitle dotColor="red">Kompaniya</ColTitle>
           <ul className="space-y-0.5">
-            <NavItem href="/about">Biz haqimizda</NavItem>
-            <NavItem href="/blog">Blog</NavItem>
-            <NavItem href="/career" badge="OCHIQ" badgeType="red">
+            <NavItem href={ROUTE_PATHS.ABOUT}>Biz haqimizda</NavItem>
+            <NavItem href={ROUTE_PATHS.BLOGS}>Blog</NavItem>
+            <NavItem href={ROUTE_PATHS.CAREER} badge="OCHIQ" badgeType="red">
               Karriera
             </NavItem>
-            <NavItem href="/faq">Ko'p so'raladigan savollar</NavItem>
-            <NavItem href="/contact">Bog'lanish</NavItem>
+            <NavItem href={ROUTE_PATHS.FAQ}>Ko'p so'raladigan savollar</NavItem>
+            <NavItem href={ROUTE_PATHS.CONTACT}>Bog'lanish</NavItem>
+            <NavItem href={ROUTE_PATHS.LOGIN}>Kirish</NavItem>
+            <NavItem href={ROUTE_PATHS.REGISTER}>Ro'yxatdan o'tish</NavItem>
           </ul>
           <div className="mt-5 h-px bg-gradient-to-r from-white/30 via-yellow-400/40 to-transparent" />
         </div>
@@ -267,7 +272,7 @@ export default function Footer() {
                 </svg>
               }
             >
-              hello@addbloger.uz
+              hello@adblogger.uz
             </ContactItem>
             <ContactItem
               iconColor="red"
@@ -277,7 +282,7 @@ export default function Footer() {
                 </svg>
               }
             >
-              @addbloger_uz
+              @adblogger_uz
             </ContactItem>
             <ContactItem
               iconColor="yellow"
@@ -334,8 +339,8 @@ export default function Footer() {
       <div className="relative z-10 border-t border-white/10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/40">
           <span>
-            © 2025 <span className="text-white font-semibold">add</span>
-            <span className="text-yellow-300 font-semibold">Bloger</span>.{" "}
+            © 2025 <span className="text-white font-semibold">ad</span>
+            <span className="text-yellow-300 font-semibold">blogger</span>.{" "}
             Barcha huquqlar himoyalangan.
           </span>
           <div className="flex items-center gap-4">

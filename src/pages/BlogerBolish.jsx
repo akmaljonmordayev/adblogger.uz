@@ -36,11 +36,35 @@ export default function BlogerBolish() {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <style>{`
+        .bb-hero        { padding: 48px 32px; }
+        .bb-hero h1     { font-size: 40px; }
+        .bb-hero p      { font-size: 16px; }
+        .bb-grid        { display: grid; grid-template-columns: 1fr 420px; gap: 32px;
+                          max-width: 1000px; margin: 0 auto; padding: 0 20px 60px;
+                          align-items: start; }
+        .bb-perks       { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .bb-form-card   { position: sticky; top: 80px; }
+
+        @media (max-width: 900px) {
+          .bb-grid        { grid-template-columns: 1fr; }
+          .bb-form-card   { position: static; }
+        }
+
+        @media (max-width: 600px) {
+          .bb-hero        { padding: 32px 20px; margin-bottom: 28px !important; border-radius: 14px !important; }
+          .bb-hero h1     { font-size: 26px; }
+          .bb-hero p      { font-size: 14px; }
+          .bb-hero-badges { gap: 12px !important; }
+          .bb-grid        { padding: 0 0 40px; gap: 24px; }
+          .bb-perks       { grid-template-columns: 1fr; }
+        }
+      `}</style>
 
       {/* Hero */}
-      <div style={{
+      <div className="bb-hero" style={{
         background: "linear-gradient(135deg,#0f172a,#1e3a5f)",
-        borderRadius: 20, padding: "48px 32px", marginBottom: 48, textAlign: "center",
+        borderRadius: 20, marginBottom: 48, textAlign: "center",
         position: "relative", overflow: "hidden",
       }}>
         <div style={{
@@ -57,17 +81,17 @@ export default function BlogerBolish() {
             🚀 YANGI IMKONIYAT
           </span>
           <h1 style={{
-            fontSize: 40, fontWeight: 800, color: "#fff",
+            fontWeight: 800, color: "#fff",
             lineHeight: 1.1, margin: "0 0 16px",
             fontFamily: "'Syne', sans-serif",
           }}>
             Bloger bo'ling va<br />
             <span style={{ color: "#38bdf8" }}>daromad oling</span>
           </h1>
-          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.65)", maxWidth: 480, margin: "0 auto 28px", lineHeight: 1.7 }}>
+          <p style={{ color: "rgba(255,255,255,0.65)", maxWidth: 480, margin: "0 auto 28px", lineHeight: 1.7 }}>
             O'z auditoriyangizni monetizatsiya qiling. 200+ brend bilan to'g'ridan-to'g'ri ishlang.
           </p>
-          <div style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "wrap" }}>
+          <div className="bb-hero-badges" style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "wrap" }}>
             {["500+ bloger", "200+ brend", "5M+ so'm to'lov"].map(t => (
               <span key={t} style={{
                 display: "flex", alignItems: "center", gap: 5,
@@ -80,7 +104,7 @@ export default function BlogerBolish() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 32, maxWidth: 1000, margin: "0 auto", padding: "0 20px 60px", alignItems: "start" }}>
+      <div className="bb-grid">
 
         {/* Left */}
         <div>
@@ -106,7 +130,7 @@ export default function BlogerBolish() {
 
           {/* Perks */}
           <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", marginBottom: 20 }}>Nima olasiz?</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="bb-perks">
             {perks.map(({ Icon, title, desc }) => (
               <div key={title} style={{
                 background: "#fff", border: "1.5px solid #e2e8f0",
@@ -127,11 +151,10 @@ export default function BlogerBolish() {
         </div>
 
         {/* Right — Form */}
-        <div style={{
+        <div className="bb-form-card" style={{
           background: "#fff", border: "1.5px solid #e2e8f0",
           borderRadius: 20, padding: "28px 24px",
           boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
-          position: "sticky", top: 80,
         }}>
           <h3 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", marginBottom: 6 }}>
             Hozir ro'yxatdan o'ting

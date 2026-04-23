@@ -16,7 +16,6 @@ const S = {
     border: "1.5px solid #f1f5f9",
     boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
     width: "100%", maxWidth: 420,
-    padding: "36px 32px",
     position: "relative", zIndex: 1,
   },
   input: {
@@ -102,6 +101,15 @@ export default function Auth() {
 
   return (
     <div style={S.wrap}>
+      <style>{`
+        .auth-card { padding: 36px 32px; }
+
+        @media (max-width: 480px) {
+          .auth-card            { padding: 28px 20px; border-radius: 18px !important; }
+          .auth-name-row        { grid-template-columns: 1fr !important; }
+          .auth-role-row        { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
       {/* bg blobs */}
       <div style={{
@@ -117,7 +125,7 @@ export default function Auth() {
         filter:"blur(40px)", pointerEvents:"none",
       }}/>
 
-      <div style={S.card}>
+      <div className="auth-card" style={{ ...S.card }}>
 
         {/* Logo */}
         <Link to="/" style={{
@@ -227,7 +235,7 @@ export default function Auth() {
             style={{ display:"flex", flexDirection:"column", gap:14 }}
           >
             {/* Role selector */}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:2 }}>
+            <div className="auth-role-row" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:2 }}>
               {[
                 { val:"brand",   emoji:"🏢", label:"Biznes / Brend" },
                 { val:"blogger", emoji:"📲", label:"Bloger" },
@@ -254,7 +262,7 @@ export default function Auth() {
               ))}
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div className="auth-name-row" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
               <InputField label="Ism" placeholder="Ismingiz" value={reg.name} onChange={e => setR("name", e.target.value)} />
               <InputField label="Familiya" placeholder="Familiya" value={reg.surname} onChange={e => setR("surname", e.target.value)} />
             </div>
