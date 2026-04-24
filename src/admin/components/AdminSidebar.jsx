@@ -21,7 +21,6 @@ const navItems = [
   { label: "E'lonlar",     path: ROUTE_PATHS.ADMIN_ADS,         icon: <MdCampaign size={20} /> },
   { label: "Blog",         path: ROUTE_PATHS.ADMIN_BLOGS,       icon: <MdArticle size={20} /> },
   { label: "Kategoriyalar",path: ROUTE_PATHS.ADMIN_CATEGORIES,  icon: <MdCategory size={20} /> },
-  { label: "Narxlar",      path: ROUTE_PATHS.ADMIN_PRICING,     icon: <MdAttachMoney size={20} /> },
   { label: "Karyera",      path: ROUTE_PATHS.ADMIN_CAREER,      icon: <MdWork size={20} /> },
   { label: "Xabarlar",     path: ROUTE_PATHS.ADMIN_CONTACT,     icon: <MdMail size={20} /> },
   { label: "FAQ",          path: ROUTE_PATHS.ADMIN_FAQ,         icon: <MdQuestionAnswer size={20} /> },
