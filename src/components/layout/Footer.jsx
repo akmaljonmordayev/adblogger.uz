@@ -231,7 +231,7 @@ export default function Footer() {
               Blogerlar
             </NavItem>
             <NavItem href={ROUTE_PATHS.CATEGORIES}>Kategoriyalar</NavItem>
-            <NavItem href={ROUTE_PATHS.PRICING}>Narxlar</NavItem>
+            <NavItem href={ROUTE_PATHS.ADS}>Reklamalar</NavItem>
             <NavItem href={ROUTE_PATHS.ELON_BERISH} badge="E'lon" badgeType="red">
               E'lon berish
             </NavItem>
