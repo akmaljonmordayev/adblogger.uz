@@ -29,7 +29,7 @@ const navItems = [
 
 const AdminSidebar = () => {
   return (
-    <aside className="w-64 min-h-screen bg-[#1a1f2e] text-white flex flex-col">
+   <aside className="w-64 h-full bg-[#1a1f2e] text-white flex flex-col">
       {/* Logo */}
       <div className="h-16 flex items-center px-6 border-b border-white/10">
         <span className="text-xl font-bold text-white">ad<span className="text-blue-400">blogger</span></span>
