@@ -21,7 +21,7 @@ const NAV = [
   { to: "/",           label: "Bosh sahifa",  Icon: LuHouse },
   { to: "/bloggers",   label: "Blogerlar",    Icon: LuUsers },
   { to: "/categories", label: "Kategoriyalar",Icon: LuTag },
-  { to: "/pricing",    label: "Narxlar",      Icon: LuDollarSign },
+  { to: "/ads",         label: "Reklamalar",   Icon: LuDollarSign },
   { to: "/contact",    label: "Bog'lanish",   Icon: LuMail },
 ];
 
