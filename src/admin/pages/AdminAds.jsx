@@ -1,559 +1,537 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from "react";
 
-const PAGE_SIZE = 5;
-
+/* ─── MOCK DATA ─── */
 const INITIAL_ADS = [
-  { id: 1, title: "iPhone 15 Pro Max batafsil sharhi", price: 15000000, author: "MrBeast", status: "Kutilmoqda", date: "2026-04-22", category: "Texnologiya", views: 1240 },
-  { id: 2, title: "MacBook M2 Pro — loyiq mi?", price: 12000000, author: "Marques Brownlee", status: "Faol", date: "2026-04-21", category: "Texnologiya", views: 8820 },
-  { id: 3, title: "Kundalik vlog: Nyu-York", price: 400000, author: "Casey Neistat", status: "Rad etilgan", date: "2026-04-20", category: "Vlog", views: 302 },
-  { id: 4, title: "Samsung Galaxy S24 Ultra test", price: 9500000, author: "Linus Tech Tips", status: "Kutilmoqda", date: "2026-04-19", category: "Texnologiya", views: 540 },
-  { id: 5, title: "Ovqat pishirish — 10 daqiqada", price: 1200000, author: "Tasty Uzbekistan", status: "Faol", date: "2026-04-18", category: "Ovqat", views: 3100 },
-  { id: 6, title: "Fitness dasturi: 30 kun", price: 2500000, author: "AthleanX", status: "Faol", date: "2026-04-17", category: "Sport", views: 4500 },
-  { id: 7, title: "DJI Mavic 3 Pro unboxing", price: 7800000, author: "Peter McKinnon", status: "Kutilmoqda", date: "2026-04-16", category: "Foto/Video", views: 980 },
-  { id: 8, title: "Python dasturlash asoslari", price: 3200000, author: "Tech With Tim", status: "Faol", date: "2026-04-15", category: "Ta'lim", views: 6700 },
-  { id: 9, title: "Sayohat: Maldiv orollari", price: 18000000, author: "Lost LeBlancs", status: "Rad etilgan", date: "2026-04-14", category: "Sayohat", views: 220 },
-  { id: 10, title: "Sony WH-1000XM5 tahlil", price: 5500000, author: "Headphones Addict", status: "Kutilmoqda", date: "2026-04-13", category: "Audio", views: 410 },
-  { id: 11, title: "Minecraft survival challenge", price: 800000, author: "Dream", status: "Faol", date: "2026-04-12", category: "O'yin", views: 9900 },
-  { id: 12, title: "Adobe Premiere Pro darslari", price: 4100000, author: "Justin Odisho", status: "Faol", date: "2026-04-11", category: "Ta'lim", views: 2200 },
+  { id:1,  title:"iPhone 15 Pro Max batafsil sharhi",  price:15000000, author:"MrBeast",          status:"Kutilmoqda",  date:"2026-04-22", category:"Texnologiya", views:1240 },
+  { id:2,  title:"MacBook M2 Pro — loyiq mi?",          price:12000000, author:"Marques Brownlee", status:"Faol",        date:"2026-04-21", category:"Texnologiya", views:8820 },
+  { id:3,  title:"Kundalik vlog: Nyu-York",             price:400000,   author:"Casey Neistat",    status:"Rad etilgan", date:"2026-04-20", category:"Vlog",        views:302  },
+  { id:4,  title:"Samsung Galaxy S24 Ultra test",       price:9500000,  author:"Linus Tech Tips",  status:"Kutilmoqda",  date:"2026-04-19", category:"Texnologiya", views:540  },
+  { id:5,  title:"Ovqat pishirish — 10 daqiqada",      price:1200000,  author:"Tasty Uzbekistan", status:"Faol",        date:"2026-04-18", category:"Ovqat",       views:3100 },
+  { id:6,  title:"Fitness dasturi: 30 kun",             price:2500000,  author:"AthleanX",         status:"Faol",        date:"2026-04-17", category:"Sport",       views:4500 },
+  { id:7,  title:"DJI Mavic 3 Pro unboxing",            price:7800000,  author:"Peter McKinnon",   status:"Kutilmoqda",  date:"2026-04-16", category:"Foto/Video",  views:980  },
+  { id:8,  title:"Python dasturlash asoslari",          price:3200000,  author:"Tech With Tim",    status:"Faol",        date:"2026-04-15", category:"Ta'lim",      views:6700 },
+  { id:9,  title:"Sayohat: Maldiv orollari",            price:18000000, author:"Lost LeBlancs",    status:"Rad etilgan", date:"2026-04-14", category:"Sayohat",     views:220  },
+  { id:10, title:"Sony WH-1000XM5 tahlil",              price:5500000,  author:"Headphones Addict",status:"Kutilmoqda",  date:"2026-04-13", category:"Audio",       views:410  },
+  { id:11, title:"Minecraft survival challenge",        price:800000,   author:"Dream",            status:"Faol",        date:"2026-04-12", category:"O'yin",       views:9900 },
+  { id:12, title:"Adobe Premiere Pro darslari",         price:4100000,  author:"Justin Odisho",    status:"Faol",        date:"2026-04-11", category:"Ta'lim",      views:2200 },
 ];
 
-const fmt = (n) => Number(n).toLocaleString('uz-UZ');
-const initials = (name) => name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+const PAGE_SIZE = 8;
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
-const CheckIcon = () => (
-  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <path d="M20 6L9 17l-5-5" />
-  </svg>
-);
-const XIcon = () => (
-  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <circle cx="12" cy="12" r="10" /><path d="m15 9-6 6M9 9l6 6" />
-  </svg>
-);
-const TrashIcon = () => (
-  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2" />
-  </svg>
-);
-const EyeIcon = () => (
-  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" /><circle cx="12" cy="12" r="3" />
-  </svg>
-);
-const SearchIcon = () => (
-  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-  </svg>
-);
+/* ─── HELPERS ─── */
+const fmt    = n => Number(n).toLocaleString("uz-UZ");
+const fmtM   = n => (n / 1_000_000).toFixed(1) + "M";
+const ini    = name => name.split(" ").slice(0,2).map(w=>w[0]).join("").toUpperCase();
 
-// ─── Status Badge ─────────────────────────────────────────────────────────────
-const STATUS_STYLES = {
-  'Faol':        { bg: '#EAF3DE', color: '#3B6D11' },
-  'Kutilmoqda':  { bg: '#FAEEDA', color: '#854F0B' },
-  'Rad etilgan': { bg: '#FCEBEB', color: '#A32D2D' },
+const AVA_COLORS = ["#6366F1","#F43F5E","#F97316","#10B981","#8B5CF6","#0EA5E9","#EC4899","#14B8A6"];
+const avaColor  = name => AVA_COLORS[name.charCodeAt(0) % AVA_COLORS.length];
+
+const STATUS_CFG = {
+  "Faol":        { bg:"#F0FDF4", tc:"#166534", dot:"#22C55E", bd:"#BBF7D0", label:"Faol"        },
+  "Kutilmoqda":  { bg:"#FFF7ED", tc:"#9A3412", dot:"#F97316", bd:"#FED7AA", label:"Kutilmoqda"  },
+  "Rad etilgan": { bg:"#FFF1F2", tc:"#9F1239", dot:"#F43F5E", bd:"#FECDD3", label:"Rad etilgan" },
 };
 
-const StatusBadge = ({ status }) => {
-  const s = STATUS_STYLES[status] || {};
+/* ─── SMALL COMPONENTS ─── */
+function Pill({ status }) {
+  const c = STATUS_CFG[status] || STATUS_CFG["Kutilmoqda"];
   return (
     <span style={{
-      display: 'inline-flex', alignItems: 'center',
-      padding: '3px 10px', borderRadius: 20,
-      fontSize: 11, fontWeight: 500,
-      background: s.bg, color: s.color,
+      display:"inline-flex", alignItems:"center", gap:5,
+      background:c.bg, color:c.tc, border:`1px solid ${c.bd}`,
+      padding:"3px 10px", borderRadius:99,
+      fontSize:11, fontWeight:700, whiteSpace:"nowrap",
     }}>
-      {status}
+      <span style={{width:6,height:6,borderRadius:"50%",background:c.dot,flexShrink:0}}/>
+      {c.label}
     </span>
   );
-};
+}
 
-// ─── Toast Notification ───────────────────────────────────────────────────────
-const TOAST_STYLES = {
-  ok:   { bg: '#EAF3DE', border: '#C0DD97', color: '#3B6D11' },
-  warn: { bg: '#FAEEDA', border: '#FAC775', color: '#854F0B' },
-  err:  { bg: '#FCEBEB', border: '#F7C1C1', color: '#A32D2D' },
-};
-
-const Toast = ({ toast }) => {
-  if (!toast) return null;
-  const s = TOAST_STYLES[toast.type] || TOAST_STYLES.ok;
+function Ava({ name, size=32 }) {
+  const col = avaColor(name);
   return (
     <div style={{
-      position: 'fixed', top: 20, right: 20, zIndex: 999,
-      padding: '10px 18px', borderRadius: 8,
-      border: `0.5px solid ${s.border}`,
-      background: s.bg, color: s.color,
-      fontSize: 13, fontWeight: 500,
-      boxShadow: '0 4px 12px rgba(0,0,0,.08)',
-      animation: 'fadeIn .2s ease',
+      width:size, height:size, borderRadius:"50%", flexShrink:0,
+      background:col+"22", border:`1.5px solid ${col}44`,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      fontSize:size*0.35, fontWeight:800, color:col,
+    }}>{ini(name)}</div>
+  );
+}
+
+function StatCard({ label, value, sub, accent }) {
+  return (
+    <div style={{
+      background:"#fff", borderRadius:18, padding:"18px 22px",
+      border:"1.5px solid #E9ECF2",
+      boxShadow:"0 1px 4px rgba(0,0,0,0.04)",
     }}>
-      {toast.msg}
+      <div style={{fontSize:11,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>{label}</div>
+      <div style={{fontSize:26,fontWeight:800,color:accent||"#0F172A",lineHeight:1,marginBottom:4}}>{value}</div>
+      {sub && <div style={{fontSize:12,color:"#94A3B8"}}>{sub}</div>}
     </div>
   );
-};
+}
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-const StatCard = ({ label, value, sub, valueColor }) => (
-  <div style={{
-    background: '#fff', border: '0.5px solid #e5e7eb',
-    borderRadius: 12, padding: '1rem 1.25rem',
-  }}>
-    <div style={{ fontSize: 11, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>{label}</div>
-    <div style={{ fontSize: 24, fontWeight: 500, color: valueColor || '#111' }}>{value}</div>
-    {sub && <div style={{ fontSize: 12, marginTop: 4, color: '#9ca3af' }}>{sub}</div>}
-  </div>
-);
+function IconBtn({ onClick, title, icon, hoverBg, hoverColor }) {
+  const [h,setH] = useState(false);
+  return (
+    <button onClick={onClick} title={title}
+      onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
+      style={{
+        width:30, height:30, borderRadius:8,
+        border:`1.5px solid ${h ? hoverBg+"88" : "#E9ECF2"}`,
+        background:h ? hoverBg+"22" : "#fff",
+        color:h ? hoverColor : "#94A3B8",
+        cursor:"pointer", display:"flex", alignItems:"center",
+        justifyContent:"center", transition:"all 0.14s", flexShrink:0,
+        fontFamily:"inherit",
+      }}
+    >{icon}</button>
+  );
+}
 
-// ─── Modal ────────────────────────────────────────────────────────────────────
-const Modal = ({ ad, onClose, onApprove, onReject, onDelete }) => {
+/* ─── TOAST ─── */
+function Toast({ toast }) {
+  if (!toast) return null;
+  const cfg = {
+    ok:   { bg:"#F0FDF4", bd:"#BBF7D0", tc:"#166534" },
+    warn: { bg:"#FFF7ED", bd:"#FED7AA", tc:"#9A3412" },
+    err:  { bg:"#FFF1F2", bd:"#FECDD3", tc:"#9F1239" },
+  }[toast.type] || {};
+  return (
+    <div style={{
+      position:"fixed", top:20, right:20, zIndex:99999,
+      padding:"11px 18px", borderRadius:12,
+      border:`1.5px solid ${cfg.bd}`,
+      background:cfg.bg, color:cfg.tc,
+      fontSize:13, fontWeight:600,
+      boxShadow:"0 8px 24px rgba(0,0,0,0.1)",
+      animation:"toastIn 0.22s ease",
+    }}>{toast.msg}</div>
+  );
+}
+
+/* ─── DETAIL MODAL ─── */
+function DetailModal({ ad, onClose, onApprove, onReject, onDelete }) {
   if (!ad) return null;
+  const c = STATUS_CFG[ad.status] || STATUS_CFG["Kutilmoqda"];
 
   return (
-    <div
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
-    >
-      <div className="w-[480px] max-w-[95vw] rounded-2xl overflow-hidden 
-        bg-gradient-to-br from-[#0f172a] to-[#43518f] 
-        border border-white/10 shadow-[0_0_40px_rgba(0,255,255,0.15)]">
-
-        {/* Header */}
-        <div className="flex justify-between items-center px-5 py-4 border-b border-white/10">
-          <h2 className="text-sm font-semibold text-white tracking-wide">
-            E'lon #{ad.id} — {ad.title}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-white/60 hover:text-red-400 transition text-lg"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="p-5 space-y-4">
-          {[
-            ['Sarlavha', ad.title],
-            ['Bloger', ad.author],
-            ['Narx', `${fmt(ad.price)} so'm`],
-            ['Kategoriya', ad.category],
-            ["Ko'rishlar", fmt(ad.views)],
-            ['Sana', ad.date],
-          ].map(([label, val]) => (
-            <div key={label}>
-              <div className="text-[10px] text-cyan-400 uppercase tracking-widest mb-1">
-                {label}
-              </div>
-              <div className="text-white text-sm font-medium">
-                {val}
-              </div>
-            </div>
-          ))}
-
+    <div onClick={e => { if (e.target===e.currentTarget) onClose(); }} style={{
+      position:"fixed", inset:0, zIndex:9999,
+      background:"rgba(15,23,42,0.55)", backdropFilter:"blur(6px)",
+      display:"flex", alignItems:"center", justifyContent:"center", padding:24,
+    }}>
+      <div style={{
+        background:"#fff", borderRadius:24, width:"100%", maxWidth:480,
+        maxHeight:"90vh", display:"flex", flexDirection:"column",
+        boxShadow:"0 32px 80px rgba(0,0,0,0.22)", overflow:"hidden",
+      }}>
+        {/* header */}
+        <div style={{
+          padding:"20px 24px 16px", borderBottom:"1px solid #F1F5F9",
+          display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexShrink:0,
+        }}>
           <div>
-            <div className="text-[10px] text-purple-400 uppercase tracking-widest mb-1">
-              Joriy status
-            </div>
-            <StatusBadge status={ad.status} />
+            <div style={{fontSize:16,fontWeight:800,color:"#0F172A",marginBottom:3}}>E'lon #{ad.id}</div>
+            <div style={{fontSize:12,color:"#94A3B8"}}>{ad.category} · {ad.date}</div>
           </div>
+          <button onClick={onClose} style={{
+            width:32,height:32,borderRadius:10,border:"1.5px solid #E2E8F0",
+            background:"#F8FAFC",cursor:"pointer",display:"flex",
+            alignItems:"center",justifyContent:"center",fontSize:14,color:"#94A3B8",
+            fontFamily:"inherit",
+          }}>✕</button>
         </div>
 
-        {/* Footer */}
-        <div className="flex gap-2 justify-end px-5 py-4 border-t border-white/10">
+        {/* body */}
+        <div style={{overflowY:"auto",flex:1,padding:"20px 24px"}}>
+          {/* title */}
+          <div style={{
+            background:"#F8FAFC", border:"1.5px solid #F1F5F9",
+            borderLeft:"3px solid #6366F1",
+            borderRadius:"0 12px 12px 0", padding:"12px 16px", marginBottom:18,
+            fontSize:15, fontWeight:700, color:"#0F172A", lineHeight:1.5,
+          }}>{ad.title}</div>
+
+          {/* author */}
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18,padding:"12px 16px",background:"#F8FAFC",borderRadius:14,border:"1.5px solid #F1F5F9"}}>
+            <Ava name={ad.author} size={44}/>
+            <div>
+              <div style={{fontSize:14,fontWeight:700,color:"#0F172A"}}>{ad.author}</div>
+              <div style={{fontSize:12,color:"#94A3B8",marginTop:2}}>Bloger</div>
+            </div>
+          </div>
+
+          {/* grid info */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:18}}>
+            {[
+              {icon:"💰", label:"Narx",       val:`${fmt(ad.price)} so'm`},
+              {icon:"👁", label:"Ko'rishlar",  val:fmt(ad.views)},
+              {icon:"🏷",  label:"Kategoriya", val:ad.category},
+              {icon:"📅", label:"Sana",        val:ad.date},
+            ].map(r=>(
+              <div key={r.label} style={{background:"#F8FAFC",border:"1.5px solid #F1F5F9",borderRadius:12,padding:"11px 14px",display:"flex",alignItems:"flex-start",gap:9}}>
+                <span style={{fontSize:18,marginTop:1}}>{r.icon}</span>
+                <div>
+                  <div style={{fontSize:10,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:2}}>{r.label}</div>
+                  <div style={{fontSize:13,fontWeight:700,color:"#1E293B"}}>{r.val}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* status */}
+          <div style={{marginBottom:20}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Joriy holat</div>
+            <Pill status={ad.status}/>
+          </div>
+
+          {/* actions */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            {[
+              {label:"✓ Tasdiqlash", st:"Faol",        bg:"#F0FDF4",tc:"#166534",bd:"#22C55E"},
+              {label:"✕ Rad etish",  st:"Rad etilgan", bg:"#FFF1F2",tc:"#9F1239",bd:"#F43F5E"},
+            ].map(btn=>{
+              const active = ad.status === btn.st;
+              return (
+                <button key={btn.st}
+                  onClick={()=>{ btn.st==="Faol" ? onApprove(ad.id) : onReject(ad.id); }}
+                  style={{
+                    padding:"11px",borderRadius:12,cursor:"pointer",fontFamily:"inherit",
+                    border:`1.5px solid ${active ? btn.bd : "#E9ECF2"}`,
+                    background:active ? btn.bg : "#fff",
+                    color:active ? btn.tc : "#64748B",
+                    fontSize:13,fontWeight:700,transition:"all 0.14s",
+                  }}
+                  onMouseEnter={e=>{ if(!active){e.currentTarget.style.borderColor=btn.bd;e.currentTarget.style.background=btn.bg+"66";}}}
+                  onMouseLeave={e=>{ if(!active){e.currentTarget.style.borderColor="#E9ECF2";e.currentTarget.style.background="#fff";}}}
+                >{btn.label}</button>
+              );
+            })}
+          </div>
 
           <button
-            onClick={() => onApprove(ad.id)}
-            className="px-4 py-2 text-xs font-semibold rounded-lg 
-            bg-green-500/10 text-green-400 border border-green-500/30
-            hover:bg-green-500/20 hover:shadow-[0_0_10px_#22c55e] transition"
-          >
-            Tasdiqlash
-          </button>
-
-          <button
-            onClick={() => onReject(ad.id)}
-            className="px-4 py-2 text-xs font-semibold rounded-lg 
-            bg-yellow-500/10 text-yellow-400 border border-yellow-500/30
-            hover:bg-yellow-500/20 hover:shadow-[0_0_10px_#eab308] transition"
-          >
-            Rad etish
-          </button>
-
-          <button
-            onClick={() => { onDelete(ad.id); onClose(); }}
-            className="px-4 py-2 text-xs font-semibold rounded-lg 
-            bg-red-500/10 text-red-400 border border-red-500/30
-            hover:bg-red-500/20 hover:shadow-[0_0_10px_#ef4444] transition"
-          >
-            O'chirish
-          </button>
-
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold rounded-lg 
-            bg-white/5 text-white/60 border border-white/10
-            hover:bg-white/10 transition"
-          >
-            Yopish
-          </button>
-
+            onClick={()=>{ onDelete(ad.id); onClose(); }}
+            style={{
+              width:"100%",marginTop:8,padding:"11px",borderRadius:12,cursor:"pointer",
+              border:"1.5px solid #FECDD3",background:"#FFF1F2",
+              color:"#9F1239",fontSize:13,fontWeight:700,fontFamily:"inherit",
+              transition:"all 0.14s",
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.background="#FFE4E6";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="#FFF1F2";}}
+          >🗑 E'lonni o'chirish</button>
         </div>
       </div>
     </div>
   );
-};
+}
 
-// ─── Action Button ────────────────────────────────────────────────────────────
-const ActionBtn = ({ onClick, title, hoverBg, hoverColor, hoverBorder, children }) => {
-  const [hover, setHover] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        borderRadius: 6, border: hover ? `0.5px solid ${hoverBorder}` : '0.5px solid #e5e7eb',
-        background: hover ? hoverBg : 'transparent',
-        cursor: 'pointer', color: hover ? hoverColor : '#6b7280',
-        transition: 'all .12s',
-      }}
-    >
-      {children}
-    </button>
-  );
-};
-
-// ─── Main Component ───────────────────────────────────────────────────────────
+/* ─── MAIN ─── */
 export default function AdminAds() {
-  const [ads, setAds] = useState(INITIAL_ADS);
-  const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [sortType, setSortType] = useState('newest');
+  const [ads, setAds]           = useState(INITIAL_ADS);
+  const [search, setSearch]     = useState("");
+  const [statusF, setStatusF]   = useState("all");
+  const [sort, setSort]         = useState("newest");
   const [selected, setSelected] = useState(new Set());
-  const [page, setPage] = useState(1);
-  const [modalAd, setModalAd] = useState(null);
-  const [toast, setToast] = useState(null);
+  const [page, setPage]         = useState(1);
+  const [modal, setModal]       = useState(null);
+  const [toast, setToast]       = useState(null);
 
   const notify = useCallback((type, msg) => {
     setToast({ type, msg });
-    setTimeout(() => setToast(null), 2500);
+    setTimeout(()=>setToast(null), 2600);
   }, []);
 
-  const filtered = useMemo(() => {
+  /* filtered & sorted */
+  const filtered = useMemo(()=>{
     const q = search.toLowerCase();
-    let res = ads.filter(a => {
-      const matchQ = a.title.toLowerCase().includes(q) || a.author.toLowerCase().includes(q);
-      const matchS = filterStatus === 'all' || a.status === filterStatus;
-      return matchQ && matchS;
+    let res = ads.filter(a=>{
+      const mq = a.title.toLowerCase().includes(q) || a.author.toLowerCase().includes(q);
+      const ms = statusF==="all" || a.status===statusF;
+      return mq && ms;
     });
-    if (sortType === 'newest') res.sort((a, b) => new Date(b.date) - new Date(a.date));
-    else if (sortType === 'oldest') res.sort((a, b) => new Date(a.date) - new Date(b.date));
-    else if (sortType === 'price_desc') res.sort((a, b) => b.price - a.price);
-    else if (sortType === 'price_asc') res.sort((a, b) => a.price - b.price);
-    else if (sortType === 'title') res.sort((a, b) => a.title.localeCompare(b.title));
+    if (sort==="newest")     res.sort((a,b)=>new Date(b.date)-new Date(a.date));
+    if (sort==="oldest")     res.sort((a,b)=>new Date(a.date)-new Date(b.date));
+    if (sort==="price_desc") res.sort((a,b)=>b.price-a.price);
+    if (sort==="price_asc")  res.sort((a,b)=>a.price-b.price);
+    if (sort==="views")      res.sort((a,b)=>b.views-a.views);
     return res;
-  }, [ads, search, filterStatus, sortType]);
+  },[ads,search,statusF,sort]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const totalPages = Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
+  const safePage   = Math.min(page,totalPages);
+  const pageItems  = filtered.slice((safePage-1)*PAGE_SIZE, safePage*PAGE_SIZE);
 
-  const updateStatus = useCallback((id, status) => {
-    setAds(prev => prev.map(a => a.id === id ? { ...a, status } : a));
-    setModalAd(prev => prev?.id === id ? { ...prev, status } : prev);
-    notify(status === 'Faol' ? 'ok' : status === 'Rad etilgan' ? 'warn' : 'err', `Status yangilandi: ${status}`);
-  }, [notify]);
+  /* actions */
+  const updateStatus = useCallback((id, st)=>{
+    setAds(p=>p.map(a=>a.id===id?{...a,status:st}:a));
+    setModal(p=>p?.id===id?{...p,status:st}:p);
+    notify(st==="Faol"?"ok":"warn", `Status: ${st}`);
+  },[notify]);
 
-  const deleteAd = useCallback((id) => {
-    setAds(prev => prev.filter(a => a.id !== id));
-    setSelected(prev => { const s = new Set(prev); s.delete(id); return s; });
-    notify('err', "E'lon o'chirildi");
-  }, [notify]);
+  const deleteAd = useCallback((id)=>{
+    setAds(p=>p.filter(a=>a.id!==id));
+    setSelected(p=>{ const s=new Set(p); s.delete(id); return s; });
+    setModal(p=>p?.id===id?null:p);
+    notify("err","E'lon o'chirildi");
+  },[notify]);
 
-  const bulkAction = (action) => {
+  const bulkAction = (action)=>{
+    if (!selected.size) return;
     const cnt = selected.size;
-    if (!cnt) return;
-    if (action === 'delete') {
-      setAds(prev => prev.filter(a => !selected.has(a.id)));
-      notify('err', `${cnt} ta e'lon o'chirildi`);
+    if (action==="delete"){
+      setAds(p=>p.filter(a=>!selected.has(a.id)));
+      notify("err",`${cnt} ta e'lon o'chirildi`);
     } else {
-      setAds(prev => prev.map(a => selected.has(a.id) ? { ...a, status: action } : a));
-      notify('ok', `${cnt} ta e'lon: ${action}`);
+      setAds(p=>p.map(a=>selected.has(a.id)?{...a,status:action}:a));
+      notify("ok",`${cnt} ta e'lon yangilandi`);
     }
     setSelected(new Set());
   };
 
-  const toggleOne = (id, checked) => {
-    setSelected(prev => {
-      const s = new Set(prev);
-      checked ? s.add(id) : s.delete(id);
-      return s;
-    });
-  };
+  const toggleOne = (id,checked)=>setSelected(p=>{const s=new Set(p);checked?s.add(id):s.delete(id);return s;});
+  const toggleAll = checked=>setSelected(p=>{const s=new Set(p);pageItems.forEach(a=>checked?s.add(a.id):s.delete(a.id));return s;});
+  const allChecked  = pageItems.length>0 && pageItems.every(a=>selected.has(a.id));
+  const someChecked = pageItems.some(a=>selected.has(a.id));
 
-  const toggleAll = (checked) => {
-    setSelected(prev => {
-      const s = new Set(prev);
-      pageItems.forEach(a => checked ? s.add(a.id) : s.delete(a.id));
-      return s;
-    });
-  };
+  /* stats */
+  const faolC  = ads.filter(a=>a.status==="Faol").length;
+  const waitC  = ads.filter(a=>a.status==="Kutilmoqda").length;
+  const rejC   = ads.filter(a=>a.status==="Rad etilgan").length;
+  const totalP = ads.reduce((s,a)=>s+a.price,0);
 
-  const allChecked = pageItems.length > 0 && pageItems.every(a => selected.has(a.id));
-  const someChecked = pageItems.some(a => selected.has(a.id));
-
-  // Stats
-  const total = ads.length;
-  const faolCount = ads.filter(a => a.status === 'Faol').length;
-  const waitCount = ads.filter(a => a.status === 'Kutilmoqda').length;
-  const totalPrice = ads.reduce((s, a) => s + a.price, 0);
-
-  const FILTERS = ['all', 'Kutilmoqda', 'Faol', 'Rad etilgan'];
-  const FILTER_LABELS = { all: 'Barchasi', 'Kutilmoqda': 'Kutilmoqda', 'Faol': 'Faol', 'Rad etilgan': 'Rad etilgan' };
+  const STATUS_TABS = [
+    {v:"all",        l:"Barchasi",    count:ads.length},
+    {v:"Kutilmoqda", l:"Kutilmoqda",  count:waitC},
+    {v:"Faol",       l:"Faol",        count:faolC},
+    {v:"Rad etilgan",l:"Rad etilgan", count:rejC},
+  ];
 
   return (
-    <div style={{ padding: '1.5rem', background: '#f8fafc', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
-      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
-      <Toast toast={toast} />
-      <Modal
-        ad={modalAd}
-        onClose={() => setModalAd(null)}
-        onApprove={(id) => updateStatus(id, 'Faol')}
-        onReject={(id) => updateStatus(id, 'Rad etilgan')}
+    <div className="admin-ads-root" style={{fontFamily:"'Manrope',sans-serif",padding:"28px 28px 56px"}}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+        .admin-ads-root *, .admin-ads-root *::before, .admin-ads-root *::after { box-sizing:border-box; }
+        .admin-ads-root button, .admin-ads-root input, .admin-ads-root select { font-family:'Manrope',sans-serif; }
+        .admin-ads-root ::-webkit-scrollbar { width:4px; height:4px; }
+        .admin-ads-root ::-webkit-scrollbar-thumb { background:#DDE1EA; border-radius:4px; }
+        @keyframes adsToastIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+        .ads-row:hover { background:#FAFBFF !important; }
+        .ads-row-sel { background:#EEF2FF !important; }
+      `}</style>
+
+      <Toast toast={toast}/>
+      <DetailModal
+        ad={modal} onClose={()=>setModal(null)}
+        onApprove={id=>updateStatus(id,"Faol")}
+        onReject={id=>updateStatus(id,"Rad etilgan")}
         onDelete={deleteAd}
       />
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: '1.5rem' }}>
-        <StatCard label="Jami e'lonlar" value={total} sub="barcha statuslar" />
-        <StatCard label="Faol" value={faolCount} valueColor="#3B6D11" sub={`${total ? Math.round(faolCount / total * 100) : 0}% ulushi`} />
-        <StatCard label="Kutilmoqda" value={waitCount} valueColor="#854F0B" sub="ko'rib chiqish kerak" />
-        <StatCard label="Umumiy narx" value={`${(totalPrice / 1000000).toFixed(1)}M`} sub="so'm" />
+      {/* ── STAT CARDS ── */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:24}}>
+        <StatCard label="Jami e'lonlar"  value={ads.length}    sub="barcha holatlarda"      accent="#0F172A"/>
+        <StatCard label="Faol"           value={faolC}         sub={`${ads.length?Math.round(faolC/ads.length*100):0}% ulushi`} accent="#166534"/>
+        <StatCard label="Kutilmoqda"     value={waitC}         sub="ko'rib chiqish kerak"   accent="#9A3412"/>
+        <StatCard label="Umumiy qiymat"  value={fmtM(totalP)}  sub="so'm"                   accent="#1D4ED8"/>
       </div>
 
-      {/* Toolbar */}
+      {/* ── TOOLBAR ── */}
       <div style={{
-        background: '#fff', border: '0.5px solid #e5e7eb', borderRadius: 12,
-        padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: 12,
-        flexWrap: 'wrap', marginBottom: '1rem',
+        background:"#fff", borderRadius:18, padding:"14px 18px",
+        border:"1.5px solid #E9ECF2", marginBottom:14,
+        display:"flex", alignItems:"center", gap:12, flexWrap:"wrap",
       }}>
-        {/* Search */}
-        <div style={{ position: 'relative', flex: 1, minWidth: 180 }}>
-          <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }}>
-            <SearchIcon />
-          </span>
+        {/* search */}
+        <div style={{position:"relative",flex:1,minWidth:200}}>
+          <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#CBD5E1",fontSize:15,pointerEvents:"none"}}>🔍</span>
           <input
-        
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Sarlavha yoki bloger bo'yicha qidirish..."
+            value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}}
+            placeholder="Sarlavha yoki bloger..."
             style={{
-              width: '100%', padding: '7px 12px 7px 34px',
-              border: '0.5px solid #d1d5db', borderRadius: 8,
-              fontSize: 13, background: '#f9fafb', color: '#111',
-              outline: 'none',
-              transition: 'all .15s',
-              '&:focus': { borderColor: '#3b82f6', boxShadow: '0 0 0 1px #3b82f6' },
-
+              width:"100%", padding:"9px 12px 9px 36px",
+              border:"1.5px solid #E9ECF2", borderRadius:12,
+              fontSize:13, color:"#0F172A", background:"#F8FAFC", outline:"none",
+              transition:"border-color 0.15s",
             }}
+            onFocus={e=>{e.target.style.borderColor="#6366F1";e.target.style.boxShadow="0 0 0 3px #6366F115";}}
+            onBlur={e=>{e.target.style.borderColor="#E9ECF2";e.target.style.boxShadow="none";}}
           />
         </div>
 
-        {/* Filter tabs */}
-        <div style={{ display: 'flex', gap: 4, background: '#f3f4f6', borderRadius: 8, padding: 3 }}>
-          {FILTERS.map(f => (
-            <button
-              key={f}
-              onClick={() => { setFilterStatus(f); setPage(1); setSelected(new Set()); }}
-              style={{
-                padding: '5px 14px', borderRadius: 6, fontSize: 12, fontWeight: 500,
-                cursor: 'pointer', border: filterStatus === f ? '0.5px solid #e5e7eb' : 'none',
-                background: filterStatus === f ? '#fff' : 'transparent',
-                color: filterStatus === f ? '#111' : '#6b7280',
-
-                transition: 'all .15s',
-                
-              }}
-            >
-              {FILTER_LABELS[f]}
-            </button>
-          ))}
+        {/* status tabs */}
+        <div style={{display:"flex",gap:4,background:"#F8FAFC",borderRadius:12,padding:4,border:"1.5px solid #E9ECF2"}}>
+          {STATUS_TABS.map(t=>{
+            const active = statusF===t.v;
+            const dotCfg = STATUS_CFG[t.v];
+            return (
+              <button key={t.v}
+                onClick={()=>{setStatusF(t.v);setPage(1);setSelected(new Set());}}
+                style={{
+                  padding:"6px 14px", borderRadius:9, fontSize:12, fontWeight:700,
+                  cursor:"pointer", border:"none", transition:"all 0.15s", fontFamily:"inherit",
+                  background:active?"#0F172A":"transparent",
+                  color:active?"#fff":"#64748B",
+                  display:"flex", alignItems:"center", gap:5,
+                }}
+              >
+                {t.l}
+                <span style={{
+                  background:active?"rgba(255,255,255,0.2)":dotCfg?dotCfg.bg:"#F1F5F9",
+                  color:active?"#fff":dotCfg?dotCfg.tc:"#64748B",
+                  fontSize:10, fontWeight:800, padding:"1px 6px", borderRadius:99,
+                }}>{t.count}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Sort */}
-        <select
-          value={sortType}
-          onChange={e => setSortType(e.target.value)}
-          style={{ padding: '7px 10px', border: '0.5px solid #d1d5db', borderRadius: 8, fontSize: 13, background: '#f9fafb', color: '#111' }}
-        >
-          <option value="newest">Yangi avval</option>
-          <option value="oldest">Eski avval</option>
-          <option value="price_desc">Narx: ko'pdan kam</option>
-          <option value="price_asc">Narx: kamdan ko'p</option>
-          <option value="title">Sarlavha A-Z</option>
-        </select>
+        {/* sort */}
+        <div style={{position:"relative"}}>
+          <select value={sort} onChange={e=>setSort(e.target.value)} style={{
+            padding:"9px 32px 9px 12px", borderRadius:12, fontSize:12, fontWeight:600,
+            border:"1.5px solid #E9ECF2", background:"#F8FAFC", color:"#0F172A",
+            outline:"none", cursor:"pointer", appearance:"none",
+          }}>
+            <option value="newest">Yangi avval</option>
+            <option value="oldest">Eski avval</option>
+            <option value="price_desc">Narx ↓</option>
+            <option value="price_asc">Narx ↑</option>
+            <option value="views">Ko'rishlar ↓</option>
+          </select>
+          <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:"#94A3B8",fontSize:12}}>▾</span>
+        </div>
       </div>
 
-      {/* Bulk bar */}
-      {selected.size > 0 && (
+      {/* ── BULK BAR ── */}
+      {selected.size>0 && (
         <div style={{
-          background: '#EFF6FF', border: '0.5px solid #BFDBFE', borderRadius: 8,
-          padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10,
-          marginBottom: 10, fontSize: 13, color: '#1D4ED8',
+          background:"#EEF2FF", border:"1.5px solid #C7D2FE", borderRadius:14,
+          padding:"10px 16px", display:"flex", alignItems:"center", gap:10,
+          marginBottom:12, flexWrap:"wrap",
         }}>
-          <span>{selected.size} ta tanlandi</span>
+          <span style={{fontSize:13,fontWeight:700,color:"#3730A3"}}>{selected.size} ta tanlandi</span>
           {[
-            { label: 'Tasdiqlash', action: 'Faol', bg: '#EAF3DE', border: '#C0DD97', color: '#3B6D11' },
-            { label: 'Rad etish', action: 'Rad etilgan', bg: '#FAEEDA', border: '#FAC775', color: '#854F0B' },
-            { label: "O'chirish", action: 'delete', bg: '#FCEBEB', border: '#F7C1C1', color: '#A32D2D' },
-          ].map(b => (
-            <button
-              key={b.action}
-              onClick={() => bulkAction(b.action)}
-              style={{ padding: '5px 12px', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: `0.5px solid ${b.border}`, background: b.bg, color: b.color }}
-            >
-              {b.label}
-            </button>
+            {l:"✓ Tasdiqlash", a:"Faol",        bg:"#F0FDF4",tc:"#166534",bd:"#BBF7D0"},
+            {l:"✕ Rad etish",  a:"Rad etilgan", bg:"#FFF1F2",tc:"#9F1239",bd:"#FECDD3"},
+            {l:"🗑 O'chirish",  a:"delete",      bg:"#FFF1F2",tc:"#9F1239",bd:"#FECDD3"},
+          ].map(b=>(
+            <button key={b.a} onClick={()=>bulkAction(b.a)} style={{
+              padding:"6px 14px",borderRadius:10,fontSize:12,fontWeight:700,cursor:"pointer",
+              border:`1.5px solid ${b.bd}`,background:b.bg,color:b.tc,fontFamily:"inherit",
+              transition:"all 0.14s",
+            }}>{b.l}</button>
           ))}
-          <button
-            onClick={() => setSelected(new Set())}
-            style={{ padding: '5px 12px', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '0.5px solid #e5e7eb', background: '#f9fafb', color: '#6b7280' }}
-          >
-            Bekor qilish
-          </button>
+          <button onClick={()=>setSelected(new Set())} style={{
+            padding:"6px 14px",borderRadius:10,fontSize:12,fontWeight:700,cursor:"pointer",
+            border:"1.5px solid #E9ECF2",background:"#fff",color:"#64748B",fontFamily:"inherit",
+            marginLeft:"auto",
+          }}>Bekor</button>
         </div>
       )}
 
-      {/* Table */}
-      <div style={{ background: '#fff', border: '0.5px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, tableLayout: 'fixed' }}>
-          <colgroup>
-            <col style={{ width: 32 }} />
-            <col style={{ width: 32 }} />
-            <col />
-            <col style={{ width: 130 }} />
-            <col style={{ width: 120 }} />
-            <col style={{ width: 90 }} />
-            <col style={{ width: 100 }} />
-            <col style={{ width: 120 }} />
-          </colgroup>
-          <thead>
-            <tr style={{ background: '#f9fafb' }}>
-              {['', '#', 'Sarlavha', 'Bloger', 'Narx (so\'m)', 'Sana', 'Status', 'Amallar'].map((h, i) => (
-                <th key={i} style={{
-                  padding: '10px 14px', textAlign: i === 7 ? 'center' : 'left',
-                  fontSize: 11, fontWeight: 500, color: '#6b7280',
-                  textTransform: 'uppercase', letterSpacing: '.05em',
-                  borderBottom: '0.5px solid #e5e7eb',
-                }}>
-                  {i === 0 ? (
-                    <input
-                      type="checkbox"
-                      checked={allChecked}
-                      ref={el => { if (el) el.indeterminate = !allChecked && someChecked; }}
-                      onChange={e => toggleAll(e.target.checked)}
-                      style={{ cursor: 'pointer' }}
+      {/* ── TABLE ── */}
+      <div style={{background:"#fff",borderRadius:18,border:"1.5px solid #E9ECF2",overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:13,minWidth:720}}>
+            <thead>
+              <tr style={{background:"#F8FAFC"}}>
+                {[
+                  {label:<input type="checkbox" checked={allChecked} ref={el=>{if(el)el.indeterminate=!allChecked&&someChecked;}} onChange={e=>toggleAll(e.target.checked)} style={{cursor:"pointer",accentColor:"#6366F1"}}/>, w:44},
+                  {label:"#",            w:48},
+                  {label:"Sarlavha",     w:"auto"},
+                  {label:"Bloger",       w:160},
+                  {label:"Narx",         w:130},
+                  {label:"Ko'rishlar",   w:100},
+                  {label:"Sana",         w:100},
+                  {label:"Holat",        w:130},
+                  {label:"Amallar",      w:130},
+                ].map((h,i)=>(
+                  <th key={i} style={{
+                    padding:"12px 14px", textAlign:i>=4&&i<=6?"right":i===8?"center":"left",
+                    fontSize:10, fontWeight:800, color:"#94A3B8",
+                    textTransform:"uppercase", letterSpacing:"0.07em",
+                    borderBottom:"1.5px solid #F1F5F9", width:h.w,
+                    whiteSpace:"nowrap",
+                  }}>{h.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {pageItems.length===0 ? (
+                <tr><td colSpan={9} style={{textAlign:"center",padding:"48px",color:"#CBD5E1",fontSize:14}}>
+                  Hech narsa topilmadi
+                </td></tr>
+              ) : pageItems.map((ad,i)=>(
+                <tr key={ad.id}
+                  className={`ads-row${selected.has(ad.id)?" ads-row-sel":""}`}
+                  style={{borderBottom:"1.5px solid #F8FAFC",transition:"background 0.12s",background:"#fff"}}
+                >
+                  <td style={{padding:"12px 14px"}}>
+                    <input type="checkbox" checked={selected.has(ad.id)}
+                      onChange={e=>toggleOne(ad.id,e.target.checked)}
+                      style={{cursor:"pointer",accentColor:"#6366F1"}}
                     />
-                  ) : h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {pageItems.length === 0 ? (
-              <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#9ca3af', fontSize: 14 }}>
-                  Hech qanday e'lon topilmadi
-                </td>
-              </tr>
-            ) : pageItems.map((ad, i) => (
-              <tr
-                key={ad.id}
-                style={{
-                  borderBottom: '0.5px solid #f3f4f6',
-                  background: selected.has(ad.id) ? '#EFF6FF' : 'transparent',
-                  transition: 'background .1s',
-                }}
-                onMouseEnter={e => { if (!selected.has(ad.id)) e.currentTarget.style.background = '#f9fafb'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = selected.has(ad.id) ? '#EFF6FF' : 'transparent'; }}
-              >
-                <td style={{ padding: '11px 14px' }}>
-                  <input
-                    type="checkbox"
-                    checked={selected.has(ad.id)}
-                    onChange={e => toggleOne(ad.id, e.target.checked)}
-                    style={{ cursor: 'pointer' }}
-                  />
-                </td>
-                <td style={{ padding: '11px 14px', color: '#9ca3af', fontSize: 12 }}>
-                  {(safePage - 1) * PAGE_SIZE + i + 1}
-                </td>
-                <td style={{ padding: '11px 14px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {ad.title}
-                </td>
-                <td style={{ padding: '11px 14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{
-                      width: 26, height: 26, borderRadius: '50%',
-                      background: '#EFF6FF', display: 'flex', alignItems: 'center',
-                      justifyContent: 'center', fontSize: 10, fontWeight: 600,
-                      color: '#1D4ED8', flexShrink: 0,
-                    }}>
-                      {initials(ad.author)}
+                  </td>
+                  <td style={{padding:"12px 14px",color:"#CBD5E1",fontSize:12,fontWeight:700}}>
+                    {(safePage-1)*PAGE_SIZE+i+1}
+                  </td>
+                  <td style={{padding:"12px 14px",maxWidth:240}}>
+                    <div style={{fontWeight:700,color:"#0F172A",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:2}}>{ad.title}</div>
+                    <div style={{fontSize:11,color:"#94A3B8"}}>{ad.category}</div>
+                  </td>
+                  <td style={{padding:"12px 14px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <Ava name={ad.author} size={30}/>
+                      <span style={{fontWeight:600,color:"#334155",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:110}}>{ad.author}</span>
                     </div>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ad.author}</span>
-                  </div>
-                </td>
-                <td style={{ padding: '11px 14px', fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
-                  {fmt(ad.price)}
-                </td>
-                <td style={{ padding: '11px 14px', color: '#6b7280', fontSize: 12 }}>{ad.date}</td>
-                <td style={{ padding: '11px 14px' }}>
-                  <StatusBadge status={ad.status} />
-                </td>
-                <td style={{ padding: '11px 14px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: 5 }}>
-                    <ActionBtn onClick={() => updateStatus(ad.id, 'Faol')} title="Tasdiqlash" hoverBg="#EAF3DE" hoverColor="#3B6D11" hoverBorder="#C0DD97">
-                      <CheckIcon />
-                    </ActionBtn>
-                    <ActionBtn onClick={() => updateStatus(ad.id, 'Rad etilgan')} title="Rad etish" hoverBg="#FAEEDA" hoverColor="#854F0B" hoverBorder="#FAC775">
-                      <XIcon />
-                    </ActionBtn>
-                    <ActionBtn onClick={() => deleteAd(ad.id)} title="O'chirish" hoverBg="#FCEBEB" hoverColor="#A32D2D" hoverBorder="#F7C1C1">
-                      <TrashIcon />
-                    </ActionBtn>
-                    <ActionBtn onClick={() => setModalAd(ad)} title="Ko'rish" hoverBg="#EFF6FF" hoverColor="#1D4ED8" hoverBorder="#BFDBFE">
-                      <EyeIcon />
-                    </ActionBtn>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                  <td style={{padding:"12px 14px",textAlign:"right",fontWeight:700,color:"#0F172A",fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>
+                    {fmt(ad.price)} <span style={{fontSize:11,color:"#94A3B8",fontWeight:500}}>so'm</span>
+                  </td>
+                  <td style={{padding:"12px 14px",textAlign:"right",color:"#64748B",fontVariantNumeric:"tabular-nums"}}>
+                    {fmt(ad.views)}
+                  </td>
+                  <td style={{padding:"12px 14px",textAlign:"right",color:"#94A3B8",fontSize:12,whiteSpace:"nowrap"}}>{ad.date}</td>
+                  <td style={{padding:"12px 14px"}}>
+                    <Pill status={ad.status}/>
+                  </td>
+                  <td style={{padding:"12px 14px"}}>
+                    <div style={{display:"flex",justifyContent:"center",gap:5}}>
+                      <IconBtn onClick={()=>updateStatus(ad.id,"Faol")}        title="Tasdiqlash" hoverBg="#22C55E" hoverColor="#166534" icon="✓"/>
+                      <IconBtn onClick={()=>updateStatus(ad.id,"Rad etilgan")} title="Rad etish"  hoverBg="#F97316" hoverColor="#9A3412" icon="✕"/>
+                      <IconBtn onClick={()=>deleteAd(ad.id)}                   title="O'chirish"  hoverBg="#F43F5E" hoverColor="#9F1239" icon="🗑"/>
+                      <IconBtn onClick={()=>setModal(ad)}                      title="Ko'rish"    hoverBg="#6366F1" hoverColor="#3730A3" icon="👁"/>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-        {/* Pagination */}
+        {/* ── PAGINATION ── */}
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 16px', borderTop: '0.5px solid #e5e7eb',
+          display:"flex", alignItems:"center", justifyContent:"space-between",
+          padding:"14px 18px", borderTop:"1.5px solid #F1F5F9", flexWrap:"wrap", gap:10,
         }}>
-          <span style={{ fontSize: 12, color: '#6b7280' }}>
+          <span style={{fontSize:12,color:"#94A3B8",fontWeight:600}}>
             {filtered.length} ta natija · {safePage}/{totalPages} sahifa
           </span>
-          <div style={{ display: 'flex', gap: 4 }}>
-            <PgBtn disabled={safePage <= 1} onClick={() => setPage(p => p - 1)}>‹</PgBtn>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => {
-              const show = totalPages <= 7 || p === 1 || p === totalPages || Math.abs(p - safePage) <= 1;
-              const ellipsis = Math.abs(p - safePage) === 2 && totalPages > 7;
-              if (ellipsis) return <span key={p} style={{ padding: '0 4px', color: '#9ca3af', fontSize: 12, lineHeight: '28px' }}>…</span>;
+          <div style={{display:"flex",gap:5,alignItems:"center"}}>
+            <PgBtn disabled={safePage<=1}          onClick={()=>setPage(p=>p-1)}>‹</PgBtn>
+            {Array.from({length:totalPages},(_,i)=>i+1).map(p=>{
+              const show = totalPages<=7 || p===1 || p===totalPages || Math.abs(p-safePage)<=1;
+              const dots  = Math.abs(p-safePage)===2 && totalPages>7;
+              if (dots) return <span key={p} style={{color:"#CBD5E1",fontSize:13,lineHeight:"30px",padding:"0 2px"}}>…</span>;
               if (!show) return null;
-              return <PgBtn key={p} active={p === safePage} onClick={() => setPage(p)}>{p}</PgBtn>;
+              return <PgBtn key={p} active={p===safePage} onClick={()=>setPage(p)}>{p}</PgBtn>;
             })}
-            <PgBtn disabled={safePage >= totalPages} onClick={() => setPage(p => p + 1)}>›</PgBtn>
+            <PgBtn disabled={safePage>=totalPages} onClick={()=>setPage(p=>p+1)}>›</PgBtn>
           </div>
         </div>
       </div>
@@ -562,21 +540,18 @@ export default function AdminAds() {
 }
 
 function PgBtn({ children, onClick, disabled, active }) {
+  const [h,setH] = useState(false);
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
+    <button onClick={onClick} disabled={disabled}
+      onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
       style={{
-        minWidth: 28, height: 28, padding: '0 6px',
-        borderRadius: 6, border: active ? '0.5px solid #BFDBFE' : '0.5px solid #e5e7eb',
-        background: active ? '#EFF6FF' : 'transparent',
-        fontSize: 12, cursor: disabled ? 'not-allowed' : 'pointer',
-        color: active ? '#1D4ED8' : '#6b7280',
-        fontWeight: active ? 500 : 400,
-        opacity: disabled ? .4 : 1,
+        minWidth:30,height:30,padding:"0 8px",borderRadius:9,
+        border:`1.5px solid ${active?"#C7D2FE":h?"#E2E8F0":"#F1F5F9"}`,
+        background:active?"#EEF2FF":h?"#F8FAFC":"#fff",
+        fontSize:12,fontWeight:active?800:500,cursor:disabled?"not-allowed":"pointer",
+        color:active?"#3730A3":"#64748B",
+        opacity:disabled?0.4:1,transition:"all 0.14s",fontFamily:"inherit",
       }}
-    >
-      {children}
-    </button>
+    >{children}</button>
   );
 }

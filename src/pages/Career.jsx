@@ -1,12 +1,81 @@
 import React, { useState } from "react";
-import { LuMapPin, LuClock, LuArrowRight, LuBriefcase, LuX, LuCheck } from "react-icons/lu"; 
+import { LuMapPin, LuClock, LuArrowRight, LuBriefcase, LuX, LuCheck, LuChevronDown } from "react-icons/lu";
 import { FiCheckCircle } from "react-icons/fi";
+
+/* ─── Ma'lumotlar — Admin Career bilan to'liq mos ─── */
 const JOBS = [
-  { id: 1, title: "Frontend Developer (React)", type: "To'liq stavka", location: "Toshkent / Remote", dept: "Texnologiya", desc: "React, TypeScript, Tailwind CSS bilan ishlash tajribasi. 2+ yil tajriba.", hot: true },
-  { id: 2, title: "UI/UX Designer", type: "To'liq stavka", location: "Toshkent", dept: "Dizayn", desc: "Figma, user research, prototyping. Portfolio taqdim etish shart.", hot: false },
-  { id: 3, title: "Marketing Manager", type: "To'liq stavka", location: "Toshkent", dept: "Marketing", desc: "Digital marketing, SMM, influencer marketing bo'yicha tajriba.", hot: true },
-  { id: 4, title: "Sales Manager", type: "To'liq stavka", location: "Toshkent", dept: "Sotuv", desc: "B2B sotuv, muloqot ko'nikmalari. Ingliz tili bo'lsa afzal.", hot: false },
-  { id: 5, title: "Content Writer (UZ)", type: "Part-time", location: "Remote", dept: "Kontent", desc: "O'zbek tilida sifatli kontent yozish. SEO ko'nikmalari.", hot: false },
+  {
+    id: 1,
+    title: "Frontend Developer",
+    icon: "💻",
+    dept: "IT bo'limi",
+    exp: "2+ yil",
+    type: "To'liq stavka",
+    location: "Toshkent / Remote",
+    skills: ["React", "TypeScript", "Tailwind"],
+    desc: "React, TypeScript, Tailwind CSS bilan ishlash tajribasi. Vite, Axios va zamonaviy frontend stack.",
+    hot: true,
+  },
+  {
+    id: 2,
+    title: "UI/UX Designer",
+    icon: "🎨",
+    dept: "Dizayn bo'limi",
+    exp: "1+ yil",
+    type: "To'liq stavka",
+    location: "Toshkent",
+    skills: ["Figma", "Prototyping", "Research"],
+    desc: "Figma, user research, prototyping. Portfolio taqdim etish shart. UX yozuv tajribasi afzal.",
+    hot: false,
+  },
+  {
+    id: 3,
+    title: "Marketing Manager",
+    icon: "📣",
+    dept: "Marketing",
+    exp: "3+ yil",
+    type: "To'liq stavka",
+    location: "Toshkent",
+    skills: ["SMM", "Content", "Analytics"],
+    desc: "Digital marketing, SMM, influencer marketing. Analitika va kontent strategiyasi bo'yicha tajriba.",
+    hot: true,
+  },
+  {
+    id: 4,
+    title: "Backend Developer",
+    icon: "🛠",
+    dept: "IT bo'limi",
+    exp: "2+ yil",
+    type: "To'liq stavka",
+    location: "Toshkent / Remote",
+    skills: ["Node.js", "PostgreSQL", "Docker"],
+    desc: "Node.js, PostgreSQL, Docker bilan ishlash. REST API va mikroservislar bo'yicha tajriba.",
+    hot: false,
+  },
+  {
+    id: 5,
+    title: "HR Specialist",
+    icon: "👥",
+    dept: "HR bo'limi",
+    exp: "1+ yil",
+    type: "To'liq stavka",
+    location: "Toshkent",
+    skills: ["Recruitment", "Onboarding"],
+    desc: "Recruitment, onboarding jarayonlari. Xodimlar bilan muloqot va korporativ madaniyatni rivojlantirish.",
+    hot: false,
+  },
+  {
+    id: 6,
+    title: "Accountant",
+    icon: "📊",
+    dept: "Moliya",
+    exp: "2+ yil",
+    type: "To'liq stavka",
+    location: "Toshkent",
+    skills: ["1C", "Excel", "Soliqlar"],
+    desc: "1C, Excel, soliq hisobi. Moliyaviy hisobot va byudjetlashtirish bo'yicha tajriba talab etiladi.",
+    hot: false,
+  },
 ];
 
 const PERKS = [
@@ -18,254 +87,479 @@ const PERKS = [
   { emoji: "🤝", title: "Jamoaviy ruh", desc: "Yosh va g'ayratli jamoa" },
 ];
 
-const CATEGORIES = ["Barchasi", "Texnologiya", "Dizayn", "Marketing", "Sotuv", "Kontent"];
+const CATEGORIES = ["Barchasi", "IT bo'limi", "Dizayn bo'limi", "Marketing", "HR bo'limi", "Moliya"];
 
+const EXP_OPTIONS = ["Tajriba tanlang", "0–1 yil", "1–2 yil", "2–3 yil", "3+ yil"];
+
+/* ─── Modal ariza formasi ─── */
+function ApplyModal({ job, onClose }) {
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    direction: job?.title || "",
+    exp: "",
+    skills: "",
+    message: "",
+    portfolio: "",
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const e = {};
+    if (!form.name.trim()) e.name = "Ism kiritish shart";
+    if (!form.phone.trim()) e.phone = "Telefon kiritish shart";
+    if (!form.email.trim()) e.email = "Email kiritish shart";
+    if (!form.exp || form.exp === "Tajriba tanlang") e.exp = "Tajribani tanlang";
+    if (!form.message.trim()) e.message = "Motivatsiya xabarini yozing";
+    return e;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const e2 = validate();
+    if (Object.keys(e2).length) { setErrors(e2); return; }
+    setSubmitted(true);
+    setTimeout(() => { onClose(); }, 3500);
+  };
+
+  const set = (k) => (ev) => {
+    setForm((p) => ({ ...p, [k]: ev.target.value }));
+    setErrors((p) => ({ ...p, [k]: undefined }));
+  };
+
+  return (
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 9999,
+        background: "rgba(10,15,28,0.7)",
+        backdropFilter: "blur(8px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "16px",
+      }}
+    >
+      <div style={{
+        background: "#fff",
+        borderRadius: "28px",
+        width: "100%",
+        maxWidth: "520px",
+        maxHeight: "92vh",
+        display: "flex",
+        flexDirection: "column",
+        boxShadow: "0 40px 100px rgba(0,0,0,0.28)",
+        overflow: "hidden",
+      }}>
+        {submitted ? (
+          <div style={{
+            flex: 1, display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+            padding: "48px 32px", textAlign: "center",
+          }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: "50%",
+              background: "linear-gradient(135deg,#d1fae5,#a7f3d0)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              marginBottom: 20, fontSize: 32,
+            }}>✓</div>
+            <h3 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>
+              Arizangiz qabul qilindi!
+            </h3>
+            <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.7 }}>
+              <strong>{job?.title}</strong> lavozimi bo'yicha arizangiz muvaffaqiyatli yuborildi.<br />
+              Tez orada siz bilan bog'lanamiz.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Header */}
+            <div style={{
+              padding: "20px 24px 18px",
+              borderBottom: "1px solid #f1f5f9",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              flexShrink: 0,
+            }}>
+              <div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "#0f172a" }}>Ariza topshirish</div>
+                <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>
+                  {job?.icon} {job?.title} · {job?.dept}
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                style={{
+                  width: 34, height: 34, borderRadius: 10,
+                  border: "1.5px solid #e2e8f0", background: "#f8fafc",
+                  cursor: "pointer", display: "flex", alignItems: "center",
+                  justifyContent: "center", fontSize: 16, color: "#94a3b8",
+                }}
+              >✕</button>
+            </div>
+
+            {/* Body */}
+            <form onSubmit={handleSubmit} style={{ overflowY: "auto", flex: 1, padding: "20px 24px 28px" }}>
+
+              {/* Lavozim banner */}
+              <div style={{
+                background: "linear-gradient(135deg,#eff6ff,#dbeafe)",
+                border: "1px solid #bfdbfe",
+                borderRadius: 14, padding: "12px 16px",
+                marginBottom: 20, display: "flex", alignItems: "center", gap: 10,
+              }}>
+                <span style={{ fontSize: 22 }}>{job?.icon}</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1e40af" }}>{job?.title}</div>
+                  <div style={{ fontSize: 11, color: "#3b82f6" }}>{job?.dept} · {job?.exp} tajriba · {job?.location}</div>
+                </div>
+              </div>
+
+              {/* 2 ustunli grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <Field label="To'liq ism *" error={errors.name}>
+                  <input
+                    value={form.name} onChange={set("name")}
+                    placeholder="Sardor Aliyev"
+                    style={inputStyle(errors.name)}
+                  />
+                </Field>
+                <Field label="Telefon raqam *" error={errors.phone}>
+                  <input
+                    value={form.phone} onChange={set("phone")}
+                    placeholder="+998 90 123 45 67"
+                    style={inputStyle(errors.phone)}
+                  />
+                </Field>
+              </div>
+
+              <div style={{ marginBottom: 12 }}>
+                <Field label="Email manzil *" error={errors.email}>
+                  <input
+                    type="email"
+                    value={form.email} onChange={set("email")}
+                    placeholder="sizning@email.com"
+                    style={inputStyle(errors.email)}
+                  />
+                </Field>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <Field label="Yo'nalish" error={null}>
+                  <input
+                    value={form.direction} onChange={set("direction")}
+                    placeholder="Frontend, Dizayn..."
+                    style={inputStyle(false)}
+                  />
+                </Field>
+                <Field label="Tajriba *" error={errors.exp}>
+                  <div style={{ position: "relative" }}>
+                    <select
+                      value={form.exp} onChange={set("exp")}
+                      style={{ ...inputStyle(errors.exp), appearance: "none", paddingRight: 32, cursor: "pointer" }}
+                    >
+                      {EXP_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                    <LuChevronDown size={14} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none" }} />
+                  </div>
+                </Field>
+              </div>
+
+              <div style={{ marginBottom: 12 }}>
+                <Field label="Ko'nikmalar (vergul bilan)" error={null}>
+                  <input
+                    value={form.skills} onChange={set("skills")}
+                    placeholder="React, Figma, Python..."
+                    style={inputStyle(false)}
+                  />
+                </Field>
+              </div>
+
+              <div style={{ marginBottom: 12 }}>
+                <Field label="Portfolio yoki CV linki" error={null}>
+                  <input
+                    type="url"
+                    value={form.portfolio} onChange={set("portfolio")}
+                    placeholder="https://..."
+                    style={inputStyle(false)}
+                  />
+                </Field>
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <Field label="Motivatsiya xabari *" error={errors.message}>
+                  <textarea
+                    value={form.message} onChange={set("message")}
+                    rows={3}
+                    placeholder="O'zingiz haqingizda qisqacha yozing, nima uchun aynan biz bilan ishlashni xohlaysiz..."
+                    style={{ ...inputStyle(errors.message), resize: "vertical", lineHeight: 1.6 }}
+                  />
+                </Field>
+              </div>
+
+              <button
+                type="submit"
+                style={{
+                  width: "100%", padding: "14px",
+                  background: "linear-gradient(135deg,#1e40af,#2563eb)",
+                  color: "#fff", fontWeight: 700, fontSize: 15,
+                  border: "none", borderRadius: 14, cursor: "pointer",
+                  boxShadow: "0 8px 24px rgba(37,99,235,0.28)",
+                  transition: "all 0.2s",
+                  fontFamily: "inherit",
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = "translateY(-1px)"}
+                onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+              >
+                Arizani yuborish →
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, error, children }) {
+  return (
+    <div>
+      <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
+        {label}
+      </label>
+      {children}
+      {error && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>{error}</div>}
+    </div>
+  );
+}
+
+function inputStyle(hasError) {
+  return {
+    width: "100%",
+    padding: "10px 12px",
+    border: `1.5px solid ${hasError ? "#fca5a5" : "#e2e8f0"}`,
+    borderRadius: 10,
+    fontSize: 13,
+    color: "#0f172a",
+    background: hasError ? "#fff5f5" : "#f8fafc",
+    outline: "none",
+    boxSizing: "border-box",
+    fontFamily: "inherit",
+    transition: "border-color 0.15s",
+  };
+}
+
+/* ─── Asosiy sahifa ─── */
 export default function Career() {
   const [activeCategory, setActiveCategory] = useState("Barchasi");
   const [applyingJob, setApplyingJob] = useState(null);
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const filteredJobs = activeCategory === "Barchasi" 
-    ? JOBS 
-    : JOBS.filter(job => job.dept === activeCategory);
-
-  const handleApply = (e) => {
-    e.preventDefault();
-    setIsSubmitted(true);
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setApplyingJob(null);
-    }, 3000);
-  };
-  // Career.jsx ichidagi JobCard-ni quyidagicha boyitamiz:
-
-const JobCard = ({ job }) => {
-  const [hover, setHover] = useState(false);
-
-  // Har bir bo'lim uchun mos rasm (placeholder)
-  const jobImages = {
-    "Tech": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=100&q=80",
-    "Design": "https://images.unsplash.com/photo-1561070791-26c145824e4d?auto=format&fit=crop&w=100&q=80",
-    "Marketing": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=100&q=80",
-  };
+  const filteredJobs = activeCategory === "Barchasi"
+    ? JOBS
+    : JOBS.filter(j => j.dept === activeCategory);
 
   return (
-    <div 
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        background: "#fff",
-        borderRadius: "24px",
-        padding: "24px",
-        display: "flex",
-        alignItems: "center",
-        gap: "20px", // Rasm va matn orasidagi masofa
-        border: `1px solid ${hover ? "#38bdf8" : "#e2e8f0"}`,
-        boxShadow: hover ? "0 20px 30px -10px rgba(0,0,0,0.1)" : "none",
-        transition: "all 0.4s ease",
-        transform: hover ? "scale(1.02)" : "scale(1)"
-      }}
-    >
-      {/* MEDIA ELEMENT: Job Image */}
-      <div style={{
-        width: "80px",
-        height: "80px",
-        borderRadius: "16px",
-        overflow: "hidden",
-        flexShrink: 0,
-        backgroundColor: "#f1f5f9"
-      }}>
-        <img 
-          src={jobImages[job.dept] || "https://via.placeholder.com/100"} 
-          alt={job.title}
-          style={{ width: "100%", height: "100%", objectFit: "cover", filter: hover ? "grayscale(0)" : "grayscale(0.5)", transition: "0.4s" }}
-        />
-      </div>
+    <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
 
-      <div style={{ flex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#1e293b", margin: 0 }}>{job.title}</h3>
-          {job.hot && <span style={{ background: "#ef4444", color: "#fff", fontSize: "10px", padding: "2px 8px", borderRadius: "6px" }}>HOT</span>}
-        </div>
-        
-        <div style={{ display: "flex", gap: 15, color: "#64748b", fontSize: "13px" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 4 }}><LuBriefcase size={14}/> {job.dept}</span>
-          <span style={{ display: "flex", alignItems: "center", gap: 4 }}><LuMapPin size={14}/> {job.location}</span>
-        </div>
-      </div>
+      {/* ── HERO ── */}
+      <div style={{ background: "linear-gradient(160deg,#0f172a 0%,#1e3a5f 60%,#0f2744 100%)", padding: "80px 24px 96px", position: "relative", overflow: "hidden" }}>
+        {/* dekor doiralar */}
+        <div style={{ position: "absolute", top: -80, right: -80, width: 400, height: 400, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.05)" }} />
+        <div style={{ position: "absolute", top: -40, right: -40, width: 240, height: 240, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.07)" }} />
+        <div style={{ position: "absolute", bottom: -60, left: -60, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle,rgba(37,99,235,0.15),transparent 70%)" }} />
 
-      <button style={{
-        padding: "10px 20px",
-        borderRadius: "12px",
-        border: "none",
-        background: "#0f172a",
-        color: "#fff",
-        fontWeight: 600,
-        cursor: "pointer"
-      }}>
-        Ariza topshirish
-      </button>
-    </div>
-  );
-};
-
-  return (
-    <div className="min-h-screen bg-slate-50 font-sans pb-20">
-      
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
-        <div className="relative bg-slate-900 rounded-3xl p-8 md:p-16 text-center overflow-hidden shadow-2xl">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:24px_24px] opacity-50"></div>
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/90"></div>
-          
-          <div className="relative z-10">
-            <span className="inline-block bg-blue-500/20 text-blue-400 text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full mb-6 border border-blue-500/20">
-              Karyera
+        <div style={{ maxWidth: 760, margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.3)",
+            color: "#93c5fd", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
+            textTransform: "uppercase", padding: "6px 16px", borderRadius: 99, marginBottom: 24,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#3b82f6", display: "inline-block" }} />
+            Karyera
+          </div>
+          <h1 style={{ fontSize: "clamp(32px,6vw,60px)", fontWeight: 900, color: "#fff", lineHeight: 1.1, marginBottom: 20, letterSpacing: "-0.02em" }}>
+            Bizning jamoaga{" "}
+            <span style={{ color: "transparent", backgroundImage: "linear-gradient(90deg,#60a5fa,#34d399)", WebkitBackgroundClip: "text", backgroundClip: "text" }}>
+              qo'shiling
             </span>
-            <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
-              Bizning jamoaga <br className="hidden md:block"/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">qo'shiling</span>
-            </h1>
-            <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
-              O'zbekistonning eng tezkor o'sayotgan tech loyihasida ishlang va kelajakni birga quring.
-            </p>
+          </h1>
+          <p style={{ fontSize: 17, color: "#94a3b8", maxWidth: 520, margin: "0 auto 36px", lineHeight: 1.7 }}>
+            O'zbekistonning eng tezkor o'sayotgan tech loyihasida ishlang va kelajakni birga quring.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            {[
+              { v: JOBS.length, l: "Ochiq lavozim" },
+              { v: "50+", l: "Jamoa a'zosi" },
+              { v: "3+", l: "Yillik tajriba" },
+            ].map(s => (
+              <div key={s.l} style={{
+                background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 16, padding: "16px 28px", textAlign: "center",
+              }}>
+                <div style={{ fontSize: 26, fontWeight: 900, color: "#fff" }}>{s.v}</div>
+                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{s.l}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-20">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">Nima taklif etamiz?</h2>
-          <p className="text-slate-500 max-w-2xl mx-auto">Biz o'z xodimlarimizga eng yaxshi sharoitlarni yaratishga harakat qilamiz.</p>
+      {/* ── PERKS ── */}
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "72px 24px 0" }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <h2 style={{ fontSize: 30, fontWeight: 800, color: "#0f172a", marginBottom: 10 }}>Nima taklif etamiz?</h2>
+          <p style={{ color: "#64748b", fontSize: 15 }}>O'z xodimlarimizga eng yaxshi sharoitlarni yaratamiz.</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {PERKS.map((p, idx) => (
-            <div key={idx} className="bg-white rounded-2xl p-6 border border-slate-200 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-50 transition-all duration-300 group">
-              <div className="text-4xl mb-4 group-hover:scale-110 transition-transform origin-left">{p.emoji}</div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">{p.title}</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">{p.desc}</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 16 }}>
+          {PERKS.map((p, i) => (
+            <div key={i} style={{
+              background: "#fff", borderRadius: 20, padding: "24px 20px",
+              border: "1.5px solid #f1f5f9",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+              transition: "all 0.2s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#bfdbfe"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(37,99,235,0.1)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#f1f5f9"; e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.04)"; e.currentTarget.style.transform = "translateY(0)"; }}
+            >
+              <div style={{ fontSize: 30, marginBottom: 12 }}>{p.emoji}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>{p.title}</div>
+              <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.6 }}>{p.desc}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-24">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+      {/* ── VAKANSIYALAR ── */}
+      <div style={{ maxWidth: 860, margin: "72px auto 0", padding: "0 24px 80px" }}>
+        {/* sarlavha + filter */}
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16, marginBottom: 28 }}>
           <div>
-            <h2 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
+            <h2 style={{ fontSize: 28, fontWeight: 800, color: "#0f172a", marginBottom: 4, display: "flex", alignItems: "center", gap: 10 }}>
               Ochiq lavozimlar
-              <span className="bg-blue-100 text-blue-700 text-sm py-1 px-3 rounded-full">{filteredJobs.length}</span>
+              <span style={{ background: "#dbeafe", color: "#1d4ed8", fontSize: 13, fontWeight: 700, padding: "3px 12px", borderRadius: 99 }}>
+                {filteredJobs.length}
+              </span>
             </h2>
-            <p className="text-slate-500">O'zingizga mos yo'nalishni tanlang</p>
+            <p style={{ fontSize: 13, color: "#94a3b8" }}>O'zingizga mos yo'nalishni tanlang</p>
           </div>
-          
-          <div className="flex flex-wrap gap-2">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {CATEGORIES.map(cat => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                  activeCategory === cat 
-                    ? "bg-slate-900 text-white shadow-md" 
-                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-                }`}
-              >
-                {cat}
-              </button>
+                style={{
+                  padding: "7px 14px", borderRadius: 10, fontSize: 12, fontWeight: 600,
+                  cursor: "pointer", transition: "all 0.15s", fontFamily: "inherit",
+                  background: activeCategory === cat ? "#0f172a" : "#fff",
+                  color: activeCategory === cat ? "#fff" : "#64748b",
+                  border: `1.5px solid ${activeCategory === cat ? "#0f172a" : "#e2e8f0"}`,
+                  boxShadow: activeCategory === cat ? "0 4px 12px rgba(15,23,42,0.18)" : "none",
+                }}
+              >{cat}</button>
             ))}
           </div>
         </div>
 
-        <div className="space-y-4">
-          {filteredJobs.length > 0 ? filteredJobs.map(job => (
-            <div key={job.id} className="bg-white rounded-2xl p-6 border border-slate-200 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-50 transition-all group relative overflow-hidden">
-              {job.hot && (
-                <div className="absolute top-0 right-0 bg-gradient-to-r from-red-500 to-rose-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
-                  Qaynoq
-                </div>
-              )}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">{job.title}</h3>
-                  <p className="text-slate-500 text-sm mb-4 line-clamp-2">{job.desc}</p>
-                  
-                  <div className="flex flex-wrap gap-3">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-lg">
-                      <LuBriefcase size={14} className="text-slate-400" /> {job.dept}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-lg">
-                      <LuClock size={14} className="text-slate-400" /> {job.type}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-lg">
-                      <LuMapPin size={14} className="text-slate-400" /> {job.location}
-                    </span>
-                  </div>
-                </div>
-                
-                <button 
-                  onClick={() => setApplyingJob(job)}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-95"
-                >
-                  Ariza qoldirish <LuArrowRight size={18} />
-                </button>
-              </div>
+        {/* Job kartalar */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {filteredJobs.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "48px 0", background: "#fff", borderRadius: 20, border: "1.5px dashed #e2e8f0" }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
+              <div style={{ color: "#94a3b8", fontSize: 14 }}>Bu yo'nalishda hozircha ochiq vakansiyalar yo'q.</div>
             </div>
-          )) : (
-            <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300">
-              <p className="text-slate-500">Bu yo'nalishda hozircha ochiq vakansiyalar yo'q.</p>
-            </div>
-          )}
+          ) : filteredJobs.map(job => (
+            <JobCard key={job.id} job={job} onApply={() => setApplyingJob(job)} />
+          ))}
         </div>
       </div>
 
-      {applyingJob && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
-            {isSubmitted ? (
-  <div className="p-10 text-center flex flex-col items-center">
-    <div className="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-4">
-      {/* FiCheckCircle har doim barqaror eksport qilinadi */}
-      <FiCheckCircle size={32} />
+      {/* Modal */}
+      {applyingJob && <ApplyModal job={applyingJob} onClose={() => setApplyingJob(null)} />}
     </div>
-    <h3 className="text-2xl font-bold text-slate-900 mb-2">Arizangiz qabul qilindi!</h3>
-    <p className="text-slate-500">Tez orada siz bilan bog'lanamiz.</p>
-  </div>
-            ) : (
-              <>
-                <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                  <h3 className="text-lg font-bold text-slate-900">Ariza topshirish</h3>
-                  <button onClick={() => setApplyingJob(null)} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-200 rounded-full transition-colors">
-                    <LuX size={20} />
-                  </button>
-                </div>
-                <form onSubmit={handleApply} className="p-6 space-y-5">
-                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6">
-                    <p className="text-sm text-blue-800 font-medium">Siz <span className="font-bold">{applyingJob.title}</span> lavozimiga ariza topshiryapsiz.</p>
-                  </div>
-                  
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700">To'liq ismingiz</label>
-                    <input required type="text" placeholder="Masalan: Sardor Aliyev" className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
-                  </div>
-                  
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700">Telefon raqam</label>
-                    <input required type="tel" placeholder="+998 90 123 45 67" className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
-                  </div>
-                  
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700">Portfolio yoki CV linki</label>
-                    <input required type="url" placeholder="https://..." className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
-                  </div>
+  );
+}
 
-                  <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-200 mt-4">
-                    Arizani yuborish
-                  </button>
-                </form>
-              </>
-            )}
+/* ─── Job Card ─── */
+function JobCard({ job, onApply }) {
+  const [hover, setHover] = useState(false);
+
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        background: "#fff",
+        borderRadius: 20,
+        padding: "20px 24px",
+        border: `1.5px solid ${hover ? "#bfdbfe" : "#f1f5f9"}`,
+        boxShadow: hover ? "0 12px 36px rgba(37,99,235,0.1)" : "0 1px 4px rgba(0,0,0,0.04)",
+        transition: "all 0.22s ease",
+        transform: hover ? "translateY(-2px)" : "none",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {job.hot && (
+        <div style={{
+          position: "absolute", top: 0, right: 0,
+          background: "linear-gradient(135deg,#ef4444,#f97316)",
+          color: "#fff", fontSize: 9, fontWeight: 800,
+          padding: "5px 12px", borderBottomLeftRadius: 10,
+          letterSpacing: "0.08em", textTransform: "uppercase",
+        }}>Qaynoq</div>
+      )}
+
+      <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        {/* Icon */}
+        <div style={{
+          width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+          background: "#f8fafc", border: "1.5px solid #f1f5f9",
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24,
+        }}>{job.icon}</div>
+
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>{job.title}</span>
+          </div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 10 }}>
+            {[
+              { icon: "🏢", val: job.dept },
+              { icon: "⏱", val: job.exp + " tajriba" },
+              { icon: "📍", val: job.location },
+              { icon: "🕐", val: job.type },
+            ].map(m => (
+              <span key={m.val} style={{ fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 3 }}>
+                <span style={{ fontSize: 12 }}>{m.icon}</span> {m.val}
+              </span>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+            {job.skills.map(s => (
+              <span key={s} style={{
+                fontSize: 11, padding: "3px 9px", borderRadius: 6,
+                background: "#f1f5f9", border: "1px solid #e2e8f0", color: "#475569",
+              }}>{s}</span>
+            ))}
           </div>
         </div>
-      )}
+
+        {/* Tugma */}
+        <button
+          onClick={onApply}
+          style={{
+            padding: "11px 22px", borderRadius: 12, border: "none",
+            background: hover ? "linear-gradient(135deg,#1e40af,#2563eb)" : "#0f172a",
+            color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer",
+            boxShadow: hover ? "0 8px 20px rgba(37,99,235,0.28)" : "none",
+            transition: "all 0.2s", whiteSpace: "nowrap",
+            fontFamily: "inherit", flexShrink: 0,
+            display: "flex", alignItems: "center", gap: 6,
+          }}
+        >
+          Ariza topshirish <LuArrowRight size={14} />
+        </button>
+      </div>
     </div>
   );
 }
