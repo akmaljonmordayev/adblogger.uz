@@ -1,444 +1,784 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  LuTarget, LuZap, LuShield, LuUsers, LuTrendingUp,
+  LuAward, LuStar, LuArrowRight, LuSparkles, LuRocket,
+  LuHandshake, LuEye, LuBuilding2, LuHeart, LuGlobe,
+  LuCircleCheck, LuInstagram, LuYoutube, LuMessageCircle,
+} from "react-icons/lu";
 
-const NAV_LINKS = ["Keyslar", "Xizmatlar", "Jamoa", "Aloqa"];
+/* ── Syne font (same as Header) ── */
+if (!document.getElementById("about-fonts")) {
+  const l = document.createElement("link");
+  l.id = "about-fonts";
+  l.rel = "stylesheet";
+  l.href = "https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap";
+  document.head.appendChild(l);
+}
 
-const SERVICES = [
-  { num: "01", title: "SEO & Google Ads", metric: "93%", metricLabel: "1-sahifa erishish darajasi", desc: "Google'da birinchi o'rinda ko'rinish — eng ko'p sotiladigan joy. Har bir klik aniq niyatli xaridor." },
-  { num: "02", title: "Social Media Ads", metric: "×4.2", metricLabel: "o'rtacha ROI", desc: "Instagram va Facebook'da faqat sotib oladigan auditoriyaga ko'rsatamiz. Isrof yo'q." },
-  { num: "03", title: "Video Production", metric: "81%", metricLabel: "video orqali konversiya", desc: "Ko'z tortuvchi kreativ video — brend haqiqiy ko'rinish oladi va sotuv o'sadi." },
-];
-
-const WHY = [
-  { n: "01", h: "Data-driven strategiya", b: "Har bir qarorimiz raqamlar asosida qabul qilinadi. Tasodif emas — aniq hisob-kitob." },
-  { n: "02", h: "Kreativ portlash", b: "Chiroyli va sotuvchi kontent bir vaqtda. Biz auditoriya ongiga ta'sir qiluvchi vizuallar yaratamiz." },
-  { n: "03", h: "To'liq shaffoflik", b: "Har bir sarflangan so'm qayerga ketayotgani va qancha daromad keltirayotgani real-time ko'rinadi." },
-];
-
-const CASES = [
-  { tag: "E-commerce", title: "Sotuvlarni 250% ga oshirish", body: "Noldan boshlab agressiv targeting va SMM strategiyasi orqali rekord ko'rsatkichlarga erishdik.", year: "2024" },
-  { tag: "Branding", title: "Minimalist Brend Identikasi", body: "Yangi startap uchun xalqaro darajadagi brending va vizual kontent. Investorlar ishonchini qozondik.", year: "2023" },
-];
-
-export default function Adbloger() {
-  const [active, setActive] = useState(0);
-  const [scrolled, setScrolled] = useState(false);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [sent, setSent] = useState(false);
-  const heroRef = useRef(null);
-
+/* ── Animated counter ── */
+function Counter({ end, suffix = "", duration = 2000 }) {
+  const [val, setVal] = useState(0);
+  const ref = useRef(null);
+  const fired = useRef(false);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+    const ob = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting && !fired.current) {
+          fired.current = true;
+          let v = 0;
+          const step = end / (duration / 16);
+          const t = setInterval(() => {
+            v += step;
+            if (v >= end) { setVal(end); clearInterval(t); }
+            else setVal(Math.floor(v));
+          }, 16);
+        }
+      },
+      { threshold: 0.4 }
+    );
+    if (ref.current) ob.observe(ref.current);
+    return () => ob.disconnect();
+  }, [end, duration]);
+  return <span ref={ref}>{val}{suffix}</span>;
+}
+
+/* ── Fade-in on scroll ── */
+function FadeIn({ children, delay = 0, style = {} }) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const ob = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); ob.disconnect(); } },
+      { threshold: 0.1 }
+    );
+    if (ref.current) ob.observe(ref.current);
+    return () => ob.disconnect();
   }, []);
-
   return (
-    <div style={{
-      background: "#F9F7F4",
-      color: "#1a1a1a",
-      fontFamily: "'Georgia', 'Times New Roman', serif",
-      minHeight: "100vh",
-      overflowX: "hidden",
-    }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=DM+Sans:wght@300;400;500;600&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #F9F7F4; }
-        ::selection { background: #C8001A; color: #fff; }
-        .serif { font-family: 'Playfair Display', Georgia, serif; }
-        .sans { font-family: 'DM Sans', sans-serif; }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(32px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes lineGrow {
-          from { transform: scaleX(0); }
-          to   { transform: scaleX(1); }
-        }
-        .hero-word { display: inline-block; animation: fadeUp 0.8s cubic-bezier(.22,1,.36,1) both; }
-        .hero-word:nth-child(1) { animation-delay: 0.1s; }
-        .hero-word:nth-child(2) { animation-delay: 0.22s; }
-        .hero-word:nth-child(3) { animation-delay: 0.34s; }
-        .hero-word:nth-child(4) { animation-delay: 0.46s; }
-        .hero-word:nth-child(5) { animation-delay: 0.58s; }
-        .hero-sub { animation: fadeUp 0.8s 0.65s cubic-bezier(.22,1,.36,1) both; }
-        .hero-cta { animation: fadeUp 0.8s 0.8s cubic-bezier(.22,1,.36,1) both; }
-        .divider-line {
-          height: 1px; background: #D8D3CC;
-          transform-origin: left;
-          animation: lineGrow 1s 0.3s cubic-bezier(.22,1,.36,1) both;
-        }
-        .svc-tab {
-          background: none; border: none; cursor: pointer;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 13px; font-weight: 600;
-          letter-spacing: 0.08em; text-transform: uppercase;
-          padding: 16px 0; color: #aaa;
-          border-bottom: 2px solid transparent;
-          transition: color .25s, border-color .25s;
-          margin-right: 40px;
-        }
-        .svc-tab.on { color: #1a1a1a; border-bottom-color: #C8001A; }
-        .svc-tab:hover { color: #1a1a1a; }
-        .case-card {
-          cursor: pointer; overflow: hidden;
-          border: 1px solid #E5E0D8;
-          transition: box-shadow .35s, transform .35s;
-          background: #fff;
-        }
-        .case-card:hover { box-shadow: 0 20px 60px rgba(0,0,0,0.1); transform: translateY(-4px); }
-        .why-card {
-          padding: 40px 36px;
-          border: 1px solid #E5E0D8;
-          background: #fff;
-          transition: background .25s, border-color .25s;
-        }
-        .why-card:hover { background: #1a1a1a; border-color: #1a1a1a; }
-        .why-card:hover .why-h { color: #fff !important; }
-        .why-card:hover .why-n { color: rgba(255,255,255,0.15) !important; }
-        .why-card:hover .why-p { color: #888 !important; }
-        .inp {
-          width: 100%; padding: 16px 18px;
-          border: 1px solid #D8D3CC;
-          background: #F9F7F4; color: #1a1a1a;
-          font-family: 'DM Sans', sans-serif; font-size: 15px;
-          outline: none; transition: border-color .2s;
-        }
-        .inp:focus { border-color: #1a1a1a; }
-        .inp::placeholder { color: #bbb; }
-        .btn-main {
-          background: #1a1a1a; color: #fff; border: none; cursor: pointer;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 13px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase;
-          padding: 18px 40px; transition: background .2s;
-          width: 100%;
-        }
-        .btn-main:hover { background: #C8001A; }
-        .nav-link {
-          font-family: 'DM Sans', sans-serif;
-          font-size: 13px; font-weight: 500; letter-spacing: 0.06em;
-          color: #555; text-decoration: none; cursor: pointer;
-          transition: color .2s;
-        }
-        .nav-link:hover { color: #1a1a1a; }
-      `}</style>
+    <div
+      ref={ref}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(28px)",
+        transition: `opacity 0.7s ${delay}s cubic-bezier(.22,1,.36,1), transform 0.7s ${delay}s cubic-bezier(.22,1,.36,1)`,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
-      {/* ── NAV ── */}
-      <nav style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        padding: "0 56px", height: 68,
-        background: scrolled ? "rgba(249,247,244,0.95)" : "transparent",
-        backdropFilter: scrolled ? "blur(12px)" : "none",
-        borderBottom: scrolled ? "1px solid #E5E0D8" : "1px solid transparent",
-        transition: "all .4s",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 28, height: 28, background: "#C8001A", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: 12, height: 12, background: "#fff" }} />
-          </div>
-          <span className="sans" style={{ fontWeight: 700, fontSize: 16, letterSpacing: "0.06em", color: "#1a1a1a" }}>
-            ADBLOGER
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: 40 }}>
-          {NAV_LINKS.map(l => <span key={l} className="nav-link">{l}</span>)}
-        </div>
-        <a href="#cta" className="sans" style={{
-          fontSize: 12, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase",
-          color: "#C8001A", textDecoration: "none",
-          borderBottom: "1.5px solid #C8001A", paddingBottom: 2,
-        }}>
-          Boshlash →
-        </a>
-      </nav>
+/* ── Data ── */
+const STATS = [
+  { end: 500,  suffix: "+",  label: "Tasdiqlangan bloger",  Icon: LuUsers,     color: "#dc2626", bg: "#fef2f2" },
+  { end: 12,   suffix: "M+", label: "Faol auditoriya",      Icon: LuEye,       color: "#2563eb", bg: "#eff6ff" },
+  { end: 200,  suffix: "+",  label: "Ishonchli brend",      Icon: LuBuilding2, color: "#7c3aed", bg: "#f5f3ff" },
+  { end: 98,   suffix: "%",  label: "Mijoz mamnuniyati",    Icon: LuStar,      color: "#d97706", bg: "#fffbeb" },
+];
 
-      {/* ── HERO ── */}
-      <section ref={heroRef} style={{
-        minHeight: "100vh", display: "grid",
-        gridTemplateColumns: "1fr 420px",
-        borderBottom: "1px solid #E5E0D8",
+const VALUES = [
+  {
+    Icon: LuTarget, color: "#dc2626", bg: "#fef2f2",
+    title: "Aniqlik",
+    desc: "Har bir qarorimiz ma'lumotlar asosida qabul qilinadi. Taxmin emas — aniq strategiya.",
+  },
+  {
+    Icon: LuZap, color: "#2563eb", bg: "#eff6ff",
+    title: "Tezlik",
+    desc: "Bozor o'zgaradi — biz ham. Mijozlarimiz doim raqobatchilardan bir qadam oldinda bo'ladi.",
+  },
+  {
+    Icon: LuShield, color: "#7c3aed", bg: "#f5f3ff",
+    title: "Ishonch",
+    desc: "To'liq shaffoflik va ochiqlik. Har bir so'm qayerga sarflanayotgani aniq ko'rinadi.",
+  },
+  {
+    Icon: LuHeart, color: "#d97706", bg: "#fffbeb",
+    title: "G'amxo'rlik",
+    desc: "Siz uchun nafaqat ish qilamiz — sizning o'sishingiz uchun mas'uliyat olamiz.",
+  },
+];
+
+const TEAM = [
+  { name: "Asilbek Raximov", role: "CEO & Asoschisi", initial: "AR", color: "#dc2626", bg: "#fef2f2", exp: "8+ yil tajriba" },
+  { name: "Nilufar Yusupova", role: "Marketing Director", initial: "NY", color: "#2563eb", bg: "#eff6ff", exp: "6+ yil tajriba" },
+  { name: "Bobur Xasanov",   role: "Head of Technology", initial: "BX", color: "#7c3aed", bg: "#f5f3ff", exp: "7+ yil tajriba" },
+  { name: "Zulfiya Karimova", role: "Content Strategist", initial: "ZK", color: "#d97706", bg: "#fffbeb", exp: "5+ yil tajriba" },
+];
+
+const MILESTONES = [
+  { year: "2021", title: "Kompaniya tashkil etildi", desc: "Toshkentda 3 kishi bilan boshlangan startup." },
+  { year: "2022", title: "100+ bloger", desc: "Platformamizga 100 dan ortiq bloger qo'shildi." },
+  { year: "2023", title: "1 mln+ auditoriya", desc: "Platforma orqali 1 million auditoriyaga yetib borildi." },
+  { year: "2024", title: "500+ bloger, 200+ brend", desc: "O'zbekistonning yetakchi influencer platformasiga aylandik." },
+];
+
+export default function About() {
+  return (
+    <div style={{ fontFamily: "'Inter', sans-serif", color: "#111827" }}>
+
+      {/* ══ HERO ══ */}
+      <section style={{
+        background: "linear-gradient(135deg, #fff 0%, #fef2f2 50%, #fff 100%)",
+        borderRadius: 20,
+        padding: "72px 48px 80px",
+        marginBottom: 32,
+        position: "relative",
+        overflow: "hidden",
+        border: "1px solid #fecaca",
       }}>
-        {/* Left */}
+        {/* Decorative circles */}
         <div style={{
-          display: "flex", flexDirection: "column", justifyContent: "flex-end",
-          padding: "140px 64px 80px 56px",
-          borderRight: "1px solid #E5E0D8",
-        }}>
-          <p className="sans hero-sub" style={{
-            fontSize: 11, fontWeight: 600, letterSpacing: "0.35em", textTransform: "uppercase",
-            color: "#C8001A", marginBottom: 36,
-          }}>
-            Performance & Creative Agency — Toshkent
-          </p>
+          position: "absolute", top: -80, right: -80,
+          width: 320, height: 320, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(220,38,38,0.07) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }} />
+        <div style={{
+          position: "absolute", bottom: -60, left: -60,
+          width: 240, height: 240, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(220,38,38,0.05) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }} />
 
-          <h1 className="serif" style={{
-            fontSize: "clamp(52px,6.5vw,88px)", fontWeight: 900, lineHeight: 1,
-            letterSpacing: "-0.02em", marginBottom: 48, color: "#1a1a1a",
+        <div style={{ position: "relative", maxWidth: 680 }}>
+          {/* Label */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 7,
+            background: "#fef2f2", color: "#dc2626",
+            border: "1px solid #fecaca",
+            fontSize: 10, fontWeight: 700, letterSpacing: "2.5px",
+            textTransform: "uppercase", padding: "5px 14px",
+            borderRadius: 100, marginBottom: 24,
           }}>
-            <span className="hero-word" style={{ display: "block" }}>Sizning</span>
-            <span className="hero-word" style={{ display: "block", color: "#C8001A", fontStyle: "italic" }}>o'singiz —</span>
-            <span className="hero-word" style={{ display: "block" }}>bizning</span>
-            <span className="hero-word" style={{ display: "block", fontStyle: "italic" }}>missiyamiz.</span>
+            <LuSparkles size={11} strokeWidth={2.5} />
+            Biz haqimizda
+          </div>
+
+          <h1 style={{
+            fontFamily: "'Syne', sans-serif",
+            fontSize: "clamp(36px, 5vw, 60px)",
+            fontWeight: 800,
+            lineHeight: 1.08,
+            letterSpacing: "-1px",
+            color: "#111827",
+            marginBottom: 24,
+          }}>
+            O'zbekistondagi{" "}
+            <span style={{
+              color: "#dc2626",
+              position: "relative",
+              display: "inline-block",
+            }}>
+              #1 influencer
+              <svg
+                viewBox="0 0 200 12"
+                style={{ position: "absolute", bottom: -4, left: 0, width: "100%", height: 8 }}
+                preserveAspectRatio="none"
+              >
+                <path d="M2 8 Q50 2 100 7 Q150 12 198 5" stroke="#dc2626" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.5"/>
+              </svg>
+            </span>{" "}
+            platformasi
           </h1>
 
-          <div className="divider-line" style={{ marginBottom: 40, width: "60%" }} />
-
-          <p className="sans hero-sub" style={{
-            fontSize: 16, lineHeight: 1.75, color: "#666",
-            maxWidth: 480, marginBottom: 52,
+          <p style={{
+            fontSize: 17, lineHeight: 1.75, color: "#6b7280",
+            marginBottom: 36, maxWidth: 560,
           }}>
-            2024-yilda raqamli marketing bozori{" "}
-            <strong style={{ color: "#1a1a1a", fontWeight: 600 }}>$667 mlrd</strong>
-            {" "}ga yetdi. Biz sizga ushbu ulkan bozordan munosib ulushingizni olishga yordam beramiz.
+            2021-yildan beri brendlar va blogerlarni bir-biriga bog'lab, o'zbek raqamli marketingini yangi bosqichga olib chiqamiz. Biz shunchaki platforma emas — sizning o'sishingiz uchun mas'ul strategik hamkorligingiz.
           </p>
 
-          <div className="hero-cta" style={{ display: "flex", gap: 24, alignItems: "center" }}>
-            <a href="#cta" className="sans" style={{
-              background: "#1a1a1a", color: "#fff",
-              fontSize: 13, fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase",
-              padding: "16px 36px", textDecoration: "none", display: "inline-block",
-              transition: "background .2s",
-            }}
-              onMouseEnter={e => e.target.style.background = "#C8001A"}
-              onMouseLeave={e => e.target.style.background = "#1a1a1a"}
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+            <Link
+              to="/bloggers"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                background: "linear-gradient(135deg, #dc2626, #b91c1c)",
+                color: "#fff", textDecoration: "none",
+                padding: "13px 26px", borderRadius: 12,
+                fontSize: 14, fontWeight: 700,
+                boxShadow: "0 4px 16px rgba(220,38,38,0.35)",
+                transition: "transform 0.18s, box-shadow 0.18s",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 8px 24px rgba(220,38,38,0.45)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = "none";
+                e.currentTarget.style.boxShadow = "0 4px 16px rgba(220,38,38,0.35)";
+              }}
             >
-              Strategiyani olish
-            </a>
-            <a href="#cases" className="sans" style={{
-              fontSize: 13, color: "#aaa", fontWeight: 500, textDecoration: "none",
-              borderBottom: "1px solid #D8D3CC", paddingBottom: 2,
-            }}>
-              Keyslarni ko'rish ↓
-            </a>
+              Blogerlarni ko'rish <LuArrowRight size={16} />
+            </Link>
+            <Link
+              to="/contact"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                background: "#fff", color: "#374151",
+                textDecoration: "none",
+                padding: "13px 26px", borderRadius: 12,
+                fontSize: 14, fontWeight: 600,
+                border: "1.5px solid #e5e7eb",
+                transition: "border-color 0.18s, color 0.18s",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = "#dc2626";
+                e.currentTarget.style.color = "#dc2626";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = "#e5e7eb";
+                e.currentTarget.style.color = "#374151";
+              }}
+            >
+              Bog'lanish
+            </Link>
           </div>
         </div>
+      </section>
 
-        {/* Right: stat panel */}
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", background: "#fff" }}>
-          {[
-            { val: "$667", unit: "mlrd", label: "Global bozor hajmi" },
-            { val: "93%", unit: "", label: "Google 1-sahifa erishish" },
-            { val: "×4.2", unit: "", label: "O'rtacha ROI ko'rsatkich" },
-          ].map((s, i) => (
-            <div key={i} style={{
-              padding: "48px 44px",
-              borderBottom: i < 2 ? "1px solid #E5E0D8" : "none",
-            }}>
-              <div className="serif" style={{
-                fontSize: 56, fontWeight: 900, color: "#1a1a1a",
-                lineHeight: 1, letterSpacing: "-0.03em", marginBottom: 8,
+      {/* ══ STATS ══ */}
+      <FadeIn>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: 16, marginBottom: 32,
+        }}>
+          {STATS.map(({ end, suffix, label, Icon, color, bg }) => (
+            <div key={label} style={{
+              background: "#fff",
+              border: "1px solid #f3f4f6",
+              borderRadius: 16,
+              padding: "28px 24px",
+              display: "flex", alignItems: "center", gap: 16,
+              boxShadow: "0 1px 8px rgba(0,0,0,0.05)",
+              transition: "transform 0.2s, box-shadow 0.2s",
+            }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = "translateY(-3px)";
+                e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.1)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = "none";
+                e.currentTarget.style.boxShadow = "0 1px 8px rgba(0,0,0,0.05)";
+              }}
+            >
+              <div style={{
+                width: 52, height: 52, borderRadius: 14,
+                background: bg, color,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
               }}>
-                {s.val}
-                {s.unit && <span style={{ fontSize: 28, color: "#C8001A", marginLeft: 4 }}>{s.unit}</span>}
+                <Icon size={24} />
               </div>
-              <div className="sans" style={{
-                fontSize: 11, fontWeight: 600, letterSpacing: "0.15em",
-                textTransform: "uppercase", color: "#aaa",
-              }}>
-                {s.label}
+              <div>
+                <div style={{
+                  fontFamily: "'Syne', sans-serif",
+                  fontSize: 30, fontWeight: 800,
+                  color: "#111827", lineHeight: 1,
+                }}>
+                  <Counter end={end} suffix={suffix} />
+                </div>
+                <div style={{ fontSize: 12, color: "#9ca3af", fontWeight: 500, marginTop: 4 }}>
+                  {label}
+                </div>
               </div>
             </div>
           ))}
         </div>
-      </section>
+      </FadeIn>
 
-      {/* ── SERVICES ── */}
-      <section style={{ padding: "100px 56px", borderBottom: "1px solid #E5E0D8" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16 }}>
-            <h2 className="serif" style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 900, color: "#1a1a1a" }}>Xizmatlarimiz</h2>
-            <p className="sans" style={{ fontSize: 13, color: "#aaa", fontWeight: 400 }}>Natijaga yo'naltirilgan yondashuv</p>
+      {/* ══ MISSION ══ */}
+      <FadeIn delay={0.1}>
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr 1fr",
+          gap: 20, marginBottom: 32,
+        }}
+          className="about-grid-2"
+        >
+          {/* Mission */}
+          <div style={{
+            background: "#111827", borderRadius: 20,
+            padding: "44px 40px", position: "relative", overflow: "hidden",
+          }}>
+            <div style={{
+              position: "absolute", top: -40, right: -40,
+              width: 180, height: 180, borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(220,38,38,0.2) 0%, transparent 70%)",
+              pointerEvents: "none",
+            }} />
+            <div style={{
+              width: 48, height: 48, borderRadius: 14,
+              background: "rgba(220,38,38,0.15)", color: "#ef4444",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              marginBottom: 20,
+            }}>
+              <LuRocket size={22} />
+            </div>
+            <h2 style={{
+              fontFamily: "'Syne', sans-serif",
+              fontSize: 24, fontWeight: 800,
+              color: "#fff", marginBottom: 14, lineHeight: 1.2,
+            }}>
+              Bizning missiyamiz
+            </h2>
+            <p style={{ fontSize: 15, color: "#9ca3af", lineHeight: 1.75 }}>
+              O'zbekiston brendlarini to'g'ri auditoriyaga yetkazadigan eng ishonchli va qulay influencer marketing platformasini yaratish. Har bir hamkorlik o'lchab bo'ladigan natija berishi kerak.
+            </p>
           </div>
-          <div style={{ borderTop: "1px solid #E5E0D8", marginBottom: 48 }} />
 
-          {/* Tabs */}
-          <div style={{ display: "flex", borderBottom: "1px solid #E5E0D8", marginBottom: 60 }}>
-            {SERVICES.map((s, i) => (
-              <button key={i} className={`svc-tab${active === i ? " on" : ""}`} onClick={() => setActive(i)}>
-                <span style={{ color: "#D8D3CC", marginRight: 8 }}>{s.num}</span>{s.title}
-              </button>
+          {/* Vision */}
+          <div style={{
+            background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
+            borderRadius: 20,
+            padding: "44px 40px", position: "relative", overflow: "hidden",
+          }}>
+            <div style={{
+              position: "absolute", bottom: -40, right: -40,
+              width: 180, height: 180, borderRadius: "50%",
+              background: "rgba(255,255,255,0.08)",
+              pointerEvents: "none",
+            }} />
+            <div style={{
+              width: 48, height: 48, borderRadius: 14,
+              background: "rgba(255,255,255,0.15)", color: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              marginBottom: 20,
+            }}>
+              <LuGlobe size={22} />
+            </div>
+            <h2 style={{
+              fontFamily: "'Syne', sans-serif",
+              fontSize: 24, fontWeight: 800,
+              color: "#fff", marginBottom: 14, lineHeight: 1.2,
+            }}>
+              Bizning vizyon
+            </h2>
+            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.8)", lineHeight: 1.75 }}>
+              2026 yilga kelib Markaziy Osiyodagi yetakchi influencer ekotizimiga aylanish. Blogerlar, brendlar va auditoriya uchun yangi standartlar yaratish.
+            </p>
+          </div>
+        </div>
+      </FadeIn>
+
+      {/* ══ VALUES ══ */}
+      <FadeIn delay={0.1}>
+        <div style={{
+          background: "#fff", borderRadius: 20,
+          border: "1px solid #f3f4f6",
+          padding: "48px 40px", marginBottom: 32,
+          boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
+        }}>
+          <div style={{ textAlign: "center", marginBottom: 40 }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 7,
+              background: "#fef2f2", color: "#dc2626",
+              border: "1px solid #fecaca",
+              fontSize: 10, fontWeight: 700, letterSpacing: "2.5px",
+              textTransform: "uppercase", padding: "5px 14px",
+              borderRadius: 100, marginBottom: 16,
+            }}>
+              <LuAward size={11} strokeWidth={2.5} />
+              Qadriyatlarimiz
+            </div>
+            <h2 style={{
+              fontFamily: "'Syne', sans-serif",
+              fontSize: "clamp(24px, 3vw, 36px)",
+              fontWeight: 800, color: "#111827",
+              letterSpacing: "-0.5px",
+            }}>
+              Biz nima asosida ishlaymiz
+            </h2>
+          </div>
+
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 20,
+          }}>
+            {VALUES.map(({ Icon, color, bg, title, desc }) => (
+              <div key={title} style={{
+                padding: "28px 24px",
+                borderRadius: 16,
+                border: "1.5px solid #f3f4f6",
+                transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s",
+                cursor: "default",
+              }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = color + "40";
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                  e.currentTarget.style.boxShadow = `0 8px 24px ${color}18`;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = "#f3f4f6";
+                  e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                <div style={{
+                  width: 48, height: 48, borderRadius: 14,
+                  background: bg, color,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: 16,
+                }}>
+                  <Icon size={22} />
+                </div>
+                <h3 style={{
+                  fontFamily: "'Syne', sans-serif",
+                  fontSize: 17, fontWeight: 800,
+                  color: "#111827", marginBottom: 8,
+                }}>
+                  {title}
+                </h3>
+                <p style={{ fontSize: 13.5, color: "#6b7280", lineHeight: 1.7 }}>
+                  {desc}
+                </p>
+              </div>
             ))}
           </div>
-
-          {/* Panel */}
-          {SERVICES.map((s, i) => i === active && (
-            <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center" }}>
-              <div>
-                <div className="serif" style={{
-                  fontSize: "clamp(80px,12vw,120px)", fontWeight: 900,
-                  color: "#F0EDE8", lineHeight: 1, letterSpacing: "-0.05em",
-                  marginBottom: -16, userSelect: "none",
-                }}>
-                  {s.metric}
-                </div>
-                <p className="sans" style={{
-                  fontSize: 11, fontWeight: 600, letterSpacing: "0.2em",
-                  textTransform: "uppercase", color: "#C8001A", marginBottom: 16,
-                }}>
-                  {s.metricLabel}
-                </p>
-                <p className="sans" style={{ fontSize: 16, lineHeight: 1.75, color: "#555" }}>{s.desc}</p>
-                <div style={{ marginTop: 36, display: "flex", gap: 4, alignItems: "center" }}>
-                  <a href="#cta" className="sans" style={{
-                    fontSize: 12, fontWeight: 600, letterSpacing: "0.12em",
-                    textTransform: "uppercase", color: "#1a1a1a", textDecoration: "none",
-                    borderBottom: "1.5px solid #1a1a1a", paddingBottom: 3,
-                  }}>Batafsil</a>
-                </div>
-              </div>
-              <div style={{ background: "#fff", border: "1px solid #E5E0D8", padding: "44px 40px" }}>
-                <p className="sans" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", color: "#aaa", marginBottom: 28 }}>Nimalar kiradi</p>
-                {["Auditoriya tahlili", "A/B testing", "Haftalik hisobot", "Dedicated manager", "ROI kafolati"].map((f, fi) => (
-                  <div key={fi} style={{
-                    display: "flex", alignItems: "center", gap: 14,
-                    padding: "14px 0",
-                    borderBottom: fi < 4 ? "1px solid #F0EDE8" : "none",
-                  }}>
-                    <div style={{ width: 20, height: 20, border: "1.5px solid #C8001A", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <div style={{ width: 6, height: 6, background: "#C8001A", borderRadius: "50%" }} />
-                    </div>
-                    <span className="sans" style={{ fontSize: 14, color: "#333", fontWeight: 400 }}>{f}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
         </div>
-      </section>
+      </FadeIn>
 
-      {/* ── CASES ── */}
-      <section id="cases" style={{ padding: "100px 56px", background: "#fff", borderBottom: "1px solid #E5E0D8" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16 }}>
-            <div>
-              <p className="sans" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.3em", textTransform: "uppercase", color: "#C8001A", marginBottom: 10 }}>Portfolio</p>
-              <h2 className="serif" style={{ fontSize: "clamp(28px,4vw,44px)", fontWeight: 900, color: "#1a1a1a" }}>Muvaffaqiyatli Keyslar</h2>
+      {/* ══ TIMELINE ══ */}
+      <FadeIn delay={0.1}>
+        <div style={{
+          background: "#fff", borderRadius: 20,
+          border: "1px solid #f3f4f6",
+          padding: "48px 40px", marginBottom: 32,
+          boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
+        }}>
+          <div style={{ marginBottom: 40 }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 7,
+              background: "#eff6ff", color: "#2563eb",
+              border: "1px solid #bfdbfe",
+              fontSize: 10, fontWeight: 700, letterSpacing: "2.5px",
+              textTransform: "uppercase", padding: "5px 14px",
+              borderRadius: 100, marginBottom: 16,
+            }}>
+              <LuTrendingUp size={11} strokeWidth={2.5} />
+              Tariximiz
             </div>
-            <a href="#" className="sans" style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#aaa", textDecoration: "none", borderBottom: "1px solid #D8D3CC", paddingBottom: 2 }}>
-              Hammasini ko'rish →
-            </a>
+            <h2 style={{
+              fontFamily: "'Syne', sans-serif",
+              fontSize: "clamp(24px, 3vw, 36px)",
+              fontWeight: 800, color: "#111827",
+              letterSpacing: "-0.5px",
+            }}>
+              O'sish yo'limiz
+            </h2>
           </div>
-          <div style={{ borderTop: "1px solid #E5E0D8", marginBottom: 60 }} />
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-            {CASES.map((c, i) => (
-              <div key={i} className="case-card">
-                {/* image placeholder */}
-                <div style={{
-                  height: 280, background: i === 0 ? "#F5F0E8" : "#1a1a1a",
-                  display: "flex", alignItems: "center", justifyContent: "center",
+          <div style={{ position: "relative" }}>
+            {/* Line */}
+            <div style={{
+              position: "absolute", left: 23, top: 0, bottom: 0,
+              width: 2, background: "linear-gradient(180deg, #dc2626 0%, #fecaca 100%)",
+              borderRadius: 2,
+            }} />
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {MILESTONES.map(({ year, title, desc }, i) => (
+                <div key={year} style={{
+                  display: "flex", gap: 24,
+                  paddingBottom: i < MILESTONES.length - 1 ? 36 : 0,
                   position: "relative",
                 }}>
+                  {/* Dot */}
                   <div style={{
-                    width: 120, height: 120,
-                    border: `2px solid ${i === 0 ? "#D8D3CC" : "#333"}`,
-                    borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 48, height: 48, flexShrink: 0,
+                    borderRadius: "50%",
+                    background: i === MILESTONES.length - 1
+                      ? "linear-gradient(135deg, #dc2626, #b91c1c)"
+                      : "#fff",
+                    border: i === MILESTONES.length - 1
+                      ? "none"
+                      : "2px solid #fecaca",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: i === MILESTONES.length - 1
+                      ? "0 4px 12px rgba(220,38,38,0.35)"
+                      : "none",
+                    zIndex: 1, position: "relative",
                   }}>
-                    <span className="serif" style={{ fontSize: 32, fontWeight: 900, color: i === 0 ? "#ccc" : "#333" }}>
-                      {i + 1 < 10 ? "0" + (i + 1) : i + 1}
-                    </span>
+                    <LuCircleCheck
+                      size={20}
+                      style={{ color: i === MILESTONES.length - 1 ? "#fff" : "#dc2626" }}
+                    />
                   </div>
-                  <span className="sans" style={{
-                    position: "absolute", top: 20, left: 20,
-                    background: "#C8001A", color: "#fff",
-                    fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase",
-                    padding: "5px 12px",
-                  }}>{c.tag}</span>
-                  <span className="sans" style={{
-                    position: "absolute", bottom: 20, right: 20,
-                    fontSize: 11, fontWeight: 500, color: i === 0 ? "#bbb" : "#444",
-                    letterSpacing: "0.1em",
-                  }}>{c.year}</span>
-                </div>
-                <div style={{ padding: "32px 32px 36px" }}>
-                  <h3 className="serif" style={{ fontSize: 22, fontWeight: 700, color: "#1a1a1a", marginBottom: 12, lineHeight: 1.25 }}>{c.title}</h3>
-                  <p className="sans" style={{ fontSize: 14, color: "#777", lineHeight: 1.7 }}>{c.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ── WHY ── */}
-      <section style={{ padding: "100px 56px", borderBottom: "1px solid #E5E0D8" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 100, alignItems: "start" }}>
-            <div style={{ position: "sticky", top: 100 }}>
-              <p className="sans" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.3em", textTransform: "uppercase", color: "#C8001A", marginBottom: 16 }}>Ustunligimiz</p>
-              <h2 className="serif" style={{ fontSize: "clamp(28px,3.5vw,44px)", fontWeight: 900, color: "#1a1a1a", lineHeight: 1.1, marginBottom: 32 }}>
-                Nima uchun<br />
-                <span style={{ fontStyle: "italic", color: "#C8001A" }}>Adbloger?</span>
-              </h2>
-              <p className="sans" style={{ fontSize: 14, color: "#888", lineHeight: 1.75 }}>
-                "Biz shunchaki agentlik emas — biz mijozlarimizning o'sishi uchun mas'ul bo'lgan strategik hamkormiz."
-              </p>
-              <p className="sans" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.15em", color: "#C8001A", marginTop: 16, textTransform: "uppercase" }}>— Adbloger CEO</p>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {WHY.map((w, i) => (
-                <div key={i} className="why-card">
-                  <div className="why-n serif" style={{ fontSize: 64, fontWeight: 900, color: "#F0EDE8", lineHeight: 1, marginBottom: 20, letterSpacing: "-0.04em", transition: "color .25s" }}>{w.n}</div>
-                  <h4 className="why-h sans" style={{ fontSize: 17, fontWeight: 600, color: "#1a1a1a", marginBottom: 10, transition: "color .25s" }}>{w.h}</h4>
-                  <p className="why-p sans" style={{ fontSize: 14, color: "#777", lineHeight: 1.7, transition: "color .25s" }}>{w.b}</p>
+                  <div style={{ paddingTop: 10 }}>
+                    <span style={{
+                      fontSize: 11, fontWeight: 700,
+                      color: "#dc2626", letterSpacing: "1.5px",
+                      textTransform: "uppercase",
+                    }}>
+                      {year}
+                    </span>
+                    <h4 style={{
+                      fontFamily: "'Syne', sans-serif",
+                      fontSize: 17, fontWeight: 800,
+                      color: "#111827", marginTop: 2, marginBottom: 6,
+                    }}>
+                      {title}
+                    </h4>
+                    <p style={{ fontSize: 13.5, color: "#6b7280", lineHeight: 1.65 }}>
+                      {desc}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </section>
+      </FadeIn>
 
-      {/* ── CTA ── */}
-      <section id="cta" style={{ padding: "100px 56px", background: "#1a1a1a" }}>
-        <div style={{ maxWidth: 680, margin: "0 auto" }}>
-          <p className="sans" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.35em", textTransform: "uppercase", color: "#C8001A", marginBottom: 20 }}>Boshlang</p>
-          <h2 className="serif" style={{
-            fontSize: "clamp(32px,5vw,60px)", fontWeight: 900,
-            color: "#fff", marginBottom: 16, lineHeight: 1.05,
-            letterSpacing: "-0.02em",
+      {/* ══ TEAM ══ */}
+      <FadeIn delay={0.1}>
+        <div style={{
+          background: "#fff", borderRadius: 20,
+          border: "1px solid #f3f4f6",
+          padding: "48px 40px", marginBottom: 32,
+          boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
+        }}>
+          <div style={{ textAlign: "center", marginBottom: 40 }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 7,
+              background: "#f5f3ff", color: "#7c3aed",
+              border: "1px solid #ddd6fe",
+              fontSize: 10, fontWeight: 700, letterSpacing: "2.5px",
+              textTransform: "uppercase", padding: "5px 14px",
+              borderRadius: 100, marginBottom: 16,
+            }}>
+              <LuUsers size={11} strokeWidth={2.5} />
+              Jamoa
+            </div>
+            <h2 style={{
+              fontFamily: "'Syne', sans-serif",
+              fontSize: "clamp(24px, 3vw, 36px)",
+              fontWeight: 800, color: "#111827",
+              letterSpacing: "-0.5px",
+            }}>
+              Bizning mutaxassislar
+            </h2>
+          </div>
+
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: 20,
           }}>
-            O'sishni bugun<br />
-            <span style={{ fontStyle: "italic", color: "#C8001A" }}>boshlang.</span>
+            {TEAM.map(({ name, role, initial, color, bg, exp }) => (
+              <div key={name} style={{
+                padding: "28px 20px",
+                borderRadius: 16,
+                border: "1.5px solid #f3f4f6",
+                textAlign: "center",
+                transition: "transform 0.2s, box-shadow 0.2s, border-color 0.2s",
+                cursor: "default",
+              }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = "translateY(-4px)";
+                  e.currentTarget.style.boxShadow = "0 12px 32px rgba(0,0,0,0.1)";
+                  e.currentTarget.style.borderColor = color + "30";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.borderColor = "#f3f4f6";
+                }}
+              >
+                {/* Avatar */}
+                <div style={{
+                  width: 72, height: 72, borderRadius: "50%",
+                  background: bg, color,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  margin: "0 auto 16px",
+                  fontFamily: "'Syne', sans-serif",
+                  fontSize: 22, fontWeight: 800,
+                  border: `2px solid ${color}25`,
+                }}>
+                  {initial}
+                </div>
+                <h4 style={{
+                  fontFamily: "'Syne', sans-serif",
+                  fontSize: 15, fontWeight: 800,
+                  color: "#111827", marginBottom: 4,
+                }}>
+                  {name}
+                </h4>
+                <p style={{ fontSize: 12.5, color: "#dc2626", fontWeight: 600, marginBottom: 8 }}>
+                  {role}
+                </p>
+                <span style={{
+                  display: "inline-block",
+                  background: bg, color,
+                  fontSize: 11, fontWeight: 600,
+                  padding: "3px 10px", borderRadius: 100,
+                }}>
+                  {exp}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </FadeIn>
+
+      {/* ══ PLATFORMS ══ */}
+      <FadeIn delay={0.1}>
+        <div style={{
+          background: "#fff", borderRadius: 20,
+          border: "1px solid #f3f4f6",
+          padding: "40px",
+          marginBottom: 32,
+          boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
+        }}>
+          <p style={{
+            textAlign: "center",
+            fontSize: 12, fontWeight: 700, letterSpacing: "2px",
+            textTransform: "uppercase", color: "#9ca3af", marginBottom: 24,
+          }}>
+            Qo'llab-quvvatlanadigan platformalar
+          </p>
+          <div style={{
+            display: "flex", justifyContent: "center",
+            alignItems: "center", gap: 32, flexWrap: "wrap",
+          }}>
+            {[
+              { Icon: LuInstagram, label: "Instagram", color: "#e1306c" },
+              { Icon: LuYoutube,   label: "YouTube",   color: "#ff0000" },
+              { Icon: LuMessageCircle, label: "Telegram", color: "#0088cc" },
+            ].map(({ Icon, label, color }) => (
+              <div key={label} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "12px 24px", borderRadius: 12,
+                border: "1.5px solid #f3f4f6",
+                transition: "border-color 0.2s, transform 0.2s",
+                cursor: "default",
+              }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = color + "50";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = "#f3f4f6";
+                  e.currentTarget.style.transform = "none";
+                }}
+              >
+                <Icon size={22} style={{ color }} />
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#374151" }}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </FadeIn>
+
+      {/* ══ CTA ══ */}
+      <FadeIn delay={0.1}>
+        <div style={{
+          background: "linear-gradient(135deg, #111827 0%, #1f2937 100%)",
+          borderRadius: 20,
+          padding: "56px 48px",
+          textAlign: "center",
+          position: "relative",
+          overflow: "hidden",
+        }}>
+          <div style={{
+            position: "absolute", top: -60, left: "50%",
+            transform: "translateX(-50%)",
+            width: 300, height: 300, borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(220,38,38,0.15) 0%, transparent 70%)",
+            pointerEvents: "none",
+          }} />
+
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 7,
+            background: "rgba(220,38,38,0.15)", color: "#ef4444",
+            border: "1px solid rgba(220,38,38,0.25)",
+            fontSize: 10, fontWeight: 700, letterSpacing: "2.5px",
+            textTransform: "uppercase", padding: "5px 14px",
+            borderRadius: 100, marginBottom: 24,
+          }}>
+            <LuHandshake size={11} strokeWidth={2.5} />
+            Hamkorlik
+          </div>
+
+          <h2 style={{
+            fontFamily: "'Syne', sans-serif",
+            fontSize: "clamp(28px, 4vw, 48px)",
+            fontWeight: 800, color: "#fff",
+            letterSpacing: "-0.5px", marginBottom: 16,
+            position: "relative",
+          }}>
+            Bizning hamkorga aylaning
           </h2>
-          <p className="sans" style={{ fontSize: 15, color: "#666", marginBottom: 56, lineHeight: 1.75 }}>
-            Ma'lumot qoldiring, biz sizga 15 daqiqada "Killer-Strategy" taklif qilamiz.
+
+          <p style={{
+            fontSize: 16, color: "#9ca3af", lineHeight: 1.75,
+            marginBottom: 36, maxWidth: 480, margin: "0 auto 36px",
+          }}>
+            Bloger yoki brend bo'lishingizdan qat'iy nazar, biz siz uchun eng yaxshi natijani ta'minlaymiz.
           </p>
 
-          {sent ? (
-            <div style={{ padding: "48px", background: "#0f0f0f", borderLeft: "3px solid #C8001A", textAlign: "center" }}>
-              <div className="serif" style={{ fontSize: 48, color: "#C8001A", marginBottom: 12 }}>✓</div>
-              <p className="sans" style={{ color: "#888", fontSize: 15 }}>Arizangiz qabul qilindi! 15 daqiqa ichida bog'lanamiz.</p>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <input className="inp" type="text" placeholder="Ismingiz" value={name} onChange={e => setName(e.target.value)} />
-                <input className="inp" type="tel" placeholder="+998 __ ___ __ __" value={phone} onChange={e => setPhone(e.target.value)} />
-              </div>
-              <button className="btn-main" onClick={() => { if (name && phone) setSent(true); }}>
-                Strategiyani Olish →
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ── FOOTER ── */}
-      <footer style={{
-        padding: "28px 56px", background: "#111",
-        borderTop: "1px solid #222",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 22, height: 22, background: "#C8001A", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: 8, height: 8, background: "#fff" }} />
+          <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+            <Link
+              to="/bloger-bolish"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                background: "linear-gradient(135deg, #dc2626, #b91c1c)",
+                color: "#fff", textDecoration: "none",
+                padding: "14px 28px", borderRadius: 12,
+                fontSize: 14, fontWeight: 700,
+                boxShadow: "0 4px 20px rgba(220,38,38,0.4)",
+                transition: "transform 0.18s, box-shadow 0.18s",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 8px 28px rgba(220,38,38,0.5)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = "none";
+                e.currentTarget.style.boxShadow = "0 4px 20px rgba(220,38,38,0.4)";
+              }}
+            >
+              Bloger bo'lish <LuArrowRight size={16} />
+            </Link>
+            <Link
+              to="/contact"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                background: "rgba(255,255,255,0.08)", color: "#fff",
+                textDecoration: "none",
+                padding: "14px 28px", borderRadius: 12,
+                fontSize: 14, fontWeight: 600,
+                border: "1.5px solid rgba(255,255,255,0.15)",
+                transition: "background 0.18s, border-color 0.18s",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.14)";
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
+              }}
+            >
+              Bog'lanish
+            </Link>
           </div>
-          <span className="sans" style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#444" }}>Adbloger Agency</span>
         </div>
-        <span className="sans" style={{ fontSize: 11, color: "#ffffff", letterSpacing: "0.08em" }}>© 2024 — Barcha huquqlar himoyalangan</span>
-      </footer>
+      </FadeIn>
+
+      {/* Responsive */}
+      <style>{`
+        @media (max-width: 768px) {
+          .about-grid-2 {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
