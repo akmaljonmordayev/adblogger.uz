@@ -32,6 +32,9 @@ import Profile       from "../pages/Profile";
 
 import NotFound      from "../pages/NotFound";
 
+// Admin auth
+import AdminLogin    from "../auth/AdminLogin";
+
 // Admin
 import AdminLayout      from "../admin/layouts/AdminLayout";
 import AdminDashboard   from "../admin/pages/AdminDashboard";
@@ -105,6 +108,11 @@ export const router = createBrowserRouter([
       { path: ROUTE_PATHS.ADMIN_FAQ,                    element: <AdminFAQ /> },
       { path: ROUTE_PATHS.ADMIN_SETTINGS,               element: <AdminSettings /> },
     ],
+  },
+  // Admin login — standalone (no AdminLayout)
+  {
+    path: ROUTE_PATHS.ADMIN_LOGIN,
+    element: <AdminLogin />,
   },
   {
     path: "*",

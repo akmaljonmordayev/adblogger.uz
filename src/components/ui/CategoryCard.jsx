@@ -1,5 +1,5 @@
 import React from "react";
-import Categories from "./Categories"; // to‘g‘rilandi
+import CategoryItem from "./CategoryItem";
 
 function CategoryCard() {
   return (
@@ -21,16 +21,16 @@ function CategoryCard() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3">
-        <Categories nomi="Texnologiya" icon="fa-laptop-code" soni={87} />
-        <Categories nomi="Lifestyle" icon="fa-wand-magic-sparkles" soni={120} />
-        <Categories nomi="Go'zallik" icon="fa-face-smile" soni={64} />
-        <Categories nomi="Ovqat" icon="fa-utensils" soni={45} />
-        <Categories nomi="Sport" icon="fa-futbol" soni={52} />
-        <Categories nomi="Sayohat" icon="fa-plane" soni={38} />
-        <Categories nomi="Biznes" icon="fa-briefcase" soni={71} />
-        <Categories nomi="Gaming" icon="fa-gamepad" soni={33} />
-        <Categories nomi="Ta'lim" icon="fa-book" soni={58} />
-        <Categories nomi="Musiqa" icon="fa-music" soni={29} />
+        <CategoryItem nomi="Texnologiya" icon="fa-laptop-code" soni={87} />
+        <CategoryItem nomi="Lifestyle" icon="fa-wand-magic-sparkles" soni={120} />
+        <CategoryItem nomi="Go'zallik" icon="fa-face-smile" soni={64} />
+        <CategoryItem nomi="Ovqat" icon="fa-utensils" soni={45} />
+        <CategoryItem nomi="Sport" icon="fa-futbol" soni={52} />
+        <CategoryItem nomi="Sayohat" icon="fa-plane" soni={38} />
+        <CategoryItem nomi="Biznes" icon="fa-briefcase" soni={71} />
+        <CategoryItem nomi="Gaming" icon="fa-gamepad" soni={33} />
+        <CategoryItem nomi="Ta'lim" icon="fa-book" soni={58} />
+        <CategoryItem nomi="Musiqa" icon="fa-music" soni={29} />
       </div>
     </>
   );

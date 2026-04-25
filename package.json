@@ -9,8 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "@gsap/react": "^2.1.2",
+ "dependencies": {
+    "@gsap/ react": "^2.1.2",
     "@hookform/resolvers": "^5.2.2",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-query": "^5.95.2",
