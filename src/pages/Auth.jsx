@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LuEye, LuEyeOff, LuArrowLeft, LuCheck } from "react-icons/lu";
+import { LuEye, LuEyeOff, LuArrowLeft, LuCheck, LuLoader } from "react-icons/lu";
+import { toast } from "react-toastify";
+import { useAuthStore } from "../store/useAuthStore";
 
 const S = {
   wrap: {
@@ -83,13 +85,19 @@ function InputField({ label, type = "text", placeholder, value, onChange, icon }
 }
 
 export default function Auth() {
-  const location = useLocation();
-  const navigate  = useNavigate();
+  const location   = useLocation();
+  const navigate   = useNavigate();
+  const { login: loginFn, register: registerFn } = useAuthStore();
+
   const defaultTab = location.pathname === "/register" ? "register" : "login";
   const [tab, setTab] = useState(defaultTab);
+  const [loading, setLoading] = useState(false);
 
-  const [login, setLogin]   = useState({ email: "", password: "" });
-  const [reg,   setReg]     = useState({ name: "", email: "", phone: "", password: "", role: "" });
+  const [login, setLogin] = useState({ email: "", password: "" });
+  const [reg,   setReg]   = useState({
+    firstName: "", lastName: "", email: "",
+    phone: "", password: "", role: "user",
+  });
 
   const setL = (k, v) => setLogin(p => ({ ...p, [k]: v }));
   const setR = (k, v) => setReg(p => ({ ...p, [k]: v }));
@@ -97,6 +105,53 @@ export default function Auth() {
   const handleTab = (t) => {
     setTab(t);
     navigate(t === "login" ? "/login" : "/register", { replace: true });
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    if (!login.email || !login.password) {
+      toast.error("Email va parolni kiriting");
+      return;
+    }
+    setLoading(true);
+    try {
+      const user = await loginFn({ email: login.email, password: login.password });
+      toast.success(`Xush kelibsiz, ${user.firstName}!`);
+      navigate(user.role === "admin" ? "/admin" : "/", { replace: true });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Kirish xatosi");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    if (!reg.firstName || !reg.email || !reg.password) {
+      toast.error("Majburiy maydonlarni to'ldiring");
+      return;
+    }
+    if (reg.password.length < 6) {
+      toast.error("Parol kamida 6 ta belgidan iborat bo'lishi kerak");
+      return;
+    }
+    setLoading(true);
+    try {
+      const user = await registerFn({
+        firstName: reg.firstName,
+        lastName:  reg.lastName,
+        email:     reg.email,
+        phone:     reg.phone,
+        password:  reg.password,
+        role:      reg.role === "brand" ? "business" : reg.role || "user",
+      });
+      toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!");
+      navigate(user.role === "admin" ? "/admin" : "/", { replace: true });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Ro'yxatdan o'tish xatosi");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -184,11 +239,11 @@ export default function Auth() {
         {/* ── LOGIN ── */}
         {tab === "login" && (
           <form
-            onSubmit={e => { e.preventDefault(); navigate("/"); }}
+            onSubmit={handleLogin}
             style={{ display:"flex", flexDirection:"column", gap:16 }}
           >
             <InputField
-              label="Email yoki telefon"
+              label="Email"
               placeholder="email@example.com"
               value={login.email}
               onChange={e => setL("email", e.target.value)}
@@ -209,11 +264,13 @@ export default function Auth() {
 
             <button
               type="submit"
-              style={S.btn}
-              onMouseEnter={e => { e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="0 8px 28px rgba(220,38,38,.35)"; }}
+              disabled={loading}
+              style={{ ...S.btn, opacity: loading ? 0.7 : 1, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}
+              onMouseEnter={e => { if(!loading){ e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="0 8px 28px rgba(220,38,38,.35)"; } }}
               onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="0 4px 18px rgba(220,38,38,.28)"; }}
             >
-              Kirish
+              {loading ? <LuLoader size={16} style={{animation:"spin 1s linear infinite"}} /> : null}
+              {loading ? "Kirish..." : "Kirish"}
             </button>
 
             <div style={{ textAlign:"center", fontSize:13, color:"#94a3b8" }}>
@@ -231,7 +288,7 @@ export default function Auth() {
         {/* ── REGISTER ── */}
         {tab === "register" && (
           <form
-            onSubmit={e => { e.preventDefault(); navigate("/"); }}
+            onSubmit={handleRegister}
             style={{ display:"flex", flexDirection:"column", gap:14 }}
           >
             {/* Role selector */}
@@ -263,8 +320,8 @@ export default function Auth() {
             </div>
 
             <div className="auth-name-row" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-              <InputField label="Ism" placeholder="Ismingiz" value={reg.name} onChange={e => setR("name", e.target.value)} />
-              <InputField label="Familiya" placeholder="Familiya" value={reg.surname} onChange={e => setR("surname", e.target.value)} />
+              <InputField label="Ism" placeholder="Ismingiz" value={reg.firstName} onChange={e => setR("firstName", e.target.value)} />
+              <InputField label="Familiya" placeholder="Familiya" value={reg.lastName} onChange={e => setR("lastName", e.target.value)} />
             </div>
 
             <InputField label="Email" placeholder="email@example.com" value={reg.email} onChange={e => setR("email", e.target.value)} />
@@ -275,11 +332,13 @@ export default function Auth() {
 
             <button
               type="submit"
-              style={{ ...S.btn, marginTop:4 }}
-              onMouseEnter={e => { e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="0 8px 28px rgba(220,38,38,.35)"; }}
+              disabled={loading}
+              style={{ ...S.btn, marginTop:4, opacity: loading ? 0.7 : 1, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}
+              onMouseEnter={e => { if(!loading){ e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="0 8px 28px rgba(220,38,38,.35)"; } }}
               onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="0 4px 18px rgba(220,38,38,.28)"; }}
             >
-              Ro'yxatdan o'tish
+              {loading ? <LuLoader size={16} style={{animation:"spin 1s linear infinite"}} /> : null}
+              {loading ? "Yuklanmoqda..." : "Ro'yxatdan o'tish"}
             </button>
 
             <div style={{ textAlign:"center", fontSize:13, color:"#94a3b8" }}>
