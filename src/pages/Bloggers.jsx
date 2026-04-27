@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "../components/ui/toast";
 import BloggerCard from "../components/ui/BlogerCard";
 import FilterSidebar from '../components/layout/FilterSidebar';
 import { useNavigate, useLocation } from "react-router-dom";
@@ -487,7 +486,6 @@ export default function Blogger() {
         </div>
       </div>
 
-      <ToastContainer position="top-right" autoClose={3000} theme="dark" />
     </div>
   );
 }

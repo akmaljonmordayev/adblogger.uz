@@ -4,7 +4,11 @@ import {
   LuSearch, LuMapPin, LuFlame, LuMenu, LuX,
   LuUser, LuPlus, LuHouse, LuUsers, LuTag,
   LuDollarSign, LuMail, LuBadgeCheck, LuTrendingUp,
+  LuLogOut, LuLayoutDashboard, LuChevronDown,
+  LuHeart, LuBell,
 } from "react-icons/lu";
+import { useAuthStore } from "../../store/useAuthStore";
+import LogoutModal from "../ui/LogoutModal";
 import HeroSwiper from "./HeroSwiper";
 import CategorySection from "./CategorySection";
 
@@ -89,11 +93,33 @@ function Logo() {
 
 /* ─────────────── MAIN HEADER ─────────────── */
 export default function Header() {
-  const [open, setOpen]     = useState(false);
-  const [search, setSearch] = useState("");
+  const [open, setOpen]       = useState(false);
+  const [search, setSearch]   = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden]   = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef    = useRef(null);
+  const userMenuRef = useRef(null);
+
+  const { user } = useAuthStore();
+  const [showLogout, setShowLogout] = useState(false);
+
+  const handleLogout = () => {
+    setUserMenuOpen(false);
+    setOpen(false);
+    setShowLogout(true);
+  };
+
+  // Close user menu on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
   const lastScrollY = useRef(0);
   const { pathname } = useLocation();
   const isHome = pathname === "/";
@@ -134,12 +160,17 @@ export default function Header() {
 
   return (
     <div className={isHome ? "hero-full-height flex flex-col" : "flex flex-col"}>
+      <LogoutModal
+        isOpen={showLogout}
+        onClose={() => setShowLogout(false)}
+        redirectTo="/"
+      />
 
       {/* ══════════════ STICKY HEADER ══════════════ */}
       <header
         ref={menuRef}
         style={{
-          position: "sticky", top: 0, zIndex: 50,
+          position: "sticky", top: 0, zIndex: 1000,
           background: "#fff",
           boxShadow: scrolled
             ? "0 4px 24px rgba(0,0,0,0.09)"
@@ -152,7 +183,7 @@ export default function Header() {
         {/* ── TOP BAR ── */}
         <div style={{
           background: "linear-gradient(90deg, #b91c1c 0%, #dc2626 40%, #ef4444 75%, #dc2626 100%)",
-          position: "relative", overflow: "hidden",
+          position: "relative",
         }}>
           {/* Subtle dot pattern */}
           <div style={{
@@ -212,69 +243,167 @@ export default function Header() {
 
             {/* Right auth */}
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{
-                display: "flex", alignItems: "center", gap: 4,
-                fontSize: 11, color: "rgba(255,255,255,0.7)",
-              }}
-                className="hidden-sm"
-              >
-                <LuBadgeCheck size={12} />
-                Ishonchli platforma
-              </span>
+              {user && (
+                <>
+                  <NavLink to="/wishlist" title="Saqlanganlar" style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 32, height: 32, borderRadius: 8,
+                    color: "rgba(255,255,255,0.8)",
+                    background: "rgba(255,255,255,0.1)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    textDecoration: "none", transition: "background 0.2s",
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                  >
+                    <LuHeart size={14} />
+                  </NavLink>
+                  <NavLink to="/notifications" title="Bildirishnomalar" style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 32, height: 32, borderRadius: 8,
+                    color: "rgba(255,255,255,0.8)",
+                    background: "rgba(255,255,255,0.1)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    textDecoration: "none", transition: "background 0.2s",
+                    position: "relative",
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+                  >
+                    <LuBell size={14} />
+                    <span style={{
+                      position: "absolute", top: 4, right: 4,
+                      width: 7, height: 7, borderRadius: "50%",
+                      background: "#f87171", border: "1.5px solid rgba(0,0,0,0.3)",
+                    }} />
+                  </NavLink>
+                </>
+              )}
+              {user ? (
+                /* ── Logged in ── */
+                <div ref={userMenuRef} style={{ position: "relative" }}>
+                  <button
+                    onClick={() => setUserMenuOpen(v => !v)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 7,
+                      background: "rgba(255,255,255,0.12)",
+                      border: "1px solid rgba(255,255,255,0.25)",
+                      borderRadius: 8, padding: "4px 10px 4px 6px",
+                      cursor: "pointer", color: "#fff", fontSize: 12, fontWeight: 600,
+                    }}
+                  >
+                    <div style={{
+                      width: 24, height: 24, borderRadius: "50%",
+                      background: "#dc2626", display: "flex",
+                      alignItems: "center", justifyContent: "center",
+                      fontSize: 11, fontWeight: 700, color: "#fff",
+                      overflow: "hidden",
+                    }}>
+                      {user.avatar
+                        ? <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        : (user.firstName?.[0] || "U").toUpperCase()
+                      }
+                    </div>
+                    {user.firstName}
+                    <LuChevronDown size={12} />
+                  </button>
 
-              <div style={{
-                width: 1, height: 14, background: "rgba(255,255,255,0.25)",
-                margin: "0 4px",
-              }} className="hidden-sm" />
-
-              <NavLink
-                to="/login"
-                style={{
-                  color: "#fff", textDecoration: "none",
-                  padding: "4px 12px", borderRadius: 6,
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  fontSize: 12, fontWeight: 500,
-                  display: "flex", alignItems: "center", gap: 4,
-                  transition: "background 0.2s, border-color 0.2s",
-                  backdropFilter: "blur(4px)",
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.18)";
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.55)";
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
-                }}
-              >
-                <LuUser size={11} />
-                Kirish
-              </NavLink>
-
-              <NavLink
-                to="/register"
-                style={{
-                  color: "#dc2626",
-                  background: "#fff",
-                  textDecoration: "none",
-                  padding: "4px 14px", borderRadius: 6,
-                  fontSize: 12, fontWeight: 700,
-                  display: "flex", alignItems: "center", gap: 4,
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
-                  transition: "transform 0.15s, box-shadow 0.15s",
-                  whiteSpace: "nowrap",
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = "translateY(-1px)";
-                  e.currentTarget.style.boxShadow = "0 3px 8px rgba(0,0,0,0.2)";
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = "none";
-                  e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.15)";
-                }}
-              >
-                ✦ Bloger bo'lish
-              </NavLink>
+                  {userMenuOpen && (
+                    <div style={{
+                      position: "absolute", top: "calc(100% + 8px)", right: 0,
+                      background: "#fff", borderRadius: 12, minWidth: 190,
+                      boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+                      border: "1px solid #f1f5f9", zIndex: 9999,
+                    }}>
+                      <div style={{ padding: "12px 14px", borderBottom: "1px solid #f1f5f9" }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>
+                          {user.firstName} {user.lastName}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{user.email}</div>
+                      </div>
+                      {[
+                        user.role === "admin"
+                          ? { to: "/admin", icon: <LuLayoutDashboard size={13} />, label: "Admin panel" }
+                          : { to: "/profile", icon: <LuUser size={13} />, label: "Profilim" },
+                      ].map(item => (
+                        <NavLink
+                          key={item.to}
+                          to={item.to}
+                          onClick={() => setUserMenuOpen(false)}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 8,
+                            padding: "10px 14px", textDecoration: "none",
+                            color: "#374151", fontSize: 13, fontWeight: 500,
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
+                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                        >
+                          {item.icon} {item.label}
+                        </NavLink>
+                      ))}
+                      <button
+                        onClick={handleLogout}
+                        style={{
+                          width: "100%", display: "flex", alignItems: "center", gap: 8,
+                          padding: "10px 14px", border: "none", background: "none",
+                          cursor: "pointer", color: "#dc2626", fontSize: 13, fontWeight: 600,
+                          borderTop: "1px solid #fef2f2",
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = "#fef2f2"}
+                        onMouseLeave={e => e.currentTarget.style.background = "none"}
+                      >
+                        <LuLogOut size={13} /> Chiqish
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* ── Not logged in ── */
+                <>
+                  <span style={{
+                    display: "flex", alignItems: "center", gap: 4,
+                    fontSize: 11, color: "rgba(255,255,255,0.7)",
+                  }} className="hidden-sm">
+                    <LuBadgeCheck size={12} />
+                    Ishonchli platforma
+                  </span>
+                  <div style={{
+                    width: 1, height: 14, background: "rgba(255,255,255,0.25)",
+                    margin: "0 4px",
+                  }} className="hidden-sm" />
+                  <NavLink
+                    to="/login"
+                    style={{
+                      color: "#fff", textDecoration: "none",
+                      padding: "4px 12px", borderRadius: 6,
+                      border: "1px solid rgba(255,255,255,0.3)",
+                      fontSize: 12, fontWeight: 500,
+                      display: "flex", alignItems: "center", gap: 4,
+                      transition: "background 0.2s",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.18)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                  >
+                    <LuUser size={11} /> Kirish
+                  </NavLink>
+                  <NavLink
+                    to="/register"
+                    style={{
+                      color: "#dc2626", background: "#fff", textDecoration: "none",
+                      padding: "4px 14px", borderRadius: 6,
+                      fontSize: 12, fontWeight: 700,
+                      display: "flex", alignItems: "center", gap: 4,
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+                      transition: "transform 0.15s",
+                      whiteSpace: "nowrap",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = "translateY(-1px)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "none"}
+                  >
+                    ✦ Bloger bo'lish
+                  </NavLink>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -513,36 +642,66 @@ export default function Header() {
               paddingTop: 6,
               borderTop: "1px solid #f3f4f6",
             }}>
-              <NavLink
-                to="/login"
-                onClick={() => setOpen(false)}
-                style={{
-                  flex: 1, textDecoration: "none",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  gap: 6, padding: "12px", borderRadius: 11, fontSize: 14,
-                  fontWeight: 600, color: "#374151",
-                  border: "1.5px solid #e5e7eb",
-                  background: "#fff",
-                }}
-              >
-                <LuUser size={15} />
-                Kirish
-              </NavLink>
-              <NavLink
-                to="/post-ad"
-                onClick={() => setOpen(false)}
-                style={{
-                  flex: 1, textDecoration: "none",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  gap: 6, padding: "12px", borderRadius: 11, fontSize: 14,
-                  fontWeight: 700, color: "#fff",
-                  background: "linear-gradient(135deg,#dc2626,#b91c1c)",
-                  boxShadow: "0 3px 12px rgba(220,38,38,0.3)",
-                }}
-              >
-                <LuPlus size={15} strokeWidth={2.5} />
-                E'lon berish
-              </NavLink>
+              {user ? (
+                <>
+                  <NavLink
+                    to={user.role === "admin" ? "/admin" : "/profile"}
+                    onClick={() => setOpen(false)}
+                    style={{
+                      flex: 1, textDecoration: "none",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      gap: 6, padding: "12px", borderRadius: 11, fontSize: 14,
+                      fontWeight: 600, color: "#374151",
+                      border: "1.5px solid #e5e7eb", background: "#fff",
+                    }}
+                  >
+                    <LuUser size={15} />
+                    {user.firstName}
+                  </NavLink>
+                  <button
+                    onClick={() => { handleLogout(); setOpen(false); }}
+                    style={{
+                      flex: 1, border: "1.5px solid #fee2e2",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      gap: 6, padding: "12px", borderRadius: 11, fontSize: 14,
+                      fontWeight: 600, color: "#dc2626", background: "#fef2f2",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <LuLogOut size={15} /> Chiqish
+                  </button>
+                </>
+              ) : (
+                <>
+                  <NavLink
+                    to="/login"
+                    onClick={() => setOpen(false)}
+                    style={{
+                      flex: 1, textDecoration: "none",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      gap: 6, padding: "12px", borderRadius: 11, fontSize: 14,
+                      fontWeight: 600, color: "#374151",
+                      border: "1.5px solid #e5e7eb", background: "#fff",
+                    }}
+                  >
+                    <LuUser size={15} /> Kirish
+                  </NavLink>
+                  <NavLink
+                    to="/post-ad"
+                    onClick={() => setOpen(false)}
+                    style={{
+                      flex: 1, textDecoration: "none",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      gap: 6, padding: "12px", borderRadius: 11, fontSize: 14,
+                      fontWeight: 700, color: "#fff",
+                      background: "linear-gradient(135deg,#dc2626,#b91c1c)",
+                      boxShadow: "0 3px 12px rgba(220,38,38,0.3)",
+                    }}
+                  >
+                    <LuPlus size={15} strokeWidth={2.5} /> E'lon berish
+                  </NavLink>
+                </>
+              )}
             </div>
           </div>
         </div>

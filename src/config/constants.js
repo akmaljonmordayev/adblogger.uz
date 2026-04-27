@@ -34,9 +34,11 @@ export const ROUTE_PATHS = {
   FAQ:            "/faq",
 
   // Auth & foydalanuvchi
-  LOGIN:          "/login",
-  REGISTER:       "/register",
-  PROFILE:        "/profile",
+  LOGIN:           "/login",
+  REGISTER:        "/register",
+  PROFILE:         "/profile",
+  WISHLIST:        "/wishlist",
+  NOTIFICATIONS:   "/notifications",
 
   // Admin
   ADMIN:                "/admin",

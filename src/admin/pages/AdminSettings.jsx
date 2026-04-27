@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "../../components/ui/toast";
 
 /* ─── ICONS ─── */
 const IC = {
@@ -157,11 +158,10 @@ const ACCENTS = [
 export default function AdminSettings() {
   const [tab, setTab] = useState("profile");
   const [editing, setEditing] = useState(false);
-  const [toast, setToast] = useState({ on: false, msg: "", col: "#22C55E" });
-
   const ping = (msg, col = "#22C55E") => {
-    setToast({ on: true, msg, col });
-    setTimeout(() => setToast(t => ({ ...t, on: false })), 2600);
+    if (col === "#ef4444") toast.error(msg);
+    else if (col === "#f59e0b") toast.warning(msg);
+    else toast.success(msg);
   };
 
   /* ── Profile ── */
@@ -857,21 +857,6 @@ export default function AdminSettings() {
 
       </div>
 
-      {/* ── TOAST ── */}
-      <div style={{
-        position: "fixed", bottom: 22, right: 22, zIndex: 9999,
-        background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12,
-        padding: "11px 16px", display: "flex", alignItems: "center", gap: 10,
-        fontSize: 13, fontWeight: 600, color: "#111827",
-        boxShadow: "0 8px 30px rgba(0,0,0,.12)",
-        transition: "all .28s cubic-bezier(.34,1.56,.64,1)",
-        opacity: toast.on ? 1 : 0,
-        transform: toast.on ? "translateY(0) scale(1)" : "translateY(14px) scale(.96)",
-        pointerEvents: toast.on ? "all" : "none",
-      }}>
-        <div style={{ width: 8, height: 8, borderRadius: "50%", background: toast.col, flexShrink: 0 }} />
-        {toast.msg}
-      </div>
     </div>
   );
 }

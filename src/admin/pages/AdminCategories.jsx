@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "../../components/ui/toast";
 
 const COLORS = [
   "from-red-600 to-red-700",
@@ -52,12 +53,11 @@ export default function AdminCategories() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [newCat, setNewCat] = useState({ name: "", icon: "💻", color: 0 });
-  const [toast, setToast] = useState(null);
   const [search, setSearch] = useState("");
 
   const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    if (type === "error") toast.error(msg);
+    else toast.success(msg);
   };
 
   const startEdit = (cat) => {
@@ -402,14 +402,6 @@ export default function AdminCategories() {
         </div>
       )}
 
-      {/* ===== TOAST ===== */}
-      {toast && (
-        <div
-          className={`fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-lg font-semibold text-sm ${toast.type === "error" ? "bg-red-600 text-white" : "bg-green-600 text-white"}`}
-        >
-          {toast.msg}
-        </div>
-      )}
     </div>
   );
 }
