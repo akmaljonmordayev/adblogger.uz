@@ -11,7 +11,8 @@ const categoryController = require('../controllers/categoryController');
 const faqController      = require('../controllers/faqController');
 const careerController   = require('../controllers/careerController');
 const contactController  = require('../controllers/contactController');
-const campaignController = require('../controllers/campaignController');
+const campaignController  = require('../controllers/campaignController');
+const businessController  = require('../controllers/businessController');
 const { uploadBlogImage } = require('../config/cloudinary');
 
 router.use(protect, restrictTo('admin'));
@@ -286,5 +287,8 @@ router.delete('/contacts/:id',       contactController.deleteContact);
 
 // ── Campaigns ──────────────────────────────────────────────────────────────────
 router.get('/campaigns', campaignController.adminGetAllCampaigns);
+
+// ── Businesses ─────────────────────────────────────────────────────────────────
+router.get('/businesses', businessController.adminGetAll);
 
 module.exports = router;

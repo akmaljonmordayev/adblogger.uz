@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef } from "react";
+import { toast } from "../../components/ui/toast";
 
 /* ─── MOCK DATA ─── */
 const INITIAL_ADS = [
@@ -92,26 +93,6 @@ function IconBtn({ onClick, title, icon, hoverBg, hoverColor }) {
   );
 }
 
-/* ─── TOAST ─── */
-function Toast({ toast }) {
-  if (!toast) return null;
-  const cfg = {
-    ok:   { bg:"#F0FDF4", bd:"#BBF7D0", tc:"#166534" },
-    warn: { bg:"#FFF7ED", bd:"#FED7AA", tc:"#9A3412" },
-    err:  { bg:"#FFF1F2", bd:"#FECDD3", tc:"#9F1239" },
-  }[toast.type] || {};
-  return (
-    <div style={{
-      position:"fixed", top:20, right:20, zIndex:99999,
-      padding:"11px 18px", borderRadius:12,
-      border:`1.5px solid ${cfg.bd}`,
-      background:cfg.bg, color:cfg.tc,
-      fontSize:13, fontWeight:600,
-      boxShadow:"0 8px 24px rgba(0,0,0,0.1)",
-      animation:"toastIn 0.22s ease",
-    }}>{toast.msg}</div>
-  );
-}
 
 /* ─── DETAIL MODAL ─── */
 function DetailModal({ ad, onClose, onApprove, onReject, onDelete }) {
@@ -239,11 +220,10 @@ export default function AdminAds() {
   const [selected, setSelected] = useState(new Set());
   const [page, setPage]         = useState(1);
   const [modal, setModal]       = useState(null);
-  const [toast, setToast]       = useState(null);
-
   const notify = useCallback((type, msg) => {
-    setToast({ type, msg });
-    setTimeout(()=>setToast(null), 2600);
+    if (type === "err") toast.error(msg);
+    else if (type === "warn") toast.warning(msg);
+    else toast.success(msg);
   }, []);
 
   /* filtered & sorted */
@@ -324,7 +304,6 @@ export default function AdminAds() {
         .ads-row-sel { background:#EEF2FF !important; }
       `}</style>
 
-      <Toast toast={toast}/>
       <DetailModal
         ad={modal} onClose={()=>setModal(null)}
         onApprove={id=>updateStatus(id,"Faol")}

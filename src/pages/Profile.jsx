@@ -8,9 +8,10 @@ import {
   LuGlobe, LuMapPin, LuUsers, LuDollarSign, LuInfo,
   LuLink, LuBookmark, LuBell, LuChevronRight, LuSend,
 } from "react-icons/lu";
-import { toast } from "react-toastify";
+import { toast } from "../components/ui/toast";
 import { useAuthStore } from "../store/useAuthStore";
 import api from "../services/api";
+import LogoutModal from "../components/ui/LogoutModal";
 
 /* ─── tiny helpers ────────────────────────────────────────────── */
 const inp = (extra = {}) => ({
@@ -106,18 +107,20 @@ const StatusBadge = ({ s }) => {
 /* ══════════════════════════════════════════════════════════════ */
 export default function Profile() {
   const navigate          = useNavigate();
-  const { user, setUser, logout } = useAuthStore();
+  const { user, setUser } = useAuthStore();
 
   const [tab,          setTab]          = useState("personal");
   const [saving,       setSaving]       = useState(false);
   const [saved,        setSaved]        = useState(false);
   const [avatarLoading,setAvatarLoading]= useState(false);
+  const [logoLoading,  setLogoLoading]  = useState(false);
   const [myAds,        setMyAds]        = useState([]);
   const [campaigns,    setCampaigns]    = useState([]);
   const [wishlist,     setWishlist]     = useState([]);
   const [loadingTab,   setLoadingTab]   = useState(false);
   const [bloggerProfile,  setBloggerProfile]  = useState(null);
   const [businessProfile, setBusinessProfile] = useState(null);
+  const [showLogout,   setShowLogout]   = useState(false);
 
   // Personal form
   const [pForm, setPForm] = useState({
@@ -128,6 +131,7 @@ export default function Profile() {
   const [bizForm, setBizForm] = useState({
     companyName: "", companyType: "", description: "", website: "", location: "",
     contactPhone: "", contactEmail: "",
+    logo: "",
     socialLinks: { instagram:"", youtube:"", telegram:"", tiktok:"" },
     targetPlatforms: [],
     targetNiches: [],
@@ -149,14 +153,22 @@ export default function Profile() {
   // Password form
   const [passForm, setPassForm] = useState({ currentPassword:"", newPassword:"", confirmPassword:"" });
 
-  const fileRef = useRef(null);
+  const fileRef    = useRef(null);
+  const logoRef    = useRef(null);
 
   // Redirect
-  useEffect(() => { if (!user) navigate("/login", { replace: true }); }, [user]);
+  useEffect(() => { if (!user && !showLogout) navigate("/login", { replace: true }); }, [user, showLogout]);
 
   // Sync personal form
   useEffect(() => {
     if (user) setPForm({ firstName: user.firstName||"", lastName: user.lastName||"", phone: user.phone||"" });
+  }, [user]);
+
+  // Pre-load role-specific profile for banner stats
+  useEffect(() => {
+    if (!user) return;
+    if (user.role === "business" && !businessProfile) fetchBusinessProfile();
+    if (user.role === "blogger"  && !bloggerProfile)  fetchBloggerProfile();
   }, [user]);
 
   // Load tab data
@@ -185,6 +197,7 @@ export default function Profile() {
           location:      d.location      || "",
           contactPhone:  d.contactPhone  || "",
           contactEmail:  d.contactEmail  || "",
+          logo:          d.logo          || "",
           socialLinks:   { instagram:"", youtube:"", telegram:"", tiktok:"", ...(d.socialLinks||{}) },
           targetPlatforms: d.targetPlatforms || [],
           targetNiches:    d.targetNiches    || [],
@@ -254,6 +267,23 @@ export default function Profile() {
       setUser(r.data.data); toast.success("Avatar yangilandi!");
     } catch { toast.error("Avatar yuklashda xatolik"); }
     finally { setAvatarLoading(false); }
+  };
+
+  // ── Logo upload ───────────────────────────────────────────────
+  const handleLogoChange = async e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2*1024*1024) { toast.error("Logo 2MB dan kichik bo'lsin"); return; }
+    const fd = new FormData(); fd.append("logo", file);
+    setLogoLoading(true);
+    try {
+      const r = await api.patch("/business/me/logo", fd, { headers:{ "Content-Type":"multipart/form-data" } });
+      const d = r.data.data;
+      setBusinessProfile(d);
+      setBizForm(p => ({ ...p, logo: d.logo || "" }));
+      toast.success("Logo yangilandi!");
+    } catch { toast.error("Logo yuklashda xatolik"); }
+    finally { setLogoLoading(false); e.target.value = ""; }
   };
 
   // ── Save personal ─────────────────────────────────────────────
@@ -348,7 +378,7 @@ export default function Profile() {
     toast.success("O'chirildi");
   };
 
-  const handleLogout = () => { logout(); navigate("/"); toast.success("Chiqildi"); };
+  const handleLogout = () => setShowLogout(true);
 
   if (!user) return null;
   const initials = `${user.firstName?.[0]||""}${user.lastName?.[0]||""}`.toUpperCase()||"U";
@@ -371,6 +401,8 @@ export default function Profile() {
   );
 
   return (
+    <>
+    <LogoutModal isOpen={showLogout} onClose={() => setShowLogout(false)} redirectTo="/" />
     <div style={{ fontFamily:"'Inter',sans-serif", maxWidth:960, margin:"0 auto", padding:"0 20px 80px" }}>
       <style>{`
         .spin{animation:spin 1s linear infinite}
@@ -443,6 +475,12 @@ export default function Profile() {
           <p style={{ fontSize:13, color:"rgba(255,255,255,.5)", margin:"0 0 12px" }}>
             {user.email}{user.phone?` · ${user.phone}`:""}
           </p>
+          {user.role === "business" && businessProfile?.companyName && (
+            <p style={{ fontSize:13, color:"rgba(255,255,255,.7)", margin:"-8px 0 10px", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
+              <LuBriefcase size={12}/> {businessProfile.companyName}
+              {businessProfile.companyType && <span style={{ fontSize:11, color:"rgba(255,255,255,.4)", fontWeight:400 }}>· {COMPANY_TYPE_LABELS[businessProfile.companyType]||businessProfile.companyType}</span>}
+            </p>
+          )}
           <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
             <span style={{
               background:"rgba(220,38,38,.2)", color:"#fca5a5",
@@ -459,6 +497,11 @@ export default function Profile() {
             {bloggerProfile?.isVerified && (
               <span style={{ background:"rgba(99,102,241,.2)", color:"#a5b4fc", fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:6 }}>
                 ✓ Verified Blogger
+              </span>
+            )}
+            {businessProfile?.isVerified && (
+              <span style={{ background:"rgba(99,102,241,.2)", color:"#a5b4fc", fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:6, display:"flex", alignItems:"center", gap:3 }}>
+                <LuBadgeCheck size={11}/> Verified Business
               </span>
             )}
           </div>
@@ -882,6 +925,48 @@ export default function Profile() {
               <form onSubmit={saveBusiness}>
                 <SectionTitle sub="Kompaniyangiz haqida to'liq ma'lumot kiriting">Biznes profili</SectionTitle>
 
+                {/* ── Logo upload ── */}
+                <div style={{ display:"flex", alignItems:"center", gap:20, marginBottom:24, padding:"18px 20px", background:"#f8fafc", border:"1.5px solid #e2e8f0", borderRadius:16 }}>
+                  <div style={{ position:"relative", flexShrink:0 }}>
+                    <div style={{
+                      width:72, height:72, borderRadius:16,
+                      background: bizForm.logo ? "transparent" : "linear-gradient(135deg,#1e293b,#374151)",
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      border:"2px solid #e2e8f0", overflow:"hidden",
+                    }}>
+                      {bizForm.logo
+                        ? <img src={bizForm.logo} alt="logo" style={{ width:"100%",height:"100%",objectFit:"cover" }}/>
+                        : <span style={{ fontSize:28 }}>🏢</span>
+                      }
+                    </div>
+                    <button type="button" onClick={()=>logoRef.current?.click()} disabled={logoLoading} style={{
+                      position:"absolute", bottom:-6, right:-6,
+                      width:26, height:26, borderRadius:"50%",
+                      background:logoLoading?"#94a3b8":"#dc2626",
+                      border:"2px solid #fff", cursor:"pointer",
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      boxShadow:"0 2px 8px rgba(0,0,0,.2)",
+                    }}>
+                      {logoLoading
+                        ? <LuLoader size={11} className="spin" style={{ color:"#fff" }}/>
+                        : <LuCamera size={11} style={{ color:"#fff" }}/>
+                      }
+                    </button>
+                    <input ref={logoRef} type="file" accept="image/*" style={{ display:"none" }} onChange={handleLogoChange}/>
+                  </div>
+                  <div style={{ flex:1 }}>
+                    <p style={{ margin:0, fontSize:14, fontWeight:700, color:"#0f172a" }}>Kompaniya logotipi</p>
+                    <p style={{ margin:"4px 0 8px", fontSize:12, color:"#94a3b8" }}>JPG, PNG yoki WebP · Maksimal 2MB</p>
+                    <button type="button" onClick={()=>logoRef.current?.click()} disabled={logoLoading} style={{
+                      padding:"7px 16px", background:"#fff",
+                      border:"1.5px solid #e2e8f0", borderRadius:8,
+                      fontSize:12, fontWeight:600, color:"#374151", cursor:"pointer",
+                    }}>
+                      {bizForm.logo ? "Logoni almashtirish" : "Logo yuklash"}
+                    </button>
+                  </div>
+                </div>
+
                 {/* ── Asosiy ── */}
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
                   <FieldWrap>
@@ -949,7 +1034,7 @@ export default function Profile() {
                 {/* ── Ijtimoiy tarmoqlar ── */}
                 <SectionTitle sub="Kompaniyangizning ijtimoiy sahifalarini kiriting">Ijtimoiy tarmoqlar</SectionTitle>
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                  {PLATFORMS.map(({ id, label, color, bg, Icon }) => (
+                  {PLATFORMS.map(({ id, color, bg, Icon }) => (
                     <div key={id} style={{ display:"flex", alignItems:"center", gap:12 }}>
                       <div style={{ width:38, height:38, borderRadius:10, flexShrink:0, background:bg, display:"flex", alignItems:"center", justifyContent:"center" }}>
                         <Icon size={17} style={{ color }}/>
@@ -1033,7 +1118,7 @@ export default function Profile() {
 
                 {/* Profil to'liqlik */}
                 {(() => {
-                  const fields = [bizForm.companyName, bizForm.companyType, bizForm.description, bizForm.website, bizForm.location, bizForm.contactPhone||bizForm.contactEmail, bizForm.targetPlatforms.length, bizForm.targetNiches.length, bizForm.budgetRange];
+                  const fields = [bizForm.companyName, bizForm.companyType, bizForm.description, bizForm.website, bizForm.location, bizForm.contactPhone||bizForm.contactEmail, bizForm.targetPlatforms.length, bizForm.targetNiches.length, bizForm.budgetRange, bizForm.logo];
                   const filled = fields.filter(Boolean).length;
                   const pct = Math.round((filled/fields.length)*100);
                   return (
@@ -1270,5 +1355,6 @@ export default function Profile() {
         </div>
       </div>
     </div>
+    </>
   );
 }

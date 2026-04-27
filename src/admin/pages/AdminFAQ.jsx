@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
+import { toast } from "../../components/ui/toast";
 // Note: In a real app, you might import CSS modules or styled-components.
 // For this example, I'm using inline styles or a CSS file.
 // I'll create a styles object to mimic the original CSS within JSX.
@@ -362,8 +363,6 @@ const AdminFAQ = () => {
   const [nextId, setNextId] = useState(12);
   const [editingId, setEditingId] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
-  const [toastMessage, setToastMessage] = useState("");
-  const [showToast, setShowToast] = useState(false);
 
   // New FAQ form state
   const [newCat, setNewCat] = useState("bloger");
@@ -371,9 +370,7 @@ const AdminFAQ = () => {
   const [newA, setNewA] = useState("");
 
   const showToastMessage = useCallback((msg) => {
-    setToastMessage(msg);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2200);
+    toast.success(msg);
   }, []);
 
   const renderTabs = useCallback(() => {
@@ -531,7 +528,6 @@ const AdminFAQ = () => {
         </div>
       </div>
 
-      <div style={styles.toast(showToast)}>{toastMessage}</div>
 
       <div style={styles.faqList}>
         {getFilteredFaqs.length === 0 ? (

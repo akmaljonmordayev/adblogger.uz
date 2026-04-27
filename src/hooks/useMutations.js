@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { adsService, blogService } from "../services/dataService";
-import { toast } from "react-toastify";
+import { toast } from "../components/ui/toast";
 
 /**
  * Umumiy Update Hook (Ads yoki Blog uchun)

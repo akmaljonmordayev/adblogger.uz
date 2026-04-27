@@ -5,7 +5,7 @@ import {
   LuCheck, LuMessageCircle, LuInfo, LuLayoutDashboard,
   LuImage, LuVideo, LuX, LuHeart,
 } from "react-icons/lu";
-import { toast } from "react-toastify";
+import { toast } from "../components/ui/toast";
 import { initialBloggers } from "./Bloggers";
 
 export default function BloggerDetail() {

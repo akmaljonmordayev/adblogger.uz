@@ -2,6 +2,7 @@ const express = require('express');
 const router  = express.Router();
 const bc      = require('../controllers/businessController');
 const { protect, restrictTo } = require('../middleware/auth');
+const { uploadAvatar } = require('../config/cloudinary');
 
 router.use(protect, restrictTo('business'));
 
@@ -53,5 +54,6 @@ router.get('/me', bc.getMyProfile);
  *         description: Profil yangilandi
  */
 router.patch('/me', bc.updateMyProfile);
+router.patch('/me/logo', uploadAvatar.single('logo'), bc.uploadLogo);
 
 module.exports = router;

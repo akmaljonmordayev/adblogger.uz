@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { LuEye, LuEyeOff, LuArrowLeft, LuCheck, LuLoader } from "react-icons/lu";
-import { toast } from "react-toastify";
+import { toast } from "../components/ui/toast";
 import { useAuthStore } from "../store/useAuthStore";
 
 const S = {

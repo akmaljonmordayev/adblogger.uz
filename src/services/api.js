@@ -1,5 +1,5 @@
 import axios from "axios";
-import { toast } from "react-toastify";
+import { toast } from "../components/ui/toast";
 
 // Axios instance yaratish
 const api = axios.create({

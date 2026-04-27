@@ -34,6 +34,19 @@ exports.updateMyProfile = catchAsync(async (req, res, next) => {
   res.status(200).json({ success: true, data: biz });
 });
 
+// PATCH /api/v1/business/me/logo
+exports.uploadLogo = catchAsync(async (req, res, next) => {
+  if (!req.file) return next(new AppError('Rasm yuklanmadi.', 400));
+
+  const biz = await Business.findOneAndUpdate(
+    { user: req.user._id },
+    { logo: req.file.path },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  ).populate('user', 'firstName lastName avatar email phone');
+
+  res.status(200).json({ success: true, data: biz });
+});
+
 // ── Admin ──────────────────────────────────────────────────────
 exports.adminGetAll = catchAsync(async (req, res) => {
   const list = await Business.find().populate('user', 'firstName lastName email avatar');

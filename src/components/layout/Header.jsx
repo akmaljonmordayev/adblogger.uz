@@ -1,4 +1,4 @@
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import {
   LuSearch, LuMapPin, LuFlame, LuMenu, LuX,
@@ -8,6 +8,7 @@ import {
   LuHeart, LuBell,
 } from "react-icons/lu";
 import { useAuthStore } from "../../store/useAuthStore";
+import LogoutModal from "../ui/LogoutModal";
 import HeroSwiper from "./HeroSwiper";
 import CategorySection from "./CategorySection";
 
@@ -100,13 +101,13 @@ export default function Header() {
   const menuRef    = useRef(null);
   const userMenuRef = useRef(null);
 
-  const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const [showLogout, setShowLogout] = useState(false);
 
   const handleLogout = () => {
-    logout();
     setUserMenuOpen(false);
-    navigate("/");
+    setOpen(false);
+    setShowLogout(true);
   };
 
   // Close user menu on outside click
@@ -159,6 +160,11 @@ export default function Header() {
 
   return (
     <div className={isHome ? "hero-full-height flex flex-col" : "flex flex-col"}>
+      <LogoutModal
+        isOpen={showLogout}
+        onClose={() => setShowLogout(false)}
+        redirectTo="/"
+      />
 
       {/* ══════════════ STICKY HEADER ══════════════ */}
       <header

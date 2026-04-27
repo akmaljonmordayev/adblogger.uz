@@ -4,7 +4,7 @@ import {
   LuHeart, LuTrash2, LuUser, LuBriefcase,
   LuInstagram, LuYoutube, LuMapPin, LuStar,
 } from "react-icons/lu";
-import { toast } from "react-toastify";
+import { toast } from "../components/ui/toast";
 import { useAuthStore } from "../store/useAuthStore";
 
 const TABS = [
