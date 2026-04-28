@@ -223,7 +223,6 @@ function initials(name) {
   return (p[0][0] + (p[1]?.[0] ?? "")).toUpperCase();
 }
 
-// ─── FIELD ────────────────────────────────────────────────────────────────────
 function Field({ label, children }) {
   return (
     <div>
@@ -235,7 +234,6 @@ function Field({ label, children }) {
   );
 }
 
-// ─── FORM MODAL ───────────────────────────────────────────────────────────────
 function FormModal({ title, data, onSubmit, onClose }) {
   const cats = Object.keys(catMeta);
   const [form, setForm] = useState(
@@ -261,7 +259,6 @@ function FormModal({ title, data, onSubmit, onClose }) {
         className="bg-white rounded-2xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <span className="text-sm font-bold text-gray-800">{title}</span>
           <button
@@ -272,7 +269,6 @@ function FormModal({ title, data, onSubmit, onClose }) {
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-5 flex flex-col gap-3">
           <Field label="Sarlavha *">
             <input
@@ -345,7 +341,6 @@ function FormModal({ title, data, onSubmit, onClose }) {
           </Field>
         </div>
 
-        {/* Footer */}
         <div className="px-5 pb-5 flex justify-end gap-2">
           <button
             onClick={onClose}
@@ -366,14 +361,12 @@ function FormModal({ title, data, onSubmit, onClose }) {
   );
 }
 
-// ─── MAIN ─────────────────────────────────────────────────────────────────────
 const AdminBlogs = () => {
   const [posts, setPosts] = useState(initialPosts);
   const [search, setSearch] = useState("");
   const [cat, setCat] = useState("Barchasi");
   const [tab, setTab] = useState("all");
   const [deleteTarget, setDelete] = useState(null);
-  const [editTarget, setEdit] = useState(null);
   const [viewTarget, setView] = useState(null);
   const [addOpen, setAdd] = useState(false);
   const notify = (msg, type = "ok") => {
@@ -397,12 +390,6 @@ const AdminBlogs = () => {
     setPosts((ps) => ps.filter((p) => p.id !== id));
     setDelete(null);
     notify("Maqola o'chirildi", "err");
-  };
-
-  const doSave = (updated) => {
-    setPosts((ps) => ps.map((p) => (p.id === updated.id ? updated : p)));
-    setEdit(null);
-    notify("Saqlandi");
   };
 
   const doAdd = (form) => {
@@ -441,7 +428,6 @@ const AdminBlogs = () => {
       {/* ─── NAVBAR ─── */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-[1160px] mx-auto px-7 h-14 flex items-center gap-5">
-          {/* Brand */}
           <div className="flex items-center gap-2 mr-2 shrink-0">
             <div className="w-[26px] h-[26px] bg-red-600 rounded-lg flex items-center justify-center">
               <svg width="12" height="12" fill="white" viewBox="0 0 24 24">
@@ -453,7 +439,6 @@ const AdminBlogs = () => {
             </span>
           </div>
 
-          {/* Tabs */}
           <div className="flex bg-gray-100 rounded-lg p-0.5 gap-0.5">
             {[
               ["all", "Barchasi", posts.length],
@@ -481,7 +466,6 @@ const AdminBlogs = () => {
             ))}
           </div>
 
-          {/* Search */}
           <div className="relative flex-1 max-w-[280px]">
             <svg
               className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -503,12 +487,10 @@ const AdminBlogs = () => {
             />
           </div>
 
-          {/* Count */}
           <span className="text-xs text-gray-300 font-mono whitespace-nowrap">
             {filtered.length}/{posts.length}
           </span>
 
-          {/* Add */}
           <button
             onClick={() => setAdd(true)}
             className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-colors"
@@ -528,7 +510,6 @@ const AdminBlogs = () => {
           </button>
         </div>
 
-        {/* Category filters */}
         <div className="max-w-[1160px] mx-auto px-7 pb-2.5 flex flex-wrap gap-1.5">
           {allCats.map((c) => (
             <button
@@ -548,7 +529,6 @@ const AdminBlogs = () => {
 
       {/* ─── MAIN ─── */}
       <main className="max-w-[1160px] mx-auto px-7 py-6">
-        {/* Stat Cards */}
         <div className="grid grid-cols-4 gap-3 mb-5">
           {[
             { label: "Jami", val: posts.length, cls: "text-indigo-500" },
@@ -576,7 +556,6 @@ const AdminBlogs = () => {
           ))}
         </div>
 
-        {/* Table */}
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           {filtered.length === 0 ? (
             <div className="text-center py-16 text-gray-300 text-sm">
@@ -683,7 +662,7 @@ const AdminBlogs = () => {
                         </div>
                       </td>
 
-                      {/* Actions */}
+                      {/* Actions — faqat ko'rish va o'chirish */}
                       <td className="px-4 py-2.5">
                         <div className="flex gap-0.5">
                           <button
@@ -701,23 +680,6 @@ const AdminBlogs = () => {
                             >
                               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                               <circle cx="12" cy="12" r="3" />
-                            </svg>
-                          </button>
-                          <button
-                            title="Tahrirlash"
-                            onClick={() => setEdit({ ...post })}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-yellow-50 hover:text-yellow-600 transition-all"
-                          >
-                            <svg
-                              width="13"
-                              height="13"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
                           </button>
                           <button
@@ -862,15 +824,7 @@ const AdminBlogs = () => {
         </div>
       )}
 
-      {/* ─── EDIT / ADD MODAL ─── */}
-      {editTarget && (
-        <FormModal
-          title="Tahrirlash"
-          data={editTarget}
-          onSubmit={doSave}
-          onClose={() => setEdit(null)}
-        />
-      )}
+      {/* ─── ADD MODAL ─── */}
       {addOpen && (
         <FormModal
           title="Yangi maqola"

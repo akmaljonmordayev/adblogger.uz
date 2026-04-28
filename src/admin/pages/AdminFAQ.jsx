@@ -1,8 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
-import { toast } from "../../components/ui/toast";
-// Note: In a real app, you might import CSS modules or styled-components.
-// For this example, I'm using inline styles or a CSS file.
-// I'll create a styles object to mimic the original CSS within JSX.
+
 
 const styles = {
   container: {
