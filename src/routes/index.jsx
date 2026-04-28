@@ -43,7 +43,6 @@ import AdminBloggers    from "../admin/pages/AdminBloggers";
 import AdminAds         from "../admin/pages/AdminAds";
 import AdminBlogs       from "../admin/pages/AdminBlogs";
 import AdminCategories  from "../admin/pages/AdminCategories";
-import AdminPricing     from "../admin/pages/AdminPricing";
 import AdminCareer      from "../admin/pages/AdminCareer";
 import AdminContact     from "../admin/pages/AdminContact";
 import AdminFAQ         from "../admin/pages/AdminFAQ";
@@ -102,7 +101,6 @@ export const router = createBrowserRouter([
       { path: ROUTE_PATHS.ADMIN_ADS,                    element: <AdminAds /> },
       { path: ROUTE_PATHS.ADMIN_BLOGS,                  element: <AdminBlogs /> },
       { path: ROUTE_PATHS.ADMIN_CATEGORIES,             element: <AdminCategories /> },
-      { path: ROUTE_PATHS.ADMIN_PRICING,                element: <AdminPricing /> },
       { path: ROUTE_PATHS.ADMIN_CAREER,                 element: <AdminCareer /> },
       { path: ROUTE_PATHS.ADMIN_CONTACT,                element: <AdminContact /> },
       { path: ROUTE_PATHS.ADMIN_FAQ,                    element: <AdminFAQ /> },
