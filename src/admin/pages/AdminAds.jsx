@@ -1,536 +1,346 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
-import { toast } from "../../components/ui/toast";
+import React, { useState, useMemo } from "react";
 
-/* ─── MOCK DATA ─── */
+/* ─── KENGAYTIRILGAN MOCK DATA (Barcha maydonlar bilan) ─── */
 const INITIAL_ADS = [
-  { id:1,  title:"iPhone 15 Pro Max batafsil sharhi",  price:15000000, author:"MrBeast",          status:"Kutilmoqda",  date:"2026-04-22", category:"Texnologiya", views:1240 },
-  { id:2,  title:"MacBook M2 Pro — loyiq mi?",          price:12000000, author:"Marques Brownlee", status:"Faol",        date:"2026-04-21", category:"Texnologiya", views:8820 },
-  { id:3,  title:"Kundalik vlog: Nyu-York",             price:400000,   author:"Casey Neistat",    status:"Rad etilgan", date:"2026-04-20", category:"Vlog",        views:302  },
-  { id:4,  title:"Samsung Galaxy S24 Ultra test",       price:9500000,  author:"Linus Tech Tips",  status:"Kutilmoqda",  date:"2026-04-19", category:"Texnologiya", views:540  },
-  { id:5,  title:"Ovqat pishirish — 10 daqiqada",      price:1200000,  author:"Tasty Uzbekistan", status:"Faol",        date:"2026-04-18", category:"Ovqat",       views:3100 },
-  { id:6,  title:"Fitness dasturi: 30 kun",             price:2500000,  author:"AthleanX",         status:"Faol",        date:"2026-04-17", category:"Sport",       views:4500 },
-  { id:7,  title:"DJI Mavic 3 Pro unboxing",            price:7800000,  author:"Peter McKinnon",   status:"Kutilmoqda",  date:"2026-04-16", category:"Foto/Video",  views:980  },
-  { id:8,  title:"Python dasturlash asoslari",          price:3200000,  author:"Tech With Tim",    status:"Faol",        date:"2026-04-15", category:"Ta'lim",      views:6700 },
-  { id:9,  title:"Sayohat: Maldiv orollari",            price:18000000, author:"Lost LeBlancs",    status:"Rad etilgan", date:"2026-04-14", category:"Sayohat",     views:220  },
-  { id:10, title:"Sony WH-1000XM5 tahlil",              price:5500000,  author:"Headphones Addict",status:"Kutilmoqda",  date:"2026-04-13", category:"Audio",       views:410  },
-  { id:11, title:"Minecraft survival challenge",        price:800000,   author:"Dream",            status:"Faol",        date:"2026-04-12", category:"O'yin",       views:9900 },
-  { id:12, title:"Adobe Premiere Pro darslari",         price:4100000,  author:"Justin Odisho",    status:"Faol",        date:"2026-04-11", category:"Ta'lim",      views:2200 },
+  {
+    id: "B-001",
+    userType: "blogger",
+    status: "Kutilmoqda",
+    date: "2026-04-28",
+    name: "Alisher Uzoqov",
+    phone: "+998 90 123 45 67",
+    platforms: ["Instagram", "Telegram"],
+    followers: "100k - 500k",
+    niches: ["Lifestyle", "Texnologiya", "Gaming"],
+    services: ["Post (feed)", "Story", "Reel / Shorts"],
+    prices: { post: "1,200,000", story: "600,000", video: "3,000,000" },
+    portfolio: "https://portfolio.uz/alisher",
+    about: "Asosan texnologiya va gadjetlar haqida sifatli kontent tayyorlayman.",
+  },
+  {
+    id: "B-002",
+    userType: "blogger",
+    status: "Faol",
+    date: "2026-04-27",
+    name: "Sardor Tech",
+    phone: "+998 91 777 88 99",
+    platforms: ["YouTube", "Instagram"],
+    followers: "500k - 1M",
+    niches: ["Texnologiya", "Review"],
+    services: ["Video review", "Shorts"],
+    prices: { post: "2,000,000", story: "800,000", video: "5,000,000" },
+    portfolio: "https://portfolio.uz/sardor",
+    about: "Smartfon va texnika reviewlari bilan shug‘ullanaman.",
+  },
+  {
+    id: "B-003",
+    userType: "blogger",
+    status: "Faol",
+    date: "2026-04-25",
+    name: "Madina Life",
+    phone: "+998 93 555 44 33",
+    platforms: ["Instagram"],
+    followers: "50k - 100k",
+    niches: ["Lifestyle", "Beauty"],
+    services: ["Post", "Story"],
+    prices: { post: "700,000", story: "300,000", video: "1,500,000" },
+    portfolio: "https://portfolio.uz/madina",
+    about: "Beauty va kundalik hayot haqida kontent qilaman.",
+  },
+   {
+    id: "C-102",
+    userType: "business",
+    status: "Faol",
+    date: "2026-04-28",
+    companyName: "Shirin Zavodi",
+    contactPerson: "E'zoza Rahmonova",
+    phone: "+998 99 888 77 66",
+    activityType: "Oziq-ovqat",
+    productName: "Shirin Premium konfetlari",
+    productDesc: "Yangi turdagi shokoladli konfetlar, shakarsiz va tabiiy.",
+    reqPlatforms: ["Instagram", "YouTube"],
+    reqBloggerTypes: ["Food bloger", "Lifestyle bloger"],
+    targetAudience: "20-35 yosh, ayollar",
+    budget: "10,000,000",
+    duration: "1 oy",
+    location: "Toshkent sh.",
+    goal: "Brend taniqliligini oshirish",
+  },
+  {
+    id: "C-103",
+    userType: "business",
+    status: "Kutilmoqda",
+    date: "2026-04-26",
+    companyName: "Tech Market",
+    contactPerson: "Jasur Aliyev",
+    phone: "+998 90 999 00 11",
+    activityType: "Elektronika",
+    productName: "Smartfonlar",
+    productDesc: "Yangi model smartfonlar arzon narxda.",
+    reqPlatforms: ["YouTube", "Telegram"],
+    reqBloggerTypes: ["Texno bloger"],
+    targetAudience: "18-40 yosh",
+    budget: "20,000,000",
+    duration: "2 oy",
+    location: "Toshkent",
+    goal: "Sotuvni oshirish",
+  },
+  {
+    id: "C-104",
+    userType: "business",
+    status: "Faol",
+    date: "2026-04-24",
+    companyName: "FitLife",
+    contactPerson: "Dilnoza Karimova",
+    phone: "+998 97 222 33 44",
+    activityType: "Sport / Fitness",
+    productName: "Fitness abonement",
+    productDesc: "Ayollar uchun maxsus fitness dasturi.",
+    reqPlatforms: ["Instagram"],
+    reqBloggerTypes: ["Fitness bloger", "Lifestyle bloger"],
+    targetAudience: "18-35 yosh, ayollar",
+    budget: "8,000,000",
+    duration: "1 oy",
+    location: "Toshkent",
+    goal: "Yangi mijoz jalb qilish",
+  }
 ];
 
-const PAGE_SIZE = 8;
+/* ─── YORDAMCHI KOMPONENTLAR ─── */
+const Badge = ({ text, color = "#475569", bg = "#F1F5F9" }) => (
+  <span style={{ padding: "4px 10px", background: bg, borderRadius: 8, fontSize: 11, fontWeight: 700, color: color, border: "1px solid rgba(0,0,0,0.05)", marginRight: 4, marginBottom: 4, display: "inline-block" }}>
+    {text}
+  </span>
+);
 
-/* ─── HELPERS ─── */
-const fmt    = n => Number(n).toLocaleString("uz-UZ");
-const fmtM   = n => (n / 1_000_000).toFixed(1) + "M";
-const ini    = name => name.split(" ").slice(0,2).map(w=>w[0]).join("").toUpperCase();
-
-const AVA_COLORS = ["#6366F1","#F43F5E","#F97316","#10B981","#8B5CF6","#0EA5E9","#EC4899","#14B8A6"];
-const avaColor  = name => AVA_COLORS[name.charCodeAt(0) % AVA_COLORS.length];
-
-const STATUS_CFG = {
-  "Faol":        { bg:"#F0FDF4", tc:"#166534", dot:"#22C55E", bd:"#BBF7D0", label:"Faol"        },
-  "Kutilmoqda":  { bg:"#FFF7ED", tc:"#9A3412", dot:"#F97316", bd:"#FED7AA", label:"Kutilmoqda"  },
-  "Rad etilgan": { bg:"#FFF1F2", tc:"#9F1239", dot:"#F43F5E", bd:"#FECDD3", label:"Rad etilgan" },
+const StatusBadge = ({ status }) => {
+  const styles = {
+    "Kutilmoqda": { bg: "#FFFBEB", text: "#D97706" },
+    "Faol": { bg: "#ECFDF5", text: "#059669" },
+    "Rad etilgan": { bg: "#FEF2F2", text: "#DC2626" }
+  };
+  const s = styles[status] || styles["Kutilmoqda"];
+  return <Badge text={status} color={s.text} bg={s.bg} />;
 };
 
-/* ─── SMALL COMPONENTS ─── */
-function Pill({ status }) {
-  const c = STATUS_CFG[status] || STATUS_CFG["Kutilmoqda"];
-  return (
-    <span style={{
-      display:"inline-flex", alignItems:"center", gap:5,
-      background:c.bg, color:c.tc, border:`1px solid ${c.bd}`,
-      padding:"3px 10px", borderRadius:99,
-      fontSize:11, fontWeight:700, whiteSpace:"nowrap",
-    }}>
-      <span style={{width:6,height:6,borderRadius:"50%",background:c.dot,flexShrink:0}}/>
-      {c.label}
-    </span>
-  );
-}
+const SectionTitle = ({ children }) => (
+  <div style={{ fontSize: 11, fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 24, marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
+    {children} <div style={{ flex: 1, height: "1px", background: "#F1F5F9" }}></div>
+  </div>
+);
 
-function Ava({ name, size=32 }) {
-  const col = avaColor(name);
-  return (
-    <div style={{
-      width:size, height:size, borderRadius:"50%", flexShrink:0,
-      background:col+"22", border:`1.5px solid ${col}44`,
-      display:"flex", alignItems:"center", justifyContent:"center",
-      fontSize:size*0.35, fontWeight:800, color:col,
-    }}>{ini(name)}</div>
-  );
-}
-
-function StatCard({ label, value, sub, accent }) {
-  return (
-    <div style={{
-      background:"#fff", borderRadius:18, padding:"18px 22px",
-      border:"1.5px solid #E9ECF2",
-      boxShadow:"0 1px 4px rgba(0,0,0,0.04)",
-    }}>
-      <div style={{fontSize:11,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>{label}</div>
-      <div style={{fontSize:26,fontWeight:800,color:accent||"#0F172A",lineHeight:1,marginBottom:4}}>{value}</div>
-      {sub && <div style={{fontSize:12,color:"#94A3B8"}}>{sub}</div>}
-    </div>
-  );
-}
-
-function IconBtn({ onClick, title, icon, hoverBg, hoverColor }) {
-  const [h,setH] = useState(false);
-  return (
-    <button onClick={onClick} title={title}
-      onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
-      style={{
-        width:30, height:30, borderRadius:8,
-        border:`1.5px solid ${h ? hoverBg+"88" : "#E9ECF2"}`,
-        background:h ? hoverBg+"22" : "#fff",
-        color:h ? hoverColor : "#94A3B8",
-        cursor:"pointer", display:"flex", alignItems:"center",
-        justifyContent:"center", transition:"all 0.14s", flexShrink:0,
-        fontFamily:"inherit",
-      }}
-    >{icon}</button>
-  );
-}
-
-
-/* ─── DETAIL MODAL ─── */
-function DetailModal({ ad, onClose, onApprove, onReject, onDelete }) {
+/* ─── BATAFSIL MODAL (Restored all fields) ─── */
+function DetailModal({ ad, onClose, onAction }) {
   if (!ad) return null;
-  const c = STATUS_CFG[ad.status] || STATUS_CFG["Kutilmoqda"];
+  const isBlogger = ad.userType === "blogger";
 
   return (
-    <div onClick={e => { if (e.target===e.currentTarget) onClose(); }} style={{
-      position:"fixed", inset:0, zIndex:9999,
-      background:"rgba(15,23,42,0.55)", backdropFilter:"blur(6px)",
-      display:"flex", alignItems:"center", justifyContent:"center", padding:24,
-    }}>
-      <div style={{
-        background:"#fff", borderRadius:24, width:"100%", maxWidth:480,
-        maxHeight:"90vh", display:"flex", flexDirection:"column",
-        boxShadow:"0 32px 80px rgba(0,0,0,0.22)", overflow:"hidden",
-      }}>
-        {/* header */}
-        <div style={{
-          padding:"20px 24px 16px", borderBottom:"1px solid #F1F5F9",
-          display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexShrink:0,
-        }}>
+    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,23,42,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: "#fff", borderRadius: 28, width: "100%", maxWidth: 650, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", position: "relative" }}>
+        
+        {/* Header */}
+        <div style={{ padding: "24px 32px", borderBottom: "1px solid #F1F5F9", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "rgba(255,255,255,0.9)", backdropFilter: "blur(10px)", zIndex: 10 }}>
           <div>
-            <div style={{fontSize:16,fontWeight:800,color:"#0F172A",marginBottom:3}}>E'lon #{ad.id}</div>
-            <div style={{fontSize:12,color:"#94A3B8"}}>{ad.category} · {ad.date}</div>
-          </div>
-          <button onClick={onClose} style={{
-            width:32,height:32,borderRadius:10,border:"1.5px solid #E2E8F0",
-            background:"#F8FAFC",cursor:"pointer",display:"flex",
-            alignItems:"center",justifyContent:"center",fontSize:14,color:"#94A3B8",
-            fontFamily:"inherit",
-          }}>✕</button>
-        </div>
-
-        {/* body */}
-        <div style={{overflowY:"auto",flex:1,padding:"20px 24px"}}>
-          {/* title */}
-          <div style={{
-            background:"#F8FAFC", border:"1.5px solid #F1F5F9",
-            borderLeft:"3px solid #6366F1",
-            borderRadius:"0 12px 12px 0", padding:"12px 16px", marginBottom:18,
-            fontSize:15, fontWeight:700, color:"#0F172A", lineHeight:1.5,
-          }}>{ad.title}</div>
-
-          {/* author */}
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18,padding:"12px 16px",background:"#F8FAFC",borderRadius:14,border:"1.5px solid #F1F5F9"}}>
-            <Ava name={ad.author} size={44}/>
-            <div>
-              <div style={{fontSize:14,fontWeight:700,color:"#0F172A"}}>{ad.author}</div>
-              <div style={{fontSize:12,color:"#94A3B8",marginTop:2}}>Bloger</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ padding: "6px 14px", borderRadius: 10, background: isBlogger ? "#EEF2FF" : "#FFF7ED", color: isBlogger ? "#4F46E5" : "#EA580C", fontSize: 12, fontWeight: 800 }}>
+                {isBlogger ? "🤳 BLOGER" : "💼 BIZNES"}
+              </span>
+              <span style={{ fontSize: 14, color: "#94A3B8", fontWeight: 600 }}>ID: {ad.id}</span>
             </div>
           </div>
+          <button onClick={onClose} style={{ border: "none", background: "#F1F5F9", width: 36, height: 36, borderRadius: "50%", cursor: "pointer", fontWeight: "bold", color: "#64748B" }}>✕</button>
+        </div>
 
-          {/* grid info */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:18}}>
-            {[
-              {icon:"💰", label:"Narx",       val:`${fmt(ad.price)} so'm`},
-              {icon:"👁", label:"Ko'rishlar",  val:fmt(ad.views)},
-              {icon:"🏷",  label:"Kategoriya", val:ad.category},
-              {icon:"📅", label:"Sana",        val:ad.date},
-            ].map(r=>(
-              <div key={r.label} style={{background:"#F8FAFC",border:"1.5px solid #F1F5F9",borderRadius:12,padding:"11px 14px",display:"flex",alignItems:"flex-start",gap:9}}>
-                <span style={{fontSize:18,marginTop:1}}>{r.icon}</span>
-                <div>
-                  <div style={{fontSize:10,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:2}}>{r.label}</div>
-                  <div style={{fontSize:13,fontWeight:700,color:"#1E293B"}}>{r.val}</div>
+        <div style={{ padding: "0 32px 32px" }}>
+          {isBlogger ? (
+            <>
+              <SectionTitle>Shaxsiy ma'lumotlar</SectionTitle>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Ism-familiya</label><div style={{ fontWeight: 700, fontSize: 16 }}>{ad.name}</div></div>
+                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Telefon</label><div style={{ fontWeight: 700, fontSize: 16 }}>{ad.phone}</div></div>
+              </div>
+
+              <SectionTitle>Platformalar va Obunachilar</SectionTitle>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Platformalar</label>
+                  <div style={{ marginTop: 6 }}>{ad.platforms.map(p => <Badge key={p} text={p} bg="#F8FAFC" />)}</div>
+                </div>
+                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Obunachilar soni</label><div style={{ fontWeight: 700 }}>{ad.followers}</div></div>
+              </div>
+
+              <div style={{ marginTop: 15 }}>
+                <label style={{ fontSize: 12, color: "#94A3B8" }}>Nishalar (Yo'nalishlar)</label>
+                <div style={{ marginTop: 6 }}>{ad.niches.map(n => <Badge key={n} text={n} bg="#EEF2FF" color="#4F46E5" />)}</div>
+              </div>
+
+              <SectionTitle>Xizmatlar va Narxlar (so'm)</SectionTitle>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                {Object.entries(ad.prices).map(([key, val]) => (
+                  <div key={key} style={{ padding: 12, background: "#F8FAFC", borderRadius: 16, border: "1px solid #F1F5F9" }}>
+                    <div style={{ fontSize: 10, color: "#94A3B8", textTransform: "uppercase", fontWeight: 800 }}>{key}</div>
+                    <div style={{ fontWeight: 800, color: "#1E293B", fontSize: 15 }}>{val}</div>
+                  </div>
+                ))}
+              </div>
+
+              <SectionTitle>Qo'shimcha</SectionTitle>
+              <div style={{ marginBottom: 16 }}><label style={{ fontSize: 12, color: "#94A3B8" }}>Portfolio</label>
+                <div><a href={ad.portfolio} target="_blank" rel="noreferrer" style={{ color: "#4F46E5", fontWeight: 600, textDecoration: "none" }}>{ad.portfolio}</a></div>
+              </div>
+              <div><label style={{ fontSize: 12, color: "#94A3B8" }}>O'zi haqida</label>
+                <p style={{ fontSize: 14, lineHeight: 1.6, color: "#475569", marginTop: 6, background: "#F8FAFC", padding: 12, borderRadius: 12 }}>{ad.about}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <SectionTitle>Kompaniya va Aloqa</SectionTitle>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Brend nomi</label><div style={{ fontWeight: 700, fontSize: 16 }}>{ad.companyName}</div></div>
+                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Aloqa shaxsi</label><div style={{ fontWeight: 700 }}>{ad.contactPerson}</div></div>
+                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Telefon</label><div style={{ fontWeight: 700 }}>{ad.phone}</div></div>
+                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Faoliyat turi</label><div style={{ fontWeight: 700 }}>{ad.activityType}</div></div>
+              </div>
+
+              <SectionTitle>Mahsulot va Kampaniya</SectionTitle>
+              <div style={{ background: "#FFF7ED", padding: 16, borderRadius: 16, marginBottom: 16 }}>
+                <div style={{ fontWeight: 800, color: "#9A3412", fontSize: 16, marginBottom: 4 }}>{ad.productName}</div>
+                <p style={{ fontSize: 14, color: "#475569", lineHeight: 1.5, margin: 0 }}>{ad.productDesc}</p>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Platformalar</label>
+                  <div style={{ marginTop: 4 }}>{ad.reqPlatforms.map(p => <Badge key={p} text={p} bg="#fff" />)}</div>
+                </div>
+                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Bloger turi</label>
+                  <div style={{ marginTop: 4 }}>{ad.reqBloggerTypes.map(b => <Badge key={b} text={b} bg="#fff" />)}</div>
                 </div>
               </div>
-            ))}
-          </div>
 
-          {/* status */}
-          <div style={{marginBottom:20}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Joriy holat</div>
-            <Pill status={ad.status}/>
-          </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 16 }}>
+                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Budjet</label><div style={{ fontWeight: 800, color: "#059669", fontSize: 18 }}>{ad.budget} so'm</div></div>
+                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Joylashuv</label><div style={{ fontWeight: 700 }}>{ad.location}</div></div>
+              </div>
 
-          {/* actions */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-            {[
-              {label:"✓ Tasdiqlash", st:"Faol",        bg:"#F0FDF4",tc:"#166534",bd:"#22C55E"},
-              {label:"✕ Rad etish",  st:"Rad etilgan", bg:"#FFF1F2",tc:"#9F1239",bd:"#F43F5E"},
-            ].map(btn=>{
-              const active = ad.status === btn.st;
-              return (
-                <button key={btn.st}
-                  onClick={()=>{ btn.st==="Faol" ? onApprove(ad.id) : onReject(ad.id); }}
-                  style={{
-                    padding:"11px",borderRadius:12,cursor:"pointer",fontFamily:"inherit",
-                    border:`1.5px solid ${active ? btn.bd : "#E9ECF2"}`,
-                    background:active ? btn.bg : "#fff",
-                    color:active ? btn.tc : "#64748B",
-                    fontSize:13,fontWeight:700,transition:"all 0.14s",
-                  }}
-                  onMouseEnter={e=>{ if(!active){e.currentTarget.style.borderColor=btn.bd;e.currentTarget.style.background=btn.bg+"66";}}}
-                  onMouseLeave={e=>{ if(!active){e.currentTarget.style.borderColor="#E9ECF2";e.currentTarget.style.background="#fff";}}}
-                >{btn.label}</button>
-              );
-            })}
-          </div>
+              <div style={{ marginTop: 16 }}>
+                <label style={{ fontSize: 12, color: "#94A3B8" }}>Maqsadli auditoriya</label>
+                <div style={{ fontSize: 14, color: "#1E293B", fontWeight: 600, marginTop: 4 }}>{ad.targetAudience}</div>
+              </div>
+            </>
+          )}
 
-          <button
-            onClick={()=>{ onDelete(ad.id); onClose(); }}
-            style={{
-              width:"100%",marginTop:8,padding:"11px",borderRadius:12,cursor:"pointer",
-              border:"1.5px solid #FECDD3",background:"#FFF1F2",
-              color:"#9F1239",fontSize:13,fontWeight:700,fontFamily:"inherit",
-              transition:"all 0.14s",
-            }}
-            onMouseEnter={e=>{e.currentTarget.style.background="#FFE4E6";}}
-            onMouseLeave={e=>{e.currentTarget.style.background="#FFF1F2";}}
-          >🗑 E'lonni o'chirish</button>
+          {/* Action Buttons */}
+          <div style={{ display: "flex", gap: 12, marginTop: 40 }}>
+            {ad.status === "Kutilmoqda" ? (
+              <>
+                <button onClick={() => onAction(ad.id, "Faol")} style={{ flex: 1, padding: "16px", borderRadius: 16, border: "none", background: "#10B981", color: "#fff", fontWeight: 800, cursor: "pointer", boxShadow: "0 10px 15px -3px rgba(16,185,129,0.3)" }}>TASDIQLASH</button>
+                <button onClick={() => onAction(ad.id, "Rad etilgan")} style={{ flex: 1, padding: "16px", borderRadius: 16, border: "none", background: "#F43F5E", color: "#fff", fontWeight: 800, cursor: "pointer", boxShadow: "0 10px 15px -3px rgba(244,63,94,0.3)" }}>RAD ETISH</button>
+              </>
+            ) : (
+              <button onClick={onClose} style={{ flex: 1, padding: "16px", borderRadius: 16, border: "1px solid #E2E8F0", background: "#fff", color: "#64748B", fontWeight: 800, cursor: "pointer" }}>YOPISH</button>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/* ─── MAIN ─── */
-export default function AdminAds() {
-  const [ads, setAds]           = useState(INITIAL_ADS);
-  const [search, setSearch]     = useState("");
-  const [statusF, setStatusF]   = useState("all");
-  const [sort, setSort]         = useState("newest");
-  const [selected, setSelected] = useState(new Set());
-  const [page, setPage]         = useState(1);
-  const [modal, setModal]       = useState(null);
-  const notify = useCallback((type, msg) => {
-    if (type === "err") toast.error(msg);
-    else if (type === "warn") toast.warning(msg);
-    else toast.success(msg);
-  }, []);
+/* ─── ASOSIY DASHBOARD ─── */
+export default function AdminDashboard() {
+  const [ads, setAds] = useState(INITIAL_ADS);
+  const [activeTab, setActiveTab] = useState("blogger");
+  const [selectedAd, setSelectedAd] = useState(null);
 
-  /* filtered & sorted */
-  const filtered = useMemo(()=>{
-    const q = search.toLowerCase();
-    let res = ads.filter(a=>{
-      const mq = a.title.toLowerCase().includes(q) || a.author.toLowerCase().includes(q);
-      const ms = statusF==="all" || a.status===statusF;
-      return mq && ms;
-    });
-    if (sort==="newest")     res.sort((a,b)=>new Date(b.date)-new Date(a.date));
-    if (sort==="oldest")     res.sort((a,b)=>new Date(a.date)-new Date(b.date));
-    if (sort==="price_desc") res.sort((a,b)=>b.price-a.price);
-    if (sort==="price_asc")  res.sort((a,b)=>a.price-b.price);
-    if (sort==="views")      res.sort((a,b)=>b.views-a.views);
-    return res;
-  },[ads,search,statusF,sort]);
+  const stats = useMemo(() => ({
+    total: ads.length,
+    pending: ads.filter(a => a.status === "Kutilmoqda").length,
+    active: ads.filter(a => a.status === "Faol").length,
+  }), [ads]);
 
-  const totalPages = Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
-  const safePage   = Math.min(page,totalPages);
-  const pageItems  = filtered.slice((safePage-1)*PAGE_SIZE, safePage*PAGE_SIZE);
+  const list = useMemo(() => ads.filter(a => a.userType === activeTab), [ads, activeTab]);
 
-  /* actions */
-  const updateStatus = useCallback((id, st)=>{
-    setAds(p=>p.map(a=>a.id===id?{...a,status:st}:a));
-    setModal(p=>p?.id===id?{...p,status:st}:p);
-    notify(st==="Faol"?"ok":"warn", `Status: ${st}`);
-  },[notify]);
-
-  const deleteAd = useCallback((id)=>{
-    setAds(p=>p.filter(a=>a.id!==id));
-    setSelected(p=>{ const s=new Set(p); s.delete(id); return s; });
-    setModal(p=>p?.id===id?null:p);
-    notify("err","E'lon o'chirildi");
-  },[notify]);
-
-  const bulkAction = (action)=>{
-    if (!selected.size) return;
-    const cnt = selected.size;
-    if (action==="delete"){
-      setAds(p=>p.filter(a=>!selected.has(a.id)));
-      notify("err",`${cnt} ta e'lon o'chirildi`);
-    } else {
-      setAds(p=>p.map(a=>selected.has(a.id)?{...a,status:action}:a));
-      notify("ok",`${cnt} ta e'lon yangilandi`);
-    }
-    setSelected(new Set());
+  const handleAction = (id, newStatus) => {
+    setAds(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
+    setSelectedAd(null);
   };
 
-  const toggleOne = (id,checked)=>setSelected(p=>{const s=new Set(p);checked?s.add(id):s.delete(id);return s;});
-  const toggleAll = checked=>setSelected(p=>{const s=new Set(p);pageItems.forEach(a=>checked?s.add(a.id):s.delete(a.id));return s;});
-  const allChecked  = pageItems.length>0 && pageItems.every(a=>selected.has(a.id));
-  const someChecked = pageItems.some(a=>selected.has(a.id));
-
-  /* stats */
-  const faolC  = ads.filter(a=>a.status==="Faol").length;
-  const waitC  = ads.filter(a=>a.status==="Kutilmoqda").length;
-  const rejC   = ads.filter(a=>a.status==="Rad etilgan").length;
-  const totalP = ads.reduce((s,a)=>s+a.price,0);
-
-  const STATUS_TABS = [
-    {v:"all",        l:"Barchasi",    count:ads.length},
-    {v:"Kutilmoqda", l:"Kutilmoqda",  count:waitC},
-    {v:"Faol",       l:"Faol",        count:faolC},
-    {v:"Rad etilgan",l:"Rad etilgan", count:rejC},
-  ];
-
   return (
-    <div className="admin-ads-root" style={{fontFamily:"'Manrope',sans-serif",padding:"28px 28px 56px"}}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-        .admin-ads-root *, .admin-ads-root *::before, .admin-ads-root *::after { box-sizing:border-box; }
-        .admin-ads-root button, .admin-ads-root input, .admin-ads-root select { font-family:'Manrope',sans-serif; }
-        .admin-ads-root ::-webkit-scrollbar { width:4px; height:4px; }
-        .admin-ads-root ::-webkit-scrollbar-thumb { background:#DDE1EA; border-radius:4px; }
-        @keyframes adsToastIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-        .ads-row:hover { background:#FAFBFF !important; }
-        .ads-row-sel { background:#EEF2FF !important; }
-      `}</style>
+    <div style={{ padding: "40px 20px", background: "#F8FAFC", minHeight: "100vh", fontFamily: "'Inter', system-ui" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        
+        <header style={{ marginBottom: 40 }}>
+          <h1 style={{ fontSize: 32, fontWeight: 900, color: "#0F172A", margin: 0 }}>Admin Panel</h1>
+          <p style={{ color: "#64748B", marginTop: 8 }}>E'lonlarni boshqarish va sifat nazorati</p>
+        </header>
 
-      <DetailModal
-        ad={modal} onClose={()=>setModal(null)}
-        onApprove={id=>updateStatus(id,"Faol")}
-        onReject={id=>updateStatus(id,"Rad etilgan")}
-        onDelete={deleteAd}
-      />
-
-      {/* ── STAT CARDS ── */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:24}}>
-        <StatCard label="Jami e'lonlar"  value={ads.length}    sub="barcha holatlarda"      accent="#0F172A"/>
-        <StatCard label="Faol"           value={faolC}         sub={`${ads.length?Math.round(faolC/ads.length*100):0}% ulushi`} accent="#166534"/>
-        <StatCard label="Kutilmoqda"     value={waitC}         sub="ko'rib chiqish kerak"   accent="#9A3412"/>
-        <StatCard label="Umumiy qiymat"  value={fmtM(totalP)}  sub="so'm"                   accent="#1D4ED8"/>
-      </div>
-
-      {/* ── TOOLBAR ── */}
-      <div style={{
-        background:"#fff", borderRadius:18, padding:"14px 18px",
-        border:"1.5px solid #E9ECF2", marginBottom:14,
-        display:"flex", alignItems:"center", gap:12, flexWrap:"wrap",
-      }}>
-        {/* search */}
-        <div style={{position:"relative",flex:1,minWidth:200}}>
-          <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#CBD5E1",fontSize:15,pointerEvents:"none"}}>🔍</span>
-          <input
-            value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}}
-            placeholder="Sarlavha yoki bloger..."
-            style={{
-              width:"100%", padding:"9px 12px 9px 36px",
-              border:"1.5px solid #E9ECF2", borderRadius:12,
-              fontSize:13, color:"#0F172A", background:"#F8FAFC", outline:"none",
-              transition:"border-color 0.15s",
-            }}
-            onFocus={e=>{e.target.style.borderColor="#6366F1";e.target.style.boxShadow="0 0 0 3px #6366F115";}}
-            onBlur={e=>{e.target.style.borderColor="#E9ECF2";e.target.style.boxShadow="none";}}
-          />
+        {/* Statistika Kartochkalari */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 32 }}>
+          <div style={statCardStyle}><div style={statLabelStyle}>Jami</div><div style={statValueStyle}>{stats.total}</div></div>
+          <div style={{ ...statCardStyle, borderLeft: "4px solid #D97706" }}><div style={statLabelStyle}>Kutilmoqda</div><div style={{ ...statValueStyle, color: "#D97706" }}>{stats.pending}</div></div>
+          <div style={{ ...statCardStyle, borderLeft: "4px solid #059669" }}><div style={statLabelStyle}>Faol</div><div style={{ ...statValueStyle, color: "#059669" }}>{stats.active}</div></div>
         </div>
 
-        {/* status tabs */}
-        <div style={{display:"flex",gap:4,background:"#F8FAFC",borderRadius:12,padding:4,border:"1.5px solid #E9ECF2"}}>
-          {STATUS_TABS.map(t=>{
-            const active = statusF===t.v;
-            const dotCfg = STATUS_CFG[t.v];
-            return (
-              <button key={t.v}
-                onClick={()=>{setStatusF(t.v);setPage(1);setSelected(new Set());}}
-                style={{
-                  padding:"6px 14px", borderRadius:9, fontSize:12, fontWeight:700,
-                  cursor:"pointer", border:"none", transition:"all 0.15s", fontFamily:"inherit",
-                  background:active?"#0F172A":"transparent",
-                  color:active?"#fff":"#64748B",
-                  display:"flex", alignItems:"center", gap:5,
-                }}
-              >
-                {t.l}
-                <span style={{
-                  background:active?"rgba(255,255,255,0.2)":dotCfg?dotCfg.bg:"#F1F5F9",
-                  color:active?"#fff":dotCfg?dotCfg.tc:"#64748B",
-                  fontSize:10, fontWeight:800, padding:"1px 6px", borderRadius:99,
-                }}>{t.count}</span>
-              </button>
-            );
-          })}
+        {/* TABS */}
+        <div style={{ display: "flex", gap: 12, marginBottom: 24, background: "#E2E8F0", padding: 6, borderRadius: 16, width: "fit-content" }}>
+          <button onClick={() => setActiveTab("blogger")} style={tabStyle(activeTab === "blogger")}>🤳 Blogerlar</button>
+          <button onClick={() => setActiveTab("business")} style={tabStyle(activeTab === "business")}>💼 Biznes</button>
         </div>
 
-        {/* sort */}
-        <div style={{position:"relative"}}>
-          <select value={sort} onChange={e=>setSort(e.target.value)} style={{
-            padding:"9px 32px 9px 12px", borderRadius:12, fontSize:12, fontWeight:600,
-            border:"1.5px solid #E9ECF2", background:"#F8FAFC", color:"#0F172A",
-            outline:"none", cursor:"pointer", appearance:"none",
-          }}>
-            <option value="newest">Yangi avval</option>
-            <option value="oldest">Eski avval</option>
-            <option value="price_desc">Narx ↓</option>
-            <option value="price_asc">Narx ↑</option>
-            <option value="views">Ko'rishlar ↓</option>
-          </select>
-          <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:"#94A3B8",fontSize:12}}>▾</span>
-        </div>
-      </div>
-
-      {/* ── BULK BAR ── */}
-      {selected.size>0 && (
-        <div style={{
-          background:"#EEF2FF", border:"1.5px solid #C7D2FE", borderRadius:14,
-          padding:"10px 16px", display:"flex", alignItems:"center", gap:10,
-          marginBottom:12, flexWrap:"wrap",
-        }}>
-          <span style={{fontSize:13,fontWeight:700,color:"#3730A3"}}>{selected.size} ta tanlandi</span>
-          {[
-            {l:"✓ Tasdiqlash", a:"Faol",        bg:"#F0FDF4",tc:"#166534",bd:"#BBF7D0"},
-            {l:"✕ Rad etish",  a:"Rad etilgan", bg:"#FFF1F2",tc:"#9F1239",bd:"#FECDD3"},
-            {l:"🗑 O'chirish",  a:"delete",      bg:"#FFF1F2",tc:"#9F1239",bd:"#FECDD3"},
-          ].map(b=>(
-            <button key={b.a} onClick={()=>bulkAction(b.a)} style={{
-              padding:"6px 14px",borderRadius:10,fontSize:12,fontWeight:700,cursor:"pointer",
-              border:`1.5px solid ${b.bd}`,background:b.bg,color:b.tc,fontFamily:"inherit",
-              transition:"all 0.14s",
-            }}>{b.l}</button>
-          ))}
-          <button onClick={()=>setSelected(new Set())} style={{
-            padding:"6px 14px",borderRadius:10,fontSize:12,fontWeight:700,cursor:"pointer",
-            border:"1.5px solid #E9ECF2",background:"#fff",color:"#64748B",fontFamily:"inherit",
-            marginLeft:"auto",
-          }}>Bekor</button>
-        </div>
-      )}
-
-      {/* ── TABLE ── */}
-      <div style={{background:"#fff",borderRadius:18,border:"1.5px solid #E9ECF2",overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
-        <div style={{overflowX:"auto"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:13,minWidth:720}}>
-            <thead>
-              <tr style={{background:"#F8FAFC"}}>
-                {[
-                  {label:<input type="checkbox" checked={allChecked} ref={el=>{if(el)el.indeterminate=!allChecked&&someChecked;}} onChange={e=>toggleAll(e.target.checked)} style={{cursor:"pointer",accentColor:"#6366F1"}}/>, w:44},
-                  {label:"#",            w:48},
-                  {label:"Sarlavha",     w:"auto"},
-                  {label:"Bloger",       w:160},
-                  {label:"Narx",         w:130},
-                  {label:"Ko'rishlar",   w:100},
-                  {label:"Sana",         w:100},
-                  {label:"Holat",        w:130},
-                  {label:"Amallar",      w:130},
-                ].map((h,i)=>(
-                  <th key={i} style={{
-                    padding:"12px 14px", textAlign:i>=4&&i<=6?"right":i===8?"center":"left",
-                    fontSize:10, fontWeight:800, color:"#94A3B8",
-                    textTransform:"uppercase", letterSpacing:"0.07em",
-                    borderBottom:"1.5px solid #F1F5F9", width:h.w,
-                    whiteSpace:"nowrap",
-                  }}>{h.label}</th>
-                ))}
+        {/* JADVAL */}
+        <div style={{ background: "#fff", borderRadius: 24, overflow: "hidden", border: "1px solid #E2E8F0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+            <thead style={{ background: "#F8FAFC" }}>
+              <tr>
+                <th style={thStyle}>ID / Sana</th>
+                <th style={thStyle}>{activeTab === "blogger" ? "Bloger" : "Kompaniya"}</th>
+                <th style={thStyle}>Yo'nalish</th>
+                <th style={thStyle}>Narx / Budjet</th>
+                <th style={thStyle}>Holat</th>
+                <th style={{ ...thStyle, textAlign: "right" }}>Amal</th>
               </tr>
             </thead>
             <tbody>
-              {pageItems.length===0 ? (
-                <tr><td colSpan={9} style={{textAlign:"center",padding:"48px",color:"#CBD5E1",fontSize:14}}>
-                  Hech narsa topilmadi
-                </td></tr>
-              ) : pageItems.map((ad,i)=>(
-                <tr key={ad.id}
-                  className={`ads-row${selected.has(ad.id)?" ads-row-sel":""}`}
-                  style={{borderBottom:"1.5px solid #F8FAFC",transition:"background 0.12s",background:"#fff"}}
-                >
-                  <td style={{padding:"12px 14px"}}>
-                    <input type="checkbox" checked={selected.has(ad.id)}
-                      onChange={e=>toggleOne(ad.id,e.target.checked)}
-                      style={{cursor:"pointer",accentColor:"#6366F1"}}
-                    />
+              {list.map(ad => (
+                <tr key={ad.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                  <td style={tdStyle}>
+                    <div style={{ fontWeight: 800, color: "#1E293B" }}>{ad.id}</div>
+                    <div style={{ fontSize: 11, color: "#94A3B8" }}>{ad.date}</div>
                   </td>
-                  <td style={{padding:"12px 14px",color:"#CBD5E1",fontSize:12,fontWeight:700}}>
-                    {(safePage-1)*PAGE_SIZE+i+1}
+                  <td style={tdStyle}>
+                    <div style={{ fontWeight: 700 }}>{activeTab === "blogger" ? ad.name : ad.companyName}</div>
+                    <div style={{ fontSize: 12, color: "#64748B" }}>{ad.phone}</div>
                   </td>
-                  <td style={{padding:"12px 14px",maxWidth:240}}>
-                    <div style={{fontWeight:700,color:"#0F172A",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:2}}>{ad.title}</div>
-                    <div style={{fontSize:11,color:"#94A3B8"}}>{ad.category}</div>
+                  <td style={tdStyle}>
+                    <div style={{ fontSize: 13, color: "#475569" }}>{activeTab === "blogger" ? ad.niches[0] : ad.productName}</div>
                   </td>
-                  <td style={{padding:"12px 14px"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <Ava name={ad.author} size={30}/>
-                      <span style={{fontWeight:600,color:"#334155",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:110}}>{ad.author}</span>
-                    </div>
+                  <td style={tdStyle}>
+                    <div style={{ fontWeight: 800 }}>{activeTab === "blogger" ? ad.prices.post : ad.budget} <span style={{ fontSize: 10, color: "#94A3B8" }}>so'm</span></div>
                   </td>
-                  <td style={{padding:"12px 14px",textAlign:"right",fontWeight:700,color:"#0F172A",fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>
-                    {fmt(ad.price)} <span style={{fontSize:11,color:"#94A3B8",fontWeight:500}}>so'm</span>
-                  </td>
-                  <td style={{padding:"12px 14px",textAlign:"right",color:"#64748B",fontVariantNumeric:"tabular-nums"}}>
-                    {fmt(ad.views)}
-                  </td>
-                  <td style={{padding:"12px 14px",textAlign:"right",color:"#94A3B8",fontSize:12,whiteSpace:"nowrap"}}>{ad.date}</td>
-                  <td style={{padding:"12px 14px"}}>
-                    <Pill status={ad.status}/>
-                  </td>
-                  <td style={{padding:"12px 14px"}}>
-                    <div style={{display:"flex",justifyContent:"center",gap:5}}>
-                      <IconBtn onClick={()=>updateStatus(ad.id,"Faol")}        title="Tasdiqlash" hoverBg="#22C55E" hoverColor="#166534" icon="✓"/>
-                      <IconBtn onClick={()=>updateStatus(ad.id,"Rad etilgan")} title="Rad etish"  hoverBg="#F97316" hoverColor="#9A3412" icon="✕"/>
-                      <IconBtn onClick={()=>deleteAd(ad.id)}                   title="O'chirish"  hoverBg="#F43F5E" hoverColor="#9F1239" icon="🗑"/>
-                      <IconBtn onClick={()=>setModal(ad)}                      title="Ko'rish"    hoverBg="#6366F1" hoverColor="#3730A3" icon="👁"/>
-                    </div>
+                  <td style={tdStyle}><StatusBadge status={ad.status} /></td>
+                  <td style={{ ...tdStyle, textAlign: "right" }}>
+                    <button onClick={() => setSelectedAd(ad)} style={viewBtnStyle}>Ko'rish</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-
-        {/* ── PAGINATION ── */}
-        <div style={{
-          display:"flex", alignItems:"center", justifyContent:"space-between",
-          padding:"14px 18px", borderTop:"1.5px solid #F1F5F9", flexWrap:"wrap", gap:10,
-        }}>
-          <span style={{fontSize:12,color:"#94A3B8",fontWeight:600}}>
-            {filtered.length} ta natija · {safePage}/{totalPages} sahifa
-          </span>
-          <div style={{display:"flex",gap:5,alignItems:"center"}}>
-            <PgBtn disabled={safePage<=1}          onClick={()=>setPage(p=>p-1)}>‹</PgBtn>
-            {Array.from({length:totalPages},(_,i)=>i+1).map(p=>{
-              const show = totalPages<=7 || p===1 || p===totalPages || Math.abs(p-safePage)<=1;
-              const dots  = Math.abs(p-safePage)===2 && totalPages>7;
-              if (dots) return <span key={p} style={{color:"#CBD5E1",fontSize:13,lineHeight:"30px",padding:"0 2px"}}>…</span>;
-              if (!show) return null;
-              return <PgBtn key={p} active={p===safePage} onClick={()=>setPage(p)}>{p}</PgBtn>;
-            })}
-            <PgBtn disabled={safePage>=totalPages} onClick={()=>setPage(p=>p+1)}>›</PgBtn>
-          </div>
+          {list.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>E'lonlar mavjud emas</div>}
         </div>
       </div>
+
+      <DetailModal ad={selectedAd} onClose={() => setSelectedAd(null)} onAction={handleAction} />
     </div>
   );
 }
 
-function PgBtn({ children, onClick, disabled, active }) {
-  const [h,setH] = useState(false);
-  return (
-    <button onClick={onClick} disabled={disabled}
-      onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
-      style={{
-        minWidth:30,height:30,padding:"0 8px",borderRadius:9,
-        border:`1.5px solid ${active?"#C7D2FE":h?"#E2E8F0":"#F1F5F9"}`,
-        background:active?"#EEF2FF":h?"#F8FAFC":"#fff",
-        fontSize:12,fontWeight:active?800:500,cursor:disabled?"not-allowed":"pointer",
-        color:active?"#3730A3":"#64748B",
-        opacity:disabled?0.4:1,transition:"all 0.14s",fontFamily:"inherit",
-      }}
-    >{children}</button>
-  );
-}
+/* ─── STYLES ─── */
+const thStyle = { padding: "16px 24px", fontSize: 12, fontWeight: 800, color: "#64748B", textTransform: "uppercase" };
+const tdStyle = { padding: "18px 24px" };
+const statCardStyle = { background: "#fff", padding: "20px 24px", borderRadius: 20, border: "1px solid #E2E8F0" };
+const statLabelStyle = { fontSize: 13, color: "#64748B", fontWeight: 600, marginBottom: 4 };
+const statValueStyle = { fontSize: 28, fontWeight: 900, color: "#0F172A" };
+const viewBtnStyle = { padding: "8px 16px", borderRadius: 10, border: "1px solid #E2E8F0", background: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, transition: "0.2s" };
+const tabStyle = (active) => ({
+  padding: "10px 24px", borderRadius: 12, border: "none", fontWeight: 800, cursor: "pointer", fontSize: 14,
+  background: active ? "#fff" : "transparent", color: active ? "#0F172A" : "#64748B", boxShadow: active ? "0 4px 6px -1px rgba(0,0,0,0.1)" : "none"
+});
