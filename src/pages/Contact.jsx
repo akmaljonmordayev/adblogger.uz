@@ -4,7 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPhoneAlt, FaEnvelope, FaTelegramPlane, FaInstagram, FaMapMarkerAlt, FaUser, FaBriefcase } from 'react-icons/fa';
-import { toast } from 'react-toastify';
+import { toast } from '../components/ui/toast';
 
 const schema = yup.object({
   name: yup.string().required('Ismingizni kiriting'),

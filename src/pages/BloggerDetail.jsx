@@ -1,15 +1,47 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { 
-  LuArrowLeft, LuUsers, LuTrendingUp, LuStar, LuMapPin, 
-  LuCheck, LuMessageCircle, LuInfo, LuLayoutDashboard, 
-  LuImage, LuVideo, LuX 
+import {
+  LuArrowLeft, LuUsers, LuTrendingUp, LuStar, LuMapPin,
+  LuCheck, LuMessageCircle, LuInfo, LuLayoutDashboard,
+  LuImage, LuVideo, LuX, LuHeart,
 } from "react-icons/lu";
+import { toast } from "../components/ui/toast";
 import { initialBloggers } from "./Bloggers";
 
 export default function BloggerDetail() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("pricing");
+  const [inWishlist, setInWishlist] = useState(false);
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("adb_wishlist") || "[]");
+    setInWishlist(stored.some(w => w._id === id));
+  }, [id]);
+
+  const toggleWishlist = (blogger) => {
+    const stored = JSON.parse(localStorage.getItem("adb_wishlist") || "[]");
+    if (inWishlist) {
+      const updated = stored.filter(w => w._id !== id);
+      localStorage.setItem("adb_wishlist", JSON.stringify(updated));
+      setInWishlist(false);
+      toast.success("Saqlanganlardan o'chirildi");
+    } else {
+      const item = {
+        _id: id, itemType: "blogger",
+        name: `${blogger.name}`,
+        handle: blogger.handle || blogger.username,
+        platforms: blogger.platforms || [],
+        rating: blogger.rating || blogger.stars,
+        avatar: blogger.avatar || blogger.image,
+        location: blogger.location,
+        link: `/bloggers/${id}`,
+        savedAt: new Date().toLocaleDateString("uz-UZ"),
+      };
+      localStorage.setItem("adb_wishlist", JSON.stringify([...stored, item]));
+      setInWishlist(true);
+      toast.success("Saqlanganlariga qo'shildi ❤️");
+    }
+  };
   const [isOrderOpen, setIsOrderOpen] = useState(false);
   const [isMsgOpen, setIsMsgOpen] = useState(false);
 
@@ -127,15 +159,29 @@ export default function BloggerDetail() {
             <h3 style={{ fontSize: 18, marginBottom: 8 }}>Reklama berish</h3>
             <p style={{ color: "#94a3b8", fontSize: 14, marginBottom: 24 }}>Brendingizni {blogger.name} bilan birga rivojlantiring.</p>
             
-            <button 
+            <button
               onClick={() => setIsOrderOpen(true)}
               style={{ width: "100%", padding: 16, background: "#dc2626", color: "#fff", border: "none", borderRadius: 14, fontWeight: 700, cursor: "pointer", marginBottom: 12 }}>
               Buyurtma berish
             </button>
-            <button 
+            <button
               onClick={() => setIsMsgOpen(true)}
-              style={{ width: "100%", padding: 16, background: "rgba(255,255,255,0.1)", color: "#fff", border: "none", borderRadius: 14, fontWeight: 700, cursor: "pointer" }}>
+              style={{ width: "100%", padding: 16, background: "rgba(255,255,255,0.1)", color: "#fff", border: "none", borderRadius: 14, fontWeight: 700, cursor: "pointer", marginBottom: 12 }}>
               Xabar yuborish
+            </button>
+            <button
+              onClick={() => toggleWishlist(blogger)}
+              style={{
+                width: "100%", padding: 14,
+                background: inWishlist ? "rgba(220,38,38,0.2)" : "rgba(255,255,255,0.06)",
+                color: inWishlist ? "#f87171" : "rgba(255,255,255,0.7)",
+                border: `1.5px solid ${inWishlist ? "rgba(220,38,38,0.4)" : "rgba(255,255,255,0.1)"}`,
+                borderRadius: 14, fontWeight: 600, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                fontSize: 14,
+              }}>
+              <LuHeart size={15} style={{ fill: inWishlist ? "#f87171" : "none" }} />
+              {inWishlist ? "Saqlanganlardan o'chirish" : "Saqlanganlariga qo'shish"}
             </button>
 
             <div style={{ marginTop: 24, padding: 16, background: "rgba(255,255,255,0.05)", borderRadius: 12, fontSize: 12, color: "#94a3b8", display: "flex", gap: 8 }}>

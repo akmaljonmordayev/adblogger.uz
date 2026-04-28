@@ -5,11 +5,9 @@ import { LuEye, LuEyeOff, LuShield, LuMail, LuLock, LuLoader, LuArrowRight } fro
 import { useAuthStore } from "../store/useAuthStore";
 import { ROUTE_PATHS } from "../config/constants";
 
-const ADMIN_CREDENTIALS = { email: "admin@adblogger.uz", password: "admin123" };
-
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const { setUser, setToken } = useAuthStore();
+  const { adminLogin } = useAuthStore();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,22 +18,19 @@ export default function AdminLogin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    
+
     if (!email.trim() || !password.trim()) {
       setError("Iltimos, barcha maydonlarni to'ldiring!");
       return;
     }
 
     setLoading(true);
-    // Haqiqiy tizimdek tuyulishi uchun biroz kutish
-    await new Promise((r) => setTimeout(r, 1500));
-
-    if (email.trim().toLowerCase() === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
-      setUser({ name: "Admin", email: email.trim(), role: "admin" });
-      setToken("admin-token-" + Date.now());
+    try {
+      await adminLogin({ email: email.trim(), password });
       navigate(ROUTE_PATHS.ADMIN_DASHBOARD, { replace: true });
-    } else {
-      setError("Email yoki parol noto'g'ri!");
+    } catch (err) {
+      setError(err?.response?.data?.message || "Email yoki parol noto'g'ri!");
+    } finally {
       setLoading(false);
     }
   };

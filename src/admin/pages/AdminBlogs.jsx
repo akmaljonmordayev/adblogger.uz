@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "../../components/ui/toast";
 
 const initialPosts = [
   {
@@ -368,11 +369,10 @@ const AdminBlogs = () => {
   const [deleteTarget, setDelete] = useState(null);
   const [viewTarget, setView] = useState(null);
   const [addOpen, setAdd] = useState(false);
-  const [toast, setToast] = useState(null);
-
   const notify = (msg, type = "ok") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 2500);
+    if (type === "err") toast.error(msg);
+    else if (type === "warn") toast.warning(msg);
+    else toast.success(msg);
   };
 
   const toggleVisible = (id) => {
@@ -834,21 +834,6 @@ const AdminBlogs = () => {
         />
       )}
 
-      {/* ─── TOAST ─── */}
-      {toast && (
-        <div
-          className={`fixed bottom-5 right-5 z-[99] px-4 py-2.5 rounded-xl text-[13px] font-semibold shadow-lg border ${
-            toast.type === "err"
-              ? "bg-red-50 text-red-600 border-red-200"
-              : toast.type === "warn"
-                ? "bg-amber-50 text-amber-600 border-amber-200"
-                : "bg-emerald-50 text-emerald-600 border-emerald-200"
-          }`}
-        >
-          {toast.type === "err" ? "🗑 " : toast.type === "warn" ? "👁 " : "✓ "}
-          {toast.msg}
-        </div>
-      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { toast } from "react-toastify";
+import { toast } from "../components/ui/toast";
 
 // Axios instance yaratish
 const api = axios.create({
@@ -33,9 +33,9 @@ api.interceptors.response.use(
     const message = error.response?.data?.message || "Kutilmagan xatolik yuz berdi";
     
     if (error.response?.status === 401) {
-      // Avtorizatsiya xatosi - tokenni o'chirish va login sahifasiga yo'naltirish
+      localStorage.removeItem("auth-storage");
       localStorage.removeItem("token");
-      // window.location.href = "/auth/login";
+      window.location.href = "/login";
     }
 
     if (error.response?.status >= 500) {
