@@ -155,8 +155,7 @@ function ToastItem({ item, onRemove }) {
             background: `linear-gradient(90deg, ${cfg.accent}99, ${cfg.accent})`,
             borderRadius: 99,
             transformOrigin: "left",
-            animation: hovered ? "none" : `t-progress ${item.duration}ms linear forwards`,
-            animationDelay: "0ms",
+            animation: hovered ? "none" : `t-progress ${item.duration}ms linear 0ms forwards`,
           }}/>
         </div>
       </div>

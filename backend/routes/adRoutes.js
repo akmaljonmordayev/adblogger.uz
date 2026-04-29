@@ -62,6 +62,21 @@ router.get('/', ac.getAllAds);
 
 /**
  * @swagger
+ * /ads/user/my-ads:
+ *   get:
+ *     summary: Mening e'lonlarim
+ *     tags: [Ads]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: E'lonlar ro'yxati
+ */
+// Must be before /:id to avoid wildcard capture
+router.get('/user/my-ads', protect, ac.getMyAds);
+
+/**
+ * @swagger
  * /ads/{id}:
  *   get:
  *     summary: E'lon tafsilotlari
@@ -84,22 +99,6 @@ router.get('/', ac.getAllAds);
  *         description: E'lon topilmadi
  */
 router.get('/:id', ac.getAd);
-
-router.use(protect);
-
-/**
- * @swagger
- * /ads/user/my-ads:
- *   get:
- *     summary: Mening e'lonlarim
- *     tags: [Ads]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: E'lonlar ro'yxati
- */
-router.get('/user/my-ads', ac.getMyAds);
 
 /**
  * @swagger
@@ -153,7 +152,7 @@ router.get('/user/my-ads', ac.getMyAds);
  *             schema:
  *               $ref: '#/components/schemas/Ad'
  */
-router.post('/', ac.createAd);
+router.post('/', protect, ac.createAd);
 
 /**
  * @swagger
@@ -192,7 +191,7 @@ router.post('/', ac.createAd);
  *       204:
  *         description: E'lon o'chirildi
  */
-router.patch('/:id', ac.updateAd);
-router.delete('/:id', ac.deleteAd);
+router.patch('/:id', protect, ac.updateAd);
+router.delete('/:id', protect, ac.deleteAd);
 
 module.exports = router;

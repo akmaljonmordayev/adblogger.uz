@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   LuLayoutGrid, LuLaptop, LuSparkles, LuSmile,
   LuUtensils, LuDumbbell, LuPlane, LuBriefcase,
@@ -24,6 +25,7 @@ export default function CategorySection() {
   const [canLeft, setCanLeft]       = useState(false);
   const [canRight, setCanRight]     = useState(true);
   const scrollRef = useRef(null);
+  const navigate = useNavigate();
 
   const checkScroll = () => {
     const el = scrollRef.current;
@@ -50,11 +52,17 @@ export default function CategorySection() {
     el.scrollBy({ left: dir * 220, behavior: "smooth" });
   };
 
-  const handleClick = (id) => {
+  const handleClick = (id, label) => {
     setActive(id);
     const el = scrollRef.current;
     const btn = el?.querySelector(`[data-id="${id}"]`);
     if (btn) btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+
+    if (id === "all") {
+      navigate("/bloggers");
+    } else {
+      navigate(`/bloggers?category=${encodeURIComponent(label)}`);
+    }
   };
 
   const activeItem = CATEGORIES.find(c => c.id === active);
@@ -160,7 +168,7 @@ export default function CategorySection() {
                 <button
                   key={id}
                   data-id={id}
-                  onClick={() => handleClick(id)}
+                  onClick={() => handleClick(id, label)}
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 7,
                     padding: "7px 14px",

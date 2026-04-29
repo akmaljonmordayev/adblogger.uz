@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import {
   LuUser, LuSettings, LuShield, LuLogOut, LuCamera, LuCheck,
   LuLoader, LuHeart, LuMegaphone, LuBriefcase,
@@ -92,24 +92,29 @@ const TABS = [
   { id: "security",  label: "Xavfsizlik",       Icon: LuShield },
 ];
 
+const STATUS_META = {
+  pending:  { bg:"#fef9c3", c:"#854d0e", bd:"#fde68a", t:"Kutilmoqda",   icon:"⏳" },
+  approved: { bg:"#dcfce7", c:"#166534", bd:"#86efac", t:"Tasdiqlangan", icon:"✓"  },
+  active:   { bg:"#dbeafe", c:"#1e40af", bd:"#93c5fd", t:"Faol",         icon:"🔵" },
+  rejected: { bg:"#fee2e2", c:"#991b1b", bd:"#fca5a5", t:"Rad etilgan",  icon:"✕"  },
+  completed:{ bg:"#f3f4f6", c:"#374151", bd:"#d1d5db", t:"Yakunlangan",  icon:"✓"  },
+};
 const StatusBadge = ({ s }) => {
-  const m = {
-    pending:  { bg:"#fef9c3", c:"#854d0e", t:"Kutilmoqda" },
-    approved: { bg:"#dcfce7", c:"#166534", t:"Tasdiqlangan" },
-    active:   { bg:"#dbeafe", c:"#1e40af", t:"Faol" },
-    rejected: { bg:"#fee2e2", c:"#991b1b", t:"Rad etilgan" },
-    completed:{ bg:"#f3f4f6", c:"#374151", t:"Yakunlangan" },
-  };
-  const x = m[s] || m.pending;
-  return <span style={{ background:x.bg, color:x.c, fontSize:11, fontWeight:700, padding:"3px 9px", borderRadius:6 }}>{x.t}</span>;
+  const x = STATUS_META[s] || STATUS_META.pending;
+  return (
+    <span style={{ background:x.bg, color:x.c, fontSize:11, fontWeight:700, padding:"3px 9px", borderRadius:6, border:`1px solid ${x.bd}`, display:"inline-flex", alignItems:"center", gap:4 }}>
+      {x.icon} {x.t}
+    </span>
+  );
 };
 
 /* ══════════════════════════════════════════════════════════════ */
 export default function Profile() {
   const navigate          = useNavigate();
+  const [searchParams]    = useSearchParams();
   const { user, setUser } = useAuthStore();
 
-  const [tab,          setTab]          = useState("personal");
+  const [tab,          setTab]          = useState(searchParams.get("tab") || "personal");
   const [saving,       setSaving]       = useState(false);
   const [saved,        setSaved]        = useState(false);
   const [avatarLoading,setAvatarLoading]= useState(false);
@@ -121,6 +126,9 @@ export default function Profile() {
   const [bloggerProfile,  setBloggerProfile]  = useState(null);
   const [businessProfile, setBusinessProfile] = useState(null);
   const [showLogout,   setShowLogout]   = useState(false);
+  const [editAd,       setEditAd]       = useState(null);   // ad being edited
+  const [editForm,     setEditForm]     = useState({});
+  const [editSaving,   setEditSaving]   = useState(false);
 
   // Personal form
   const [pForm, setPForm] = useState({
@@ -370,6 +378,46 @@ export default function Profile() {
     if (!confirm("E'lonni o'chirishni tasdiqlaysizmi?")) return;
     try { await api.delete(`/ads/${id}`); setMyAds(p=>p.filter(a=>a._id!==id)); toast.success("O'chirildi"); }
     catch { toast.error("Xatolik"); }
+  };
+
+  const openEditAd = ad => {
+    setEditAd(ad);
+    if (ad.type === "blogger") {
+      setEditForm({
+        title:       ad.title       || "",
+        description: ad.description || "",
+        phone:       ad.phone       || "",
+        followersRange: ad.followersRange || "",
+        pricing: {
+          post:  ad.pricing?.post  || "",
+          story: ad.pricing?.story || "",
+          video: ad.pricing?.video || "",
+        },
+        portfolio: ad.portfolio || "",
+      });
+    } else {
+      setEditForm({
+        companyName:        ad.companyName        || "",
+        productName:        ad.productName        || "",
+        productDescription: ad.productDescription || "",
+        phone:              ad.phone              || "",
+        targetAudience:     ad.targetAudience     || "",
+        campaignDuration:   ad.campaignDuration   || "",
+        budget: { range: ad.budget?.range || "" },
+      });
+    }
+  };
+
+  const saveEditAd = async () => {
+    if (!editAd) return;
+    setEditSaving(true);
+    try {
+      const r = await api.patch(`/ads/${editAd._id}`, editForm);
+      setMyAds(p => p.map(a => a._id === editAd._id ? r.data.data : a));
+      toast.success("E'lon yangilandi (tekshiruvga yuborildi)");
+      setEditAd(null);
+    } catch { toast.error("Xatolik"); }
+    finally { setEditSaving(false); }
   };
 
   const removeWishlist = id => {
@@ -639,9 +687,9 @@ export default function Profile() {
           {/* ══ TAB: BLOGGER PROFILE ═══════════════════════════ */}
           {tab === "blogger" && user.role === "blogger" && (
             loadingTab ? (
-              <div style={{ textAlign:"center", padding:"60px 0" }}>
+              <div style={{ display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", padding:"60px 0", gap:12 }}>
                 <LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/>
-                <p style={{ color:"#94a3b8", marginTop:12 }}>Profil yuklanmoqda...</p>
+                <p style={{ color:"#94a3b8", margin:0 }}>Profil yuklanmoqda...</p>
               </div>
             ) : (
               <form onSubmit={saveBlogger}>
@@ -917,9 +965,9 @@ export default function Profile() {
           {/* ══ TAB: BUSINESS PROFILE ═════════════════════════ */}
           {tab === "business" && user.role === "business" && (
             loadingTab ? (
-              <div style={{ textAlign:"center", padding:"60px 0" }}>
+              <div style={{ display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", padding:"60px 0", gap:12 }}>
                 <LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/>
-                <p style={{ color:"#94a3b8", marginTop:12 }}>Profil yuklanmoqda...</p>
+                <p style={{ color:"#94a3b8", margin:0 }}>Profil yuklanmoqda...</p>
               </div>
             ) : (
               <form onSubmit={saveBusiness}>
@@ -1158,7 +1206,7 @@ export default function Profile() {
                 </Link>
               </div>
               {loadingTab ? (
-                <div style={{ textAlign:"center", padding:"60px 0" }}><LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/></div>
+                <div style={{ display:"flex", justifyContent:"center", alignItems:"center", padding:"60px 0" }}><LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/></div>
               ) : myAds.length===0 ? (
                 <div style={{ textAlign:"center", padding:"60px 20px" }}>
                   <div style={{ fontSize:52, marginBottom:12 }}>📢</div>
@@ -1170,32 +1218,139 @@ export default function Profile() {
               ) : (
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                   {myAds.map(ad => (
-                    <div key={ad._id} style={{ border:"1.5px solid #e2e8f0", borderRadius:14, padding:"16px 18px", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12 }}>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ display:"flex", gap:8, marginBottom:6, flexWrap:"wrap" }}>
+                    <div key={ad._id} style={{ border:"1.5px solid #e2e8f0", borderRadius:14, padding:"16px 18px", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, flexWrap:"wrap" }}>
+                      <div style={{ flex:1, minWidth:200 }}>
+                        <div style={{ display:"flex", gap:8, marginBottom:6, flexWrap:"wrap", alignItems:"center" }}>
                           <span style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:5, background:ad.type==="blogger"?"#ede9fe":"#dbeafe", color:ad.type==="blogger"?"#6d28d9":"#1e40af" }}>
                             {ad.type==="blogger"?"Blogger":"Biznes"}
                           </span>
                           <StatusBadge s={ad.status}/>
                         </div>
+                        {ad.status==="rejected" && (
+                          <div style={{ margin:"4px 0 6px", padding:"6px 10px", background:"#fef2f2", border:"1px solid #fca5a5", borderRadius:8, fontSize:12, color:"#991b1b", display:"flex", alignItems:"center", gap:6 }}>
+                            ✕ Admin tomonidan rad etildi. Tahrirlang va qayta yuboring.
+                          </div>
+                        )}
+                        {ad.status==="pending" && (
+                          <div style={{ margin:"4px 0 6px", padding:"6px 10px", background:"#fffbeb", border:"1px solid #fde68a", borderRadius:8, fontSize:12, color:"#92400e", display:"flex", alignItems:"center", gap:6 }}>
+                            ⏳ Admin tekshiruvi kutilmoqda (24 soat ichida)
+                          </div>
+                        )}
                         <p style={{ margin:0, fontSize:14, fontWeight:700, color:"#0f172a" }}>
                           {ad.title||ad.companyName||ad.productName||"—"}
                         </p>
-                        <p style={{ margin:"4px 0 0", fontSize:12, color:"#94a3b8", display:"flex", alignItems:"center", gap:8 }}>
+                        <p style={{ margin:"4px 0 0", fontSize:12, color:"#94a3b8" }}>
+                          {ad.description||ad.productDescription||""}
+                        </p>
+                        <p style={{ margin:"6px 0 0", fontSize:11, color:"#94a3b8", display:"flex", alignItems:"center", gap:8 }}>
                           <LuCalendar size={11}/> {new Date(ad.createdAt).toLocaleDateString("uz-UZ")}
-                          <LuEye size={11}/> {ad.views||0}
+                          <LuEye size={11}/> {ad.views||0} ko'rildi
+                          {ad.phone && <><LuPhone size={11}/> {ad.phone}</>}
                         </p>
                       </div>
                       <div style={{ display:"flex", gap:8, flexShrink:0 }}>
-                        <Link to={`/ads/${ad._id}`} style={{ padding:"7px 14px", border:"1.5px solid #e2e8f0", borderRadius:8, textDecoration:"none", color:"#374151", fontSize:12, fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
-                          <LuEye size={12}/> Ko'rish
-                        </Link>
+                        {(ad.status==="approved"||ad.status==="active") && (
+                          <Link to={`/ads/${ad._id}`} style={{ padding:"7px 12px", border:"1.5px solid #e2e8f0", borderRadius:8, textDecoration:"none", color:"#374151", fontSize:12, fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
+                            <LuEye size={12}/> Ko'rish
+                          </Link>
+                        )}
+                        <button onClick={()=>openEditAd(ad)} style={{ padding:"7px 12px", border:"1.5px solid #bfdbfe", borderRadius:8, background:"#eff6ff", color:"#2563eb", cursor:"pointer", display:"flex", alignItems:"center", gap:5, fontSize:12, fontWeight:600 }}>
+                          <LuSettings size={12}/> Tahrirlash
+                        </button>
                         <button onClick={()=>deleteAd(ad._id)} style={{ padding:"7px 10px", border:"1.5px solid #fee2e2", borderRadius:8, background:"#fef2f2", color:"#dc2626", cursor:"pointer", display:"flex", alignItems:"center" }}>
                           <LuTrash2 size={13}/>
                         </button>
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* ── Edit Ad Modal ── */}
+              {editAd && (
+                <div style={{ position:"fixed", inset:0, zIndex:1000, background:"rgba(0,0,0,0.45)", backdropFilter:"blur(4px)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={()=>setEditAd(null)}>
+                  <div style={{ background:"#fff", borderRadius:20, padding:"28px 24px", maxWidth:500, width:"100%", maxHeight:"90vh", overflowY:"auto", boxShadow:"0 24px 64px rgba(0,0,0,0.2)" }} onClick={e=>e.stopPropagation()}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+                      <div>
+                        <h3 style={{ margin:0, fontSize:16, fontWeight:800, color:"#0f172a" }}>E'lonni tahrirlash</h3>
+                        <p style={{ margin:"4px 0 0", fontSize:12, color:"#94a3b8" }}>Saqlangandan so'ng admin tekshiruviga yuboriladi</p>
+                      </div>
+                      <button onClick={()=>setEditAd(null)} style={{ background:"none", border:"none", cursor:"pointer", color:"#94a3b8", padding:4 }}>✕</button>
+                    </div>
+
+                    {editAd.type==="blogger" ? (
+                      <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                        <FieldWrap>
+                          <Label>E'lon sarlavhasi</Label>
+                          <input style={inp()} value={editForm.title||""} onChange={e=>setEditForm(p=>({...p,title:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="Sarlavha" />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Tavsif</Label>
+                          <textarea style={{...inp(),resize:"vertical"}} rows={3} value={editForm.description||""} onChange={e=>setEditForm(p=>({...p,description:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="O'zingiz haqingizda qisqacha..." />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Telefon</Label>
+                          <input style={inp()} value={editForm.phone||""} onChange={e=>setEditForm(p=>({...p,phone:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="+998 90 000 00 00" />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Portfolio havolasi</Label>
+                          <input style={inp()} value={editForm.portfolio||""} onChange={e=>setEditForm(p=>({...p,portfolio:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="https://..." />
+                        </FieldWrap>
+                        <div>
+                          <Label>Narxlar (so'm)</Label>
+                          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginTop:6 }}>
+                            {[{k:"post",l:"Post"},{k:"story",l:"Story"},{k:"video",l:"Video"}].map(({k,l})=>(
+                              <div key={k}>
+                                <div style={{ fontSize:11, color:"#6b7280", marginBottom:4 }}>{l}</div>
+                                <input style={inp({fontSize:13})} value={editForm.pricing?.[k]||""} onChange={e=>setEditForm(p=>({...p,pricing:{...p.pricing,[k]:e.target.value}}))} onFocus={onFocus} onBlur={onBlur} placeholder="0" type="number" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                        <FieldWrap>
+                          <Label>Kompaniya nomi</Label>
+                          <input style={inp()} value={editForm.companyName||""} onChange={e=>setEditForm(p=>({...p,companyName:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="Kompaniya nomi" />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Mahsulot / xizmat nomi</Label>
+                          <input style={inp()} value={editForm.productName||""} onChange={e=>setEditForm(p=>({...p,productName:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="Mahsulot nomi" />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Tavsif</Label>
+                          <textarea style={{...inp(),resize:"vertical"}} rows={3} value={editForm.productDescription||""} onChange={e=>setEditForm(p=>({...p,productDescription:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="Mahsulot haqida..." />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Telefon</Label>
+                          <input style={inp()} value={editForm.phone||""} onChange={e=>setEditForm(p=>({...p,phone:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="+998 90 000 00 00" />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Maqsadli auditoriya</Label>
+                          <input style={inp()} value={editForm.targetAudience||""} onChange={e=>setEditForm(p=>({...p,targetAudience:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="Yoshlar, ayollar..." />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Byudjet</Label>
+                          <select style={{...inp(),cursor:"pointer"}} value={editForm.budget?.range||""} onChange={e=>setEditForm(p=>({...p,budget:{range:e.target.value}}))}>
+                            <option value="">Tanlang</option>
+                            {BUDGET_RANGES.map(r=><option key={r} value={r}>{BUDGET_LABELS[r]||r}</option>)}
+                          </select>
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Kampaniya davomiyligi</Label>
+                          <input style={inp()} value={editForm.campaignDuration||""} onChange={e=>setEditForm(p=>({...p,campaignDuration:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="1 oy, 2 hafta..." />
+                        </FieldWrap>
+                      </div>
+                    )}
+
+                    <div style={{ display:"flex", gap:10, marginTop:22 }}>
+                      <button onClick={saveEditAd} disabled={editSaving} style={{ flex:1, padding:"12px", background:"linear-gradient(135deg,#2563eb,#1d4ed8)", color:"#fff", border:"none", borderRadius:10, fontSize:14, fontWeight:700, cursor:editSaving?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:7, opacity:editSaving?0.7:1 }}>
+                        {editSaving ? <><LuLoader size={15} style={{animation:"spin 1s linear infinite"}}/> Saqlanmoqda...</> : <><LuCheck size={15}/> Saqlash</>}
+                      </button>
+                      <button onClick={()=>setEditAd(null)} style={{ padding:"12px 18px", background:"none", border:"1.5px solid #e2e8f0", borderRadius:10, fontSize:13, color:"#64748b", cursor:"pointer" }}>Bekor</button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -1244,7 +1399,7 @@ export default function Profile() {
             <div>
               <SectionTitle sub="Faol va tugallangan kampaniyalar">Kampaniyalarim</SectionTitle>
               {loadingTab ? (
-                <div style={{ textAlign:"center", padding:"60px 0" }}><LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/></div>
+                <div style={{ display:"flex", justifyContent:"center", alignItems:"center", padding:"60px 0" }}><LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/></div>
               ) : campaigns.length===0 ? (
                 <div style={{ textAlign:"center", padding:"60px 20px" }}>
                   <div style={{ fontSize:52, marginBottom:12 }}>🤝</div>
