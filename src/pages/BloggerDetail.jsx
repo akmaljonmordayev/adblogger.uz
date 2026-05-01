@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import SEO from "../components/SEO";
 import {
   LuArrowLeft, LuUsers, LuTrendingUp, LuStar, LuMapPin,
   LuCheck, LuMessageCircle, LuInfo, LuLayoutDashboard,
@@ -173,6 +174,18 @@ export default function BloggerDetail() {
 
   return (
     <>
+      <SEO
+        title={blogger ? `${blogger.user?.firstName} ${blogger.user?.lastName} — Blogger` : "Blogger Profili"}
+        description={blogger?.bio || `ADBlogger platformasida blogger profili. Reklama narxlari, auditoriya va platforma ma'lumotlari.`}
+        canonical={`/bloggers/${id}`}
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "Person",
+          "name": blogger ? `${blogger.user?.firstName} ${blogger.user?.lastName}` : "Blogger",
+          "url": `https://adblogger.uz/bloggers/${id}`,
+          "description": blogger?.bio,
+        }}
+      />
       <style>{`
         .bd-layout { display: grid; grid-template-columns: 1fr 340px; gap: 28px; align-items: start; }
         .bd-right  { position: sticky; top: 24px; }

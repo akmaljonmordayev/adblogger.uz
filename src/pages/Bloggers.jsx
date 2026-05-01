@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import SEO, { breadcrumbSchema } from "../components/SEO";
 import BloggerCard from "../components/ui/BlogerCard";
 import FilterSidebar from '../components/layout/FilterSidebar';
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -151,6 +152,12 @@ export default function Blogger() {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <SEO
+        title="Bloggerlar — O'zbekistoning Top Influencerlari"
+        description="O'zbekistonning 500+ tasdiqlangan bloggerlari. Instagram, YouTube, Telegram, TikTok. Auditoriyangizga mos bloggerni tanlang va reklamangizni joylashtiring."
+        canonical="/bloggers"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Bloggerlar", path: "/bloggers" }])}
+      />
       <style>{`
         .bl-scroll::-webkit-scrollbar { width: 4px; }
         .bl-scroll::-webkit-scrollbar-track { background: transparent; }

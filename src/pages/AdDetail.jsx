@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import SEO from "../components/SEO";
 import {
   PiArrowLeftDuotone,
   PiShareNetworkDuotone,
@@ -187,6 +188,11 @@ export default function AdDetail() {
 
   return (
     <div style={{fontFamily:"'Inter',sans-serif",maxWidth:1000,margin:"0 auto",padding:"0 20px 80px"}}>
+      <SEO
+        title={ad?.title || "E'lon Tafsilotlari"}
+        description={ad?.description || "ADBlogger platformasida reklama e'loni. Blogger yoki biznes bilan hamkorlik qiling."}
+        canonical={`/ads/${id}`}
+      />
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 700px) {

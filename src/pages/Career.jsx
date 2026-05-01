@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import SEO, { breadcrumbSchema } from "../components/SEO";
 import { LuMapPin, LuClock, LuArrowRight, LuBriefcase, LuX, LuCheck, LuChevronDown } from "react-icons/lu";
 import { FiCheckCircle } from "react-icons/fi";
 
@@ -359,6 +360,12 @@ export default function Career() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+      <SEO
+        title="Karyera — ADBlogger Jamoasiga Qo'shiling"
+        description="ADBlogger jamoasiga qo'shiling! IT, marketing, dizayn, HR va boshqa yo'nalishlarda ochiq vakansiyalar. Zamonaviy ish sharoiti va raqobatbardosh maosh."
+        canonical="/career"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Karyera", path: "/career" }])}
+      />
 
       {/* ── HERO ── */}
       <div style={{ background: "linear-gradient(160deg,#0f172a 0%,#1e3a5f 60%,#0f2744 100%)", padding: "80px 24px 96px", position: "relative", overflow: "hidden" }}>

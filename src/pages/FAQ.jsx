@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+import SEO, { breadcrumbSchema } from "../components/SEO";
 
 const CATEGORIES = [
   { key: "all", label: "Barchasi", count: 11 },
@@ -193,6 +194,19 @@ export default function FAQ() {
 
   return (
     <div className="max-w-3xl mx-auto py-6">
+      <SEO
+        title="Ko'p So'raladigan Savollar — FAQ"
+        description="ADBlogger platformasi haqida eng ko'p beriladigan savollar va ularga to'liq javoblar. Blogger bo'lish, reklama joylashtirish va to'lov haqida."
+        canonical="/faq"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            { "@type": "Question", "name": "ADBlogger nima?", "acceptedAnswer": { "@type": "Answer", "text": "ADBlogger — O'zbekistonning eng yirik blogger va reklama platformasi. Biznes va bloggerlarni birlashtiradi." }},
+            { "@type": "Question", "name": "Qanday ro'yxatdan o'taman?", "acceptedAnswer": { "@type": "Answer", "text": "Saytga kirib, ro'yxatdan o'tish tugmasini bosing va kerakli ma'lumotlarni to'ldiring." }},
+          ]
+        }}
+      />
       {/* ── HERO ── */}
       <div className="relative rounded-3xl overflow-hidden mb-10 grid grid-cols-[1fr_190px] bg-white border border-slate-100 shadow-sm min-h-[300px]">
         {/* CHAP: oq tomon */}

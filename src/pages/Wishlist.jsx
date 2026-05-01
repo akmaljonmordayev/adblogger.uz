@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import SEO from "../components/SEO";
 import {
   LuHeart, LuTrash2, LuUser, LuBriefcase,
   LuInstagram, LuYoutube, LuMapPin, LuStar,
@@ -39,7 +40,7 @@ export default function Wishlist() {
 
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", maxWidth: 860, margin: "0 auto", padding: "0 20px 60px" }}>
-
+      <SEO title="Saqlanganlar" noindex />
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0f172a", margin: "0 0 6px", display: "flex", alignItems: "center", gap: 10 }}>

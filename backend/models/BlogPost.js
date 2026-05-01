@@ -17,6 +17,7 @@ const blogPostSchema = new mongoose.Schema(
     tags:     [{ type: String, trim: true, lowercase: true }],
     readTime: { type: Number, default: 5 },
     views:    { type: Number, default: 0 },
+    likes:    [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     isPublished: { type: Boolean, default: false },
   },
   { timestamps: true }

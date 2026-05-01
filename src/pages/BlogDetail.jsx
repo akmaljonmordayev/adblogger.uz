@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import SEO from "../components/SEO";
 import { LuArrowLeft, LuCalendar, LuClock, LuEye, LuShare2, LuBookmark } from "react-icons/lu";
 
 const POSTS = {
@@ -46,7 +47,20 @@ export default function BlogDetail() {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: 780, margin: "0 auto", padding: "0 20px 60px" }}>
-
+      <SEO
+        title={post?.title || "Blog Maqolasi"}
+        description={post?.excerpt || "ADBlogger blog — reklama va marketing bo'yicha foydali maqolalar."}
+        canonical={`/blogs/${id}`}
+        isArticle
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": post?.title,
+          "author": { "@type": "Organization", "name": "ADBlogger" },
+          "publisher": { "@type": "Organization", "name": "ADBlogger", "logo": { "@type": "ImageObject", "url": "https://adblogger.uz/favicon.svg" }},
+          "url": `https://adblogger.uz/blogs/${id}`
+        }}
+      />
       <Link to="/blog" style={{
         display: "inline-flex", alignItems: "center", gap: 6,
         color: "#64748b", textDecoration: "none", fontSize: 13, fontWeight: 500,

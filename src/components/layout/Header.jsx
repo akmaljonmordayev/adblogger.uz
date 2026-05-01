@@ -8,6 +8,7 @@ import {
   LuHeart, LuBell,
 } from "react-icons/lu";
 import { useAuthStore } from "../../store/useAuthStore";
+import { useNotificationStore } from "../../store/useNotificationStore";
 import LogoutModal from "../ui/LogoutModal";
 import HeroSwiper from "./HeroSwiper";
 import CategorySection from "./CategorySection";
@@ -101,8 +102,17 @@ export default function Header() {
   const menuRef    = useRef(null);
   const userMenuRef = useRef(null);
 
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
+  const { unreadCount, fetch: fetchNotifs, reset: resetNotifs } = useNotificationStore();
   const [showLogout, setShowLogout] = useState(false);
+
+  // Poll notifications every 30s while logged in
+  useEffect(() => {
+    if (!token) { resetNotifs(); return; }
+    fetchNotifs();
+    const id = setInterval(fetchNotifs, 30_000);
+    return () => clearInterval(id);
+  }, [token, fetchNotifs, resetNotifs]);
 
   const handleLogout = () => {
     setUserMenuOpen(false);
@@ -271,11 +281,23 @@ export default function Header() {
                     onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
                   >
                     <LuBell size={14} />
-                    <span style={{
-                      position: "absolute", top: 4, right: 4,
-                      width: 7, height: 7, borderRadius: "50%",
-                      background: "#f87171", border: "1.5px solid rgba(0,0,0,0.3)",
-                    }} />
+                    {unreadCount > 0 && (
+                      <span style={{
+                        position: "absolute",
+                        top: unreadCount > 9 ? 2 : 3,
+                        right: unreadCount > 9 ? 2 : 3,
+                        minWidth: unreadCount > 9 ? 16 : 13,
+                        height: unreadCount > 9 ? 16 : 13,
+                        borderRadius: 99,
+                        background: "#f87171",
+                        border: "1.5px solid rgba(185,28,28,0.6)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 8, fontWeight: 800, color: "#fff",
+                        lineHeight: 1,
+                      }}>
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
                   </NavLink>
                 </>
               )}

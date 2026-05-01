@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import SEO, { breadcrumbSchema } from "../components/SEO";
 import {
   LuInstagram, LuYoutube, LuMessageCircle, LuSearch,
   LuPhone, LuSend, LuBookOpen,
@@ -394,7 +395,12 @@ export default function Ads() {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
-
+      <SEO
+        title="E'lonlar — Blogger va Biznes Reklamalari"
+        description="O'zbekistondagi blogger va biznes reklamalari. ADBlogger platformasida eng mos hamkorni toping. 500+ faol e'lon, qulay narxlar va ishonchli bloggerlar."
+        canonical="/ads"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "E'lonlar", path: "/ads" }])}
+      />
       {/* ── HERO ── */}
       <div style={{ background: "linear-gradient(135deg, #fff 0%, #fef2f2 60%, #fff 100%)", borderRadius: 20, padding: "48px 40px 40px", marginBottom: 24, border: "1px solid #fecaca", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(220,38,38,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
