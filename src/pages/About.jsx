@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import SEO, { breadcrumbSchema } from "../components/SEO";
 import { Link } from "react-router-dom";
 import {
   LuTarget, LuZap, LuShield, LuUsers, LuTrendingUp,
@@ -118,6 +119,12 @@ const MILESTONES = [
 export default function About() {
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", color: "#111827" }}>
+      <SEO
+        title="Biz Haqimizda — ADBlogger Jamoasi va Missiya"
+        description="ADBlogger — O'zbekistonning eng yirik blogger va reklama ekotizimi. Bizning missiyamiz, qadriyatlarimiz va jamoamiz haqida batafsil ma'lumot."
+        canonical="/about"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Biz haqimizda", path: "/about" }])}
+      />
 
       {/* ══ HERO ══ */}
       <section style={{

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import SEO from "../components/SEO";
 import {
   LuUser, LuSettings, LuShield, LuLogOut, LuCamera, LuCheck,
   LuLoader, LuHeart, LuMegaphone, LuBriefcase,
@@ -450,6 +451,7 @@ export default function Profile() {
 
   return (
     <>
+    <SEO title="Profilim" noindex />
     <LogoutModal isOpen={showLogout} onClose={() => setShowLogout(false)} redirectTo="/" />
     <div style={{ fontFamily:"'Inter',sans-serif", maxWidth:960, margin:"0 auto", padding:"0 20px 80px" }}>
       <style>{`

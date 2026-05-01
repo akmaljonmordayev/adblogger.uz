@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { LuInstagram, LuYoutube, LuCheck, LuArrowRight, LuUsers, LuTrendingUp, LuDollarSign, LuStar } from "react-icons/lu";
+import SEO, { breadcrumbSchema } from "../components/SEO";
 
 const steps = [
   { num: "01", title: "Ro'yxatdan o'ting", desc: "Bepul profil yarating va o'z ma'lumotlaringizni kiriting." },
@@ -36,6 +37,12 @@ export default function BlogerBolish() {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <SEO
+        title="Blogger Bo'lish — Daromad Oling"
+        description="ADBlogger platformasida blogger bo'ling. Auditoriyangizni monetizatsiya qiling, brendlar bilan hamkorlik qiling va daromad oling. Ro'yxatdan o'tish bepul!"
+        canonical="/blogger-bolish"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Blogger bo'lish", path: "/blogger-bolish" }])}
+      />
       <style>{`
         .bb-hero        { padding: 48px 32px; }
         .bb-hero h1     { font-size: 40px; }

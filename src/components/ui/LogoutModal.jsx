@@ -72,6 +72,7 @@ export default function LogoutModal({ isOpen, onClose, redirectTo = "/" }) {
           logout();
           navigate(redirectTo, { replace: true });
           onClose();
+          setPhase("idle");
         }, 1000);
       }, 950);
     }, 520);

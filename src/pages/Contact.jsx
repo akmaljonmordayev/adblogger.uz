@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPhoneAlt, FaEnvelope, FaTelegramPlane, FaInstagram, FaMapMarkerAlt, FaUser, FaBriefcase } from 'react-icons/fa';
 import { toast } from '../components/ui/toast';
+import { useAuthStore } from '../store/useAuthStore';
+import SEO, { breadcrumbSchema } from '../components/SEO';
+import api from '../services/api';
 
 const schema = yup.object({
-  name: yup.string().required('Ismingizni kiriting'),
-  email: yup.string().email('Email xato').required('Email majburiy'),
-  phone: yup.string().optional(),
+  name:    yup.string().required('Ismingizni kiriting'),
+  email:   yup.string().email('Email xato').required('Email majburiy'),
+  phone:   yup.string().optional(),
+  subject: yup.string().required('Mavzuni kiriting'),
   message: yup.string().min(10, 'Xabar juda qisqa').required('Xabarni yozing'),
 }).required();
 
@@ -21,6 +25,7 @@ const roles = [
     icon: <FaUser size={20} />,
     hint: 'Bloggerlar uchun: biz sizning auditoriyangizga mos brendlarni topamiz',
     placeholder: 'Blogingiz haqida yozing...',
+    subject: 'Blogger sifatida murojaat',
   },
   {
     id: 'business',
@@ -29,6 +34,7 @@ const roles = [
     icon: <FaBriefcase size={20} />,
     hint: "Biznesmenlar uchun: mahsulotingizni eng mos bloggerlarga ulap beramiz",
     placeholder: 'Mahsulot yoki xizmatingiz haqida yozing...',
+    subject: 'Biznes sifatida murojaat',
   },
 ];
 
@@ -52,12 +58,10 @@ const RoleCard = ({ role, selected, onSelect }) => (
         </svg>
       )}
     </div>
-
     <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200
       ${selected ? 'bg-[#e31e24] text-white' : 'bg-red-100 text-[#e31e24]'}`}>
       {role.icon}
     </div>
-
     <div>
       <p className="text-sm font-medium text-gray-800 text-center">{role.label}</p>
       <p className="text-[11px] text-gray-400 text-center leading-tight mt-0.5">{role.sub}</p>
@@ -67,20 +71,76 @@ const RoleCard = ({ role, selected, onSelect }) => (
 
 const Contact = () => {
   const [selectedRole, setSelectedRole] = useState('blogger');
+  const [sent, setSent] = useState(false);
+  const { user } = useAuthStore();
   const activeRole = roles.find(r => r.id === selectedRole);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm({
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue } = useForm({
     resolver: yupResolver(schema),
   });
 
+  // Pre-fill form fields if user is logged in
+  useEffect(() => {
+    if (user) {
+      setValue('name', `${user.firstName || ''} ${user.lastName || ''}`.trim());
+      setValue('email', user.email || '');
+      setValue('phone', user.phone || '');
+    }
+  }, [user, setValue]);
+
+  // Auto-fill subject when role changes
+  useEffect(() => {
+    setValue('subject', activeRole.subject);
+  }, [selectedRole, activeRole.subject, setValue]);
+
   const onSubmit = async (data) => {
-    await new Promise(r => setTimeout(r, 1200));
-    toast.success('Xabaringiz yuborildi!');
-    reset();
+    try {
+      await api.post('/contact', { ...data, role: selectedRole });
+      toast.success('Xabaringiz yuborildi! Tez orada javob beramiz.');
+      setSent(true);
+      reset();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Xatolik yuz berdi. Qayta urinib ko\'ring.');
+    }
   };
+
+  if (sent) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center max-w-sm"
+        >
+          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-5">
+            <svg width="36" height="36" fill="#16a34a" viewBox="0 0 24 24">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Xabar yuborildi!</h2>
+          <p className="text-gray-500 text-sm mb-6">
+            Xabaringiz qabul qilindi. Tez orada javob beramiz.
+            {user && ' Javob bildirishnomalar bo\'limiga keladi.'}
+          </p>
+          <button
+            onClick={() => setSent(false)}
+            className="px-6 py-3 rounded-xl bg-[#e31e24] text-white font-medium text-sm hover:bg-[#c4191f] transition-colors"
+          >
+            Yana xabar yuborish
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-3 sm:p-6 md:p-10 bg-red-50/30">
+      <SEO
+        title="Bog'lanish — Biz Bilan Muloqot Qiling"
+        description="ADBlogger bilan bog'laning. Savol, taklif yoki hamkorlik bo'yicha murojaat uchun formani to'ldiring. Tez orada javob beramiz."
+        canonical="/contact"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Bog'lanish", path: "/contact" }])}
+      />
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -88,6 +148,7 @@ const Contact = () => {
         className="max-w-5xl w-full bg-white rounded-[1.5rem] overflow-hidden border border-red-100 flex flex-col md:flex-row"
         style={{ boxShadow: '0 8px 40px rgba(227,30,36,0.07)' }}
       >
+        {/* Left panel */}
         <div className="md:w-[300px] flex-shrink-0 bg-[#e31e24] p-6 sm:p-8 md:p-10 flex flex-col justify-between gap-6 md:gap-0">
           <div>
             <div className="w-10 h-[3px] bg-white/40 rounded-full mb-5" />
@@ -125,10 +186,15 @@ const Contact = () => {
           </div>
         </div>
 
+        {/* Right panel — form */}
         <div className="flex-1 p-6 sm:p-8 md:p-12 bg-white">
           <div className="mb-5">
             <h3 className="text-lg sm:text-xl font-medium text-gray-800 mb-1">Xabar yuborish</h3>
-            <p className="text-sm text-gray-400">Barcha maydonlarni to'ldiring, tez javob beramiz</p>
+            <p className="text-sm text-gray-400">
+              {user
+                ? `Salom, ${user.firstName}! Ma'lumotlaringiz avtomatik to'ldirildi.`
+                : 'Barcha maydonlarni to\'ldiring, tez javob beramiz'}
+            </p>
           </div>
 
           <label className="block text-xs text-gray-400 tracking-wider uppercase mb-2.5">Siz kimsiz?</label>
@@ -157,16 +223,37 @@ const Contact = () => {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               <Field label="Ism" error={errors.name}>
-                <input {...register('name')} placeholder="Sardor..." className={inputClass(errors.name)} />
+                <input
+                  {...register('name')}
+                  placeholder="Sardor..."
+                  className={inputClass(errors.name)}
+                />
               </Field>
               <Field label="Email" error={errors.email}>
-                <input {...register('email')} placeholder="example@mail.com" className={inputClass(errors.email)} />
+                <input
+                  {...register('email')}
+                  placeholder="example@mail.com"
+                  className={inputClass(errors.email)}
+                />
               </Field>
             </div>
 
-            <Field label="Telefon">
-              <input {...register('phone')} placeholder="+998 __ ___ __ __" className={inputClass()} />
-            </Field>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <Field label="Telefon">
+                <input
+                  {...register('phone')}
+                  placeholder="+998 __ ___ __ __"
+                  className={inputClass()}
+                />
+              </Field>
+              <Field label="Mavzu" error={errors.subject}>
+                <input
+                  {...register('subject')}
+                  placeholder="Xabar mavzusi..."
+                  className={inputClass(errors.subject)}
+                />
+              </Field>
+            </div>
 
             <Field label="Xabar" error={errors.message}>
               <textarea
@@ -177,9 +264,22 @@ const Contact = () => {
               />
             </Field>
 
-            <motion.button type="submit" disabled={isSubmitting}
-              whileHover={{ backgroundColor: '#c4191f' }} whileTap={{ scale: 0.98 }}
-              className="w-full bg-[#e31e24] text-white font-medium py-3.5 rounded-xl tracking-wide transition-colors disabled:opacity-60 disabled:pointer-events-none text-sm mt-1">
+            {user && (
+              <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                <svg width="12" height="12" fill="#e31e24" viewBox="0 0 24 24">
+                  <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+                Javob bildirishnomalar bo'limiga keladi
+              </p>
+            )}
+
+            <motion.button
+              type="submit"
+              disabled={isSubmitting}
+              whileHover={{ backgroundColor: '#c4191f' }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-[#e31e24] text-white font-medium py-3.5 rounded-xl tracking-wide transition-colors disabled:opacity-60 disabled:pointer-events-none text-sm mt-1"
+            >
               {isSubmitting ? 'Yuborilmoqda...' : 'Xabarni yuborish →'}
             </motion.button>
           </form>
@@ -199,8 +299,14 @@ const Field = ({ label, error, children }) => (
     {children}
     <AnimatePresence>
       {error && (
-        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-          className="text-xs text-red-500">{error.message}</motion.p>
+        <motion.p
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          className="text-xs text-red-500"
+        >
+          {error.message}
+        </motion.p>
       )}
     </AnimatePresence>
   </div>

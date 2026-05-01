@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import SEO, { breadcrumbSchema } from "../components/SEO";
+
 const posts = [
   {
     id: 1,
@@ -432,6 +434,12 @@ export default function Blog() {
 
   return (
     <section className="max-w-6xl mx-auto px-4 py-10">
+      <SEO
+        title="Blog — Marketing va Reklama Maqolalari"
+        description="Reklama, marketing va blogging bo'yicha foydali maqolalar va qo'llanmalar. O'zbekiston bozori uchun amaliy tavsiyalar va yangiliklar."
+        canonical="/blogs"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Blog", path: "/blogs" }])}
+      />
       <div className="flex flex-col gap-4 mb-8">
         <div className="relative max-w-sm">
           <svg

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import SEO, { breadcrumbSchema } from "../components/SEO";
 import {
   LuTag, LuLaptop, LuSparkles, LuSmile,
   LuUtensils, LuDumbbell, LuPlane, LuBriefcase,
@@ -116,7 +117,12 @@ export default function CategoriesPage() {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
-
+      <SEO
+        title="Kategoriyalar — Blogger Reklama Yo'nalishlari"
+        description="Moda, oziq-ovqat, sport, texnologiya, go'zallik va 20+ kategoriyada bloggerni toping. ADBlogger platformasida yo'nalishingizga mos influencerni tanlang."
+        canonical="/categories"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Kategoriyalar", path: "/categories" }])}
+      />
       {/* ── Hero ── */}
       <div style={{ textAlign: "center", padding: "44px 20px 40px", maxWidth: 600, margin: "0 auto" }}>
         <span style={{
