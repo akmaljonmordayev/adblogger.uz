@@ -2,10 +2,11 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 
-const User    = require('./models/User');
-const Blogger = require('./models/Blogger');
-const Review  = require('./models/Review');
-const Ad      = require('./models/Ad');
+const User     = require('./models/User');
+const Blogger  = require('./models/Blogger');
+const Review   = require('./models/Review');
+const Ad       = require('./models/Ad');
+const BlogPost = require('./models/BlogPost');
 
 const MONGO_URI = process.env.MONGO_URI;
 if (!MONGO_URI) { console.error('MONGO_URI topilmadi'); process.exit(1); }
@@ -278,6 +279,7 @@ async function main() {
     }
     if (oldUserIds.length) {
       await Ad.deleteMany({ user: { $in: oldUserIds } });
+      await BlogPost.deleteMany({ author: { $in: oldUserIds } });
       await User.deleteMany({ _id: { $in: oldUserIds } });
     }
 
@@ -350,6 +352,158 @@ async function main() {
     // Biznes userlar
     const biz1 = await User.create({ firstName: 'Shirin', lastName: 'Zavodi', email: 'biz1@seed.uz', phone: '+998901000201', password: 'Seed@123456', role: 'business' });
     const biz2 = await User.create({ firstName: 'Texno', lastName: 'Market', email: 'biz2@seed.uz', phone: '+998901000202', password: 'Seed@123456', role: 'business' });
+
+    /* ── 5. Blog postlar (5 ta) ── */
+    const BLOG_POSTS = [
+      {
+        title: 'Instagram\'da reklama samaradorligini oshirish: 10 ta amaliy maslahat',
+        excerpt: 'Instagram reklamangiz ishlamayaptimi? Bu maqolada auditoriya bilan haqiqiy aloqa o\'rnatishning sirlari haqida gaplashamiz.',
+        content: `<h2>Kirish</h2>
+<p>Bugungi raqamli marketing dunyosida Instagram reklamasi eng samarali vositalardan biri hisoblanadi. Lekin ko'plab tadbirkorlar reklamaga pul sarflaydi va natija ko'rmaydi. Sabab nima?</p>
+<h2>1. Maqsadli auditoriyani to'g'ri belgilang</h2>
+<p>Reklama muvaffaqiyatining 80% to'g'ri auditoriyani topishda. Instagram Ads Manager orqali yosh, joylashuv, qiziqishlar bo'yicha aniq sozlang.</p>
+<h2>2. Kontent sifati birinchi o'rinda</h2>
+<p>Professional foto va video materiallarsiz reklama ishlamaydi. Kamida 1080x1080 piksel o'lchamidagi rasmlar ishlating.</p>
+<h2>3. Call-to-Action (CTA) ni aniq yozing</h2>
+<p>"Hoziroq xarid qiling", "Batafsil bilib oling" kabi aniq chaqiriqlar konversiyani 3 barobarga oshiradi.</p>
+<h2>4. A/B test o'tkazing</h2>
+<p>Har doim 2-3 xil variant sinab ko'ring. Eng yaxshi ishlaydiganini kengaytiring.</p>
+<h2>5. Analytics ma'lumotlarini kuzating</h2>
+<p>Reach, engagement rate, CTR ko'rsatkichlarini kunlik kuzating va kerak bo'lsa strategiyani o'zgartiring.</p>
+<h2>Xulosa</h2>
+<p>Samarali Instagram reklamasi uchun sabr, tahlil va doimiy optimizatsiya zarur. Ushbu maslahatlarni qo'llab natijangiz oshishini kuzating.</p>`,
+        coverImage: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800',
+        author: sardor.user._id,
+        category: 'Tech',
+        tags: ['instagram', 'reklama', 'marketing', 'smm'],
+        isPublished: true,
+        status: 'approved',
+        views: 1240,
+      },
+      {
+        title: 'Blogger sifatida birinchi 100K obunachilikka qanday erishdim',
+        excerpt: 'Noldan boshlagan bloger sifatida 18 oyda 100 000 ta obunachilikka erishish yo\'lidagi real tajribam.',
+        content: `<h2>Boshlanish</h2>
+<p>2022-yil men Instagram sahifamni noldan boshladim. Hech qanday tajribam, katta byudjetim yo'q edi. Faqat bir narsa bor edi — qiziqish va istak.</p>
+<h2>Birinchi oy: asoslarni o'rganish</h2>
+<p>Kuniga kamida 1 ta post va 5-7 ta story joylashdan boshladim. Hashtag tadqiqotiga ko'p vaqt sarfladim. Niche mening ehtiyojimga to'g'ri kelishi kerak edi.</p>
+<h2>Uchinchi oy: aloqalar o'rnatish</h2>
+<p>Boshqa bloggerlar bilan hamkorlik mening o'sishimni 10 baravar tezlashtirdi. Kollaboratsiya — eng kuchli vosita.</p>
+<h2>Oltinchi oy: pul ishlash boshlandi</h2>
+<p>30K obunachilikka yetganimda birinchi reklama taklifini oldim. Oyiga 2-3 mln so'm ishlay boshladim.</p>
+<h2>18-oy: 100K!</h2>
+<p>Doimiylik, sifatli kontent va auditoriya bilan samimiy muloqot meni 100K ga olib keldi. Bu faqat boshlanish.</p>
+<h2>Asosiy saboqlar</h2>
+<ul>
+<li>Niche ni aniq belgilang</li>
+<li>Har kun kontent yarating</li>
+<li>Auditoriyangiz bilan muloqot qiling</li>
+<li>Tahlil qiling va o'rganing</li>
+</ul>`,
+        coverImage: 'https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=800',
+        author: nilufar.user._id,
+        category: 'Lifestyle',
+        tags: ['blogger', 'instagram', 'obunachilik', 'kontent'],
+        isPublished: true,
+        status: 'approved',
+        views: 3580,
+      },
+      {
+        title: 'O\'zbekistonda influencer marketing: bizneslar uchun qo\'llanma',
+        excerpt: 'O\'zbekiston bozorida influencer marketing qanday ishlaydi? Biznes uchun to\'g\'ri bloger tanlash strategiyalari.',
+        content: `<h2>O'zbekiston influencer bozori</h2>
+<p>2024-yilga kelib O'zbekistonda influencer marketing bozori 50 mlrd so'mdan oshdi. Bu raqam har yili 40% ga o'smoqda.</p>
+<h2>To'g'ri bloger tanlash mezonlari</h2>
+<h3>1. Engagement Rate (ER)</h3>
+<p>Obunachilik soni emas, engagement rate muhimroq. 10% dan yuqori ER — bu juda yaxshi ko'rsatkich.</p>
+<h3>2. Auditoriya mos kelishi</h3>
+<p>Sizning maqsadli auditoriyangiz va blogger auditoriyasi mos kelishi kerak. Demografik tahlil zarur.</p>
+<h3>3. Kontent sifati</h3>
+<p>Avvalgi reklamalarni ko'rib chiqing. Tabiiy va organik ko'rinadimi yoki sun'iy?</p>
+<h2>Byudjet rejalashtirish</h2>
+<p>Kichik biznes uchun: 1-5 mln so'm/oy</p>
+<p>O'rta biznes uchun: 5-20 mln so'm/oy</p>
+<p>Yirik kompaniya uchun: 20 mln+ so'm/oy</p>
+<h2>ROI ni o'lchash</h2>
+<p>Reklama kampaniyasidan oldin KPI larni belgilang: qamrov, kliklar, savdo, brend taniqlilik.</p>
+<h2>Xatolar va qochish yo'llari</h2>
+<p>Eng ko'p uchraydigan xato — faqat katta obunachilikka qarab bloger tanlash. Micro-influencer lar ko'pincha yuqori ROI beradi.</p>`,
+        coverImage: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800',
+        author: sardor.user._id,
+        category: 'Business',
+        tags: ['influencer', 'marketing', 'biznes', 'reklama', "o'zbekiston"],
+        isPublished: true,
+        status: 'approved',
+        views: 2100,
+      },
+      {
+        title: 'Go\'zallik blogeri bo\'lish: boshlang\'ichlar uchun to\'liq yo\'riqnoma',
+        excerpt: 'Go\'zallik va moda sohasida blog yuritishni xohlaysizmi? Mana kerakli barcha ma\'lumotlar.',
+        content: `<h2>Go'zallik blog nima?</h2>
+<p>Go'zallik blogi — pardoz, teri parvarishi, soch, perfumeriya va moda haqidagi kontent. Bu sohada O'zbekistonda raqobat bor, lekin imkoniyat undan ham katta.</p>
+<h2>Qaysi platformani tanlash kerak?</h2>
+<h3>Instagram</h3>
+<p>Vizual kontent uchun ideal. Estetik lenta, professional foto zarur. 18-35 yosh auditoriyasi ko'p.</p>
+<h3>YouTube</h3>
+<p>Uzoq tutorial videolar uchun. Odamlar 10-20 daqiqa ko'radi va ishonadi.</p>
+<h3>TikTok</h3>
+<p>Tezkor o'sish uchun. Viral kontent imkoniyati yuqori.</p>
+<h2>Asosiy kontent turlari</h2>
+<ul>
+<li>Mahsulot sharhi (Review)</li>
+<li>Qo'llash darsligi (Tutorial)</li>
+<li>Before/After transformatsiya</li>
+<li>Trend makeup ko'rinishlar</li>
+<li>Byudjet vs Luxury solishtirish</li>
+</ul>
+<h2>Uskunalar ro'yxati</h2>
+<p>Boshlang'ich uchun: iPhone kamerasi, ring light (200-400 ming so'm), oddiy fon yetarli.</p>
+<h2>Monetizatsiya</h2>
+<p>Go'zallik blogerlar uchun asosiy daromad manba'lari: brendlar bilan hamkorlik, affiliate marketing, o'z mahsulotlari sotish.</p>`,
+        coverImage: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800',
+        author: kamola.user._id,
+        category: 'Beauty',
+        tags: ['beauty', 'blogger', 'makeup', 'lifestyle', "go'zallik"],
+        isPublished: true,
+        status: 'approved',
+        views: 4200,
+      },
+      {
+        title: 'YouTube\'da pul ishlash: O\'zbekistondan real tajriba',
+        excerpt: 'O\'zbekistonlik YouTuber sifatida kanal ochishdan boshlab birinchi pulga qadar o\'tgan yo\'l.',
+        content: `<h2>YouTube O'zbekistonda qanday ishlaydi?</h2>
+<p>O'zbekistonda YouTube monetizatsiyasi 2023-yildan faolroq. AdSense to'lovlari UZS ga o'tkazilmoqda, lekin hali to'liq imkoniyat ochilmagan.</p>
+<h2>Kanal ochish va niche tanlash</h2>
+<p>Muvaffaqiyatli kanal uchun niche aniq bo'lishi shart. Umumiy "men haqimda" kanallar o'smaydi. Tech, ta'lim, food, ko'ngilochar — bular yaxshi ishlaydi.</p>
+<h2>Birinchi 1000 obunachilik</h2>
+<p>Bu eng qiyin bosqich. Har hafta kamida 2 video yuklash, SEO optimizatsiya (sarlavha, tavsif, teglar) va ijtimoiy tarmoqlarda tarqatish zarur.</p>
+<h2>YouTube Partner Program (YPP)</h2>
+<p>Shartlar: 1000 obunachilik + 4000 soat tomosha. O'rtacha O'zbekistonlik kanallar bu ko'rsatkichga 8-18 oyda erishadi.</p>
+<h2>Asosiy daromad manbalari</h2>
+<ol>
+<li>AdSense (CPM O'zbekistonda $0.5-2)</li>
+<li>Brendlar bilan hamkorlik (asosiy daromad)</li>
+<li>Super Chat (live stream paytida)</li>
+<li>Merchandise va kurslar</li>
+</ol>
+<h2>Menning raqamlarim</h2>
+<p>300K obunachilikda oyiga: AdSense 3-5 mln + Brendlar 15-25 mln so'm. Jami 20-30 mln so'm/oy.</p>
+<h2>Maslahat</h2>
+<p>YouTube marathon, sprint emas. Kamida 1 yil doimiy ishlashga tayyor bo'ling.</p>`,
+        coverImage: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=800',
+        author: sardor.user._id,
+        category: 'Education',
+        tags: ['youtube', 'monetizatsiya', 'blogger', "o'zbekiston", 'kontent'],
+        isPublished: true,
+        status: 'approved',
+        views: 5670,
+      },
+    ];
+
+    for (const post of BLOG_POSTS) {
+      await BlogPost.create(post);
+    }
+    console.log(`📝  ${BLOG_POSTS.length} ta blog post yaratildi`);
 
     await Ad.insertMany([
       /* ── 1. Blogger e'loni: Sardor – YouTube Tech ── */

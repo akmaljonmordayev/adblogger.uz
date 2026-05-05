@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { adminDashboardService } from "../../services/adminService";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiUsers,
@@ -649,7 +650,23 @@ export default function AdminDashboard() {
   const [period, setPeriod] = useState("week");
   const [notif, setNotif] = useState(false);
   const [clock, setClock] = useState(new Date());
+  const [apiStats, setApiStats] = useState(null);
+  const [apiLoading, setApiLoading] = useState(true);
   const nRef = useRef(null);
+
+  const fetchStats = useCallback(async () => {
+    setApiLoading(true);
+    try {
+      const res = await adminDashboardService.getStats();
+      setApiStats(res.data);
+    } catch {
+      // silently fall through; UI will show placeholders
+    } finally {
+      setApiLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchStats(); }, [fetchStats]);
 
   useEffect(() => {
     const t = setInterval(() => setClock(new Date()), 1000);
@@ -670,70 +687,71 @@ export default function AdminDashboard() {
   const card = { background: C.surface, border: `1px solid ${C.border}` };
   const card2 = { background: C.surfaceUp, border: `1px solid ${C.borderUp}` };
 
+  const s = apiStats?.stats || {};
   const STATS = [
     {
-      icon: FiDollarSign,
-      label: "Total Revenue",
-      value: fmtUSD(totalRev),
-      sub: "+18%",
-      up: true,
-      spark: [28, 42, 33, 62, 48, 78, 58],
-    },
-    {
-      icon: FiCalendar,
-      label: "Bookings",
-      value: totalBook,
-      sub: "+12%",
-      up: true,
-      spark: [38, 52, 40, 68, 55, 82, 65],
-    },
-    {
       icon: FiUsers,
-      label: "Active Bloggers",
-      value: "1,284",
-      sub: "+47",
+      label: "Foydalanuvchilar",
+      value: apiLoading ? "…" : (s.totalUsers ?? 0),
+      sub: "jami",
       up: true,
       spark: [52, 56, 58, 60, 63, 66, 70],
     },
     {
+      icon: FiActivity,
+      label: "Bloggerlar",
+      value: apiLoading ? "…" : (s.totalBloggers ?? 0),
+      sub: "faol",
+      up: true,
+      spark: [38, 52, 40, 68, 55, 82, 65],
+    },
+    {
       icon: FiLayers,
-      label: "Brand Clients",
-      value: "342",
-      sub: "+23",
+      label: "E'lonlar",
+      value: apiLoading ? "…" : (s.totalAds ?? 0),
+      sub: "jami",
       up: true,
       spark: [18, 32, 28, 52, 42, 68, 52],
     },
     {
-      icon: FiHeart,
-      label: "Impressions",
-      value: "84.2M",
-      sub: "+31%",
+      icon: FiCalendar,
+      label: "Kampaniyalar",
+      value: apiLoading ? "…" : (s.totalCampaigns ?? 0),
+      sub: "jami",
       up: true,
-      spark: [32, 48, 40, 68, 55, 78, 72],
+      spark: [28, 42, 33, 62, 48, 78, 58],
     },
     {
       icon: FiStar,
-      label: "Avg Rating",
-      value: "4.8",
-      sub: "+0.2",
+      label: "Blog postlar",
+      value: apiLoading ? "…" : (s.totalBlogs ?? 0),
+      sub: "nashr",
       up: true,
       spark: [68, 70, 69, 72, 71, 74, 76],
     },
     {
-      icon: FiActivity,
-      label: "Conversion",
-      value: "5.9%",
-      sub: "+1.1%",
-      up: true,
-      spark: [36, 38, 39, 42, 41, 45, 48],
+      icon: FiAlertCircle,
+      label: "Kutilmoqda",
+      value: apiLoading ? "…" : (s.pendingAds ?? 0),
+      sub: "e'lon",
+      up: false,
+      spark: [52, 58, 42, 68, 48, 38, 36],
     },
     {
       icon: FiMessageSquare,
-      label: "Open Tickets",
-      value: "17",
-      sub: "-5",
+      label: "Yangi xabar",
+      value: apiLoading ? "…" : (s.newContacts ?? 0),
+      sub: "contact",
       up: false,
-      spark: [52, 58, 42, 68, 48, 38, 36],
+      spark: [36, 38, 39, 42, 41, 45, 48],
+    },
+    {
+      icon: FiCheckCircle,
+      label: "Yakunlangan",
+      value: apiLoading ? "…" : (s.completedCampaigns ?? 0),
+      sub: "kampaniya",
+      up: true,
+      spark: [32, 48, 40, 68, 55, 78, 72],
     },
   ];
 
