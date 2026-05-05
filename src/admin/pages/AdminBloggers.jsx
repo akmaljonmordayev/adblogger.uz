@@ -1,280 +1,293 @@
-import React, { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "../../components/ui/toast";
+import { adminBloggersService } from "../../services/adminService";
+import {
+  LuSearch, LuRefreshCw, LuEye, LuLoader,
+  LuChevronLeft, LuChevronRight,
+} from "react-icons/lu";
+import { FiInstagram, FiYoutube, FiTv } from "react-icons/fi";
+import { BsTiktok } from "react-icons/bs";
 
-const INITIAL_BLOGGERS = [
-  { id: 1, name: "Ali Valiyev", platform: "Instagram", category: "Texnologiya", price: 5000000, status: "Tasdiqlangan", avatar: "👨‍💻" },
-  { id: 2, name: "Malika Asatova", platform: "YouTube", category: "Lifestyle", price: 12000000, status: "Kutilmoqda", avatar: "👩‍🎨" },
-  { id: 3, name: "Sanjar Gaming", platform: "YouTube", category: "Gaming", price: 3000000, status: "Tasdiqlangan", avatar: "🎮" },
-  { id: 4, name: "Go'zallik Sirlari", platform: "TikTok", category: "Go'zallik", price: 1500000, status: "Rad etilgan", avatar: "💅" },
-  { id: 5, name: "Hamdam Dev", platform: "Telegram", category: "Texnologiya", price: 8000000, status: "Kutilmoqda", avatar: "🚀" },
-  { id: 6, name: "Lola Fashion", platform: "Instagram", category: "Go'zallik", price: 4500000, status: "Tasdiqlangan", avatar: "👗" },
-];
+const STATUS_META = {
+  true:  { bg: "#dcfce7", c: "#166534", bd: "#86efac", label: "Tasdiqlangan" },
+  false: { bg: "#fef9c3", c: "#854d0e", bd: "#fde68a", label: "Kutilmoqda" },
+};
 
-const AdminBloggers = () => {
-  const [bloggers, setBloggers] = useState(INITIAL_BLOGGERS);
-  const [search, setSearch] = useState("");
-  const [filterPlatform, setFilterPlatform] = useState("All");
-  const [sortBy, setSortBy] = useState("newest");
+const PLT_ICON = { instagram: FiInstagram, youtube: FiYoutube, tiktok: BsTiktok, telegram: FiTv };
+const PLT_COLOR = { instagram: "#e1306c", youtube: "#ff0000", tiktok: "#69c9d0", telegram: "#229ed9" };
 
-  // Modal states
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedBlogger, setSelectedBlogger] = useState(null); // Batafsil ko'rish uchun
-  const [formData, setFormData] = useState({ name: "", platform: "Instagram", category: "Texnologiya", price: "" });
+const PER = 10;
 
-  const stats = {
-    total: bloggers.length,
-    pending: bloggers.filter((b) => b.status === "Kutilmoqda").length,
-    totalValue: bloggers.reduce((acc, curr) => acc + curr.price, 0),
-  };
+function ini(u) {
+  if (!u) return "?";
+  return `${u.firstName?.[0] || ""}${u.lastName?.[0] || ""}`.toUpperCase() || "?";
+}
 
-  const processedBloggers = useMemo(() => {
-    let result = bloggers.filter(
-      (b) =>
-        (b.name.toLowerCase().includes(search.toLowerCase()) ||
-          b.platform.toLowerCase().includes(search.toLowerCase())) &&
-        (filterPlatform === "All" || b.platform === filterPlatform),
-    );
-    if (sortBy === "price-asc") result.sort((a, b) => a.price - b.price);
-    if (sortBy === "price-desc") result.sort((a, b) => b.price - a.price);
-    return result;
-  }, [bloggers, search, filterPlatform, sortBy]);
+function Ava({ user, size = 40 }) {
+  const colors = ["#6366f1","#f43f5e","#f97316","#10b981","#8b5cf6","#0ea5e9"];
+  const color = colors[((user?.firstName || "?").charCodeAt(0)) % colors.length];
+  if (user?.avatar) return (
+    <img src={user.avatar} alt="" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+  );
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      background: color + "22", border: `1.5px solid ${color}44`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: size * 0.35, fontWeight: 800, color,
+    }}>{ini(user)}</div>
+  );
+}
 
-  const handleDelete = (e, id) => {
-    e.stopPropagation(); // Qator bosilganda Modal ochilib ketmasligi uchun
-    if (window.confirm("Rostdan ham o'chirmoqchimisiz?")) {
-      setBloggers(bloggers.filter((b) => b.id !== id));
+function Pill({ verified }) {
+  const m = STATUS_META[verified];
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      background: m.bg, color: m.c, border: `1px solid ${m.bd}`,
+      padding: "3px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700,
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: m.c, flexShrink: 0 }} />
+      {m.label}
+    </span>
+  );
+}
+
+function ViewModal({ blogger, onClose, onVerify }) {
+  const u = blogger?.user;
+  const [saving, setSaving] = useState(false);
+
+  const toggleVerify = async () => {
+    setSaving(true);
+    try {
+      await adminBloggersService.verify(blogger._id, !blogger.isVerified);
+      toast.success(blogger.isVerified ? "Tasdiq bekor qilindi" : "Blogger tasdiqlandi");
+      onVerify();
+      onClose();
+    } catch {
+      toast.error("Xatolik yuz berdi");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const openModal = () => {
-    setFormData({ name: "", platform: "Instagram", category: "Texnologiya", price: "" });
-    setIsModalOpen(true);
-  };
+  if (!blogger) return null;
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 520, overflow: "hidden" }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontWeight: 800, fontSize: 17, color: "#111827" }}>Blogger ma'lumotlari</span>
+          <button onClick={onClose} style={{ fontSize: 22, color: "#6b7280", background: "none", border: "none", cursor: "pointer" }}>×</button>
+        </div>
+        <div style={{ padding: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+            <Ava user={u} size={56} />
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>
+                {u ? `${u.firstName} ${u.lastName}` : "—"}
+              </div>
+              <div style={{ fontSize: 13, color: "#6b7280" }}>{u?.email || "—"}</div>
+              <div style={{ marginTop: 6 }}><Pill verified={blogger.isVerified} /></div>
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+            {[
+              ["Handle", blogger.handle || "—"],
+              ["Followers", blogger.followers?.toLocaleString() || "—"],
+              ["Engagement", blogger.engagementRate ? `${blogger.engagementRate}%` : "—"],
+              ["Joylashuv", blogger.location || "—"],
+            ].map(([k, v]) => (
+              <div key={k} style={{ background: "#f9fafb", borderRadius: 10, padding: "12px 14px", border: "1px solid #f3f4f6" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", marginBottom: 4 }}>{k}</div>
+                <div style={{ fontWeight: 700, color: "#111827", fontSize: 14 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={toggleVerify}
+            disabled={saving}
+            style={{
+              width: "100%", padding: "12px 0", borderRadius: 12, border: "none", cursor: saving ? "not-allowed" : "pointer",
+              background: blogger.isVerified ? "#fee2e2" : "#dcfce7",
+              color: blogger.isVerified ? "#991b1b" : "#166534",
+              fontWeight: 800, fontSize: 14,
+            }}
+          >
+            {saving ? "Saqlanmoqda…" : blogger.isVerified ? "Tasdiqni bekor qilish" : "Tasdiqlash"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    const newBlogger = {
-      id: Date.now(),
-      ...formData,
-      price: Number(formData.price),
-      status: "Kutilmoqda",
-      avatar: "👤",
-    };
-    setBloggers([newBlogger, ...bloggers]);
-    setIsModalOpen(false);
+export default function AdminBloggers() {
+  const [bloggers, setBloggers] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState(null);
+
+  const fetchBloggers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = { page, limit: PER };
+      if (search.trim()) params.search = search.trim();
+      const res = await adminBloggersService.getAll(params);
+      setBloggers(res.data || []);
+      setTotal(res.total || 0);
+    } catch {
+      toast.error("Bloggerlarni yuklashda xatolik");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, search]);
+
+  useEffect(() => { fetchBloggers(); }, [fetchBloggers]);
+
+  const pages = Math.ceil(total / PER) || 1;
+
+  const stats = {
+    total,
+    verified: bloggers.filter(b => b.isVerified).length,
+    pending: bloggers.filter(b => !b.isVerified).length,
   };
 
   return (
-    <div className="p-4 sm:p-8 bg-[#f8fafc] min-h-screen font-sans">
-      <div className="max-w-7xl mx-auto">
-        {/* 1. STATS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-[24px] shadow-sm border border-slate-100">
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Jami Blogerlar</p>
-            <h2 className="text-3xl font-black text-slate-900 mt-2">{stats.total} ta</h2>
-          </div>
-          <div className="bg-indigo-600 p-6 rounded-[24px] shadow-lg shadow-indigo-100 text-white">
-            <p className="text-indigo-100 text-xs font-bold uppercase tracking-wider">Kutilmoqda</p>
-            <h2 className="text-3xl font-black mt-2">{stats.pending} ta</h2>
-          </div>
-          <div className="bg-white p-6 rounded-[24px] shadow-sm border border-slate-100">
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Umumiy Aylanma</p>
-            <h2 className="text-3xl font-black text-slate-900 mt-2">
-              {stats.totalValue.toLocaleString()} <span className="text-sm font-medium">UZS</span>
-            </h2>
-          </div>
+    <div style={{ minHeight: "100vh", background: "#f4f6fb", padding: "28px 32px", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111827", margin: 0 }}>Bloggerlar</h1>
+          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>Jami: {total} ta blogger</p>
         </div>
 
-        {/* 2. HEADER & FILTERS */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
-          <h1 className="text-2xl font-black text-slate-900">Boshqaruv Paneli</h1>
-          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-            <div className="relative group w-full md:w-64">
-              <input 
-                type="text" 
-                placeholder="Qidirish..." 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-4 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none transition-all focus:border-indigo-500"
-              />
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
+          {[
+            { l: "Jami", v: total, c: "#111827" },
+            { l: "Tasdiqlangan", v: stats.verified, c: "#166534" },
+            { l: "Kutilmoqda", v: stats.pending, c: "#854d0e" },
+          ].map(({ l, v, c }) => (
+            <div key={l} style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "18px 20px" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1 }}>{l}</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: c, marginTop: 4 }}>{v}</div>
             </div>
-            <select
-              value={filterPlatform}
-              onChange={(e) => setFilterPlatform(e.target.value)}
-              className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none cursor-pointer"
-            >
-              <option value="All">Barcha Platformalar</option>
-              <option value="Instagram">Instagram</option>
-              <option value="YouTube">YouTube</option>
-              <option value="Telegram">Telegram</option>
-              <option value="TikTok">TikTok</option>
-            </select>
-            <button
-              onClick={openModal}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all active:scale-95"
-            >
-              + Qo'shish
-            </button>
-          </div>
+          ))}
         </div>
 
-        {/* 3. TABLE */}
-        <div className="bg-white rounded-[24px] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+        {/* Search & refresh */}
+        <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+          <div style={{ position: "relative", flex: 1 }}>
+            <LuSearch style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: 16 }} />
+            <input
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              placeholder="Handle, ism bo'yicha qidirish…"
+              style={{ width: "100%", paddingLeft: 38, paddingRight: 14, height: 40, border: "1px solid #e5e7eb", borderRadius: 10, fontSize: 13, color: "#111827", background: "#fff", outline: "none", boxSizing: "border-box" }}
+            />
+          </div>
+          <button onClick={fetchBloggers} disabled={loading} style={{ width: 40, height: 40, border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <LuRefreshCw style={{ fontSize: 16, color: "#6b7280", animation: loading ? "spin 1s linear infinite" : "none" }} />
+          </button>
+        </div>
+
+        {/* Table */}
+        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", overflow: "hidden" }}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr className="bg-slate-50/50 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                  <th className="px-6 py-4 text-left">Bloger</th>
-                  <th className="px-6 py-4 text-left">Kategoriya</th>
-                  <th className="px-6 py-4 text-left">
-                    <button onClick={() => setSortBy(sortBy === "price-asc" ? "price-desc" : "price-asc")} className="flex items-center gap-1 hover:text-indigo-600 transition-colors">
-                      Narxi ↕️
-                    </button>
-                  </th>
-                  <th className="px-6 py-4 text-left">Holat</th>
-                  <th className="px-6 py-4 text-center">Amallar</th>
+                <tr style={{ borderBottom: "1px solid #f3f4f6", background: "#f9fafb" }}>
+                  {["Blogger", "Handle", "Followers", "Platformalar", "Holat", "Amallar"].map(h => (
+                    <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap" }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
-                {processedBloggers.map((blogger) => (
-                  <tr
-                    key={blogger.id}
-                    onClick={() => setSelectedBlogger(blogger)}
-                    className="group hover:bg-indigo-50/40 transition-all cursor-pointer"
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "#6b7280" }}>
+                    <LuLoader style={{ fontSize: 24, animation: "spin 1s linear infinite", display: "block", margin: "0 auto 8px" }} />
+                    Yuklanmoqda…
+                  </td></tr>
+                ) : bloggers.length === 0 ? (
+                  <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "#9ca3af", fontSize: 14 }}>Blogger topilmadi</td></tr>
+                ) : bloggers.map(b => (
+                  <tr key={b._id} style={{ borderBottom: "1px solid #f9fafb", cursor: "pointer" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                   >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xl shadow-inner border border-white">
-                          {blogger.avatar}
-                        </div>
+                    <td style={{ padding: "11px 14px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Ava user={b.user} size={36} />
                         <div>
-                          <div className="font-bold text-slate-900">{blogger.name}</div>
-                          <div className="text-[10px] font-bold text-indigo-500 uppercase">{blogger.platform}</div>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: "#111827" }}>
+                            {b.user ? `${b.user.firstName} ${b.user.lastName}` : "—"}
+                          </div>
+                          <div style={{ fontSize: 11, color: "#6b7280" }}>{b.user?.email || "—"}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-slate-600">{blogger.category}</td>
-                    <td className="px-6 py-4 font-black text-slate-800 text-sm">{blogger.price.toLocaleString()} UZS</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${
-                        blogger.status === "Tasdiqlangan" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : 
-                        blogger.status === "Kutilmoqda" ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-rose-50 text-rose-600 border-rose-100"
-                      }`}>
-                        {blogger.status}
-                      </span>
+                    <td style={{ padding: "11px 14px", fontSize: 13, color: "#374151", fontWeight: 600 }}>{b.handle || "—"}</td>
+                    <td style={{ padding: "11px 14px", fontSize: 13, fontWeight: 700, color: "#111827" }}>
+                      {b.followers ? b.followers.toLocaleString() : "—"}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-center items-center gap-2">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSelectedBlogger(blogger); }}
-                          className="w-8 h-8 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-                          title="Batafsil ko'rish"
-                        >
-                          👁
-                        </button>
-                        <button
-                          onClick={(e) => handleDelete(e, blogger.id)}
-                          className="w-8 h-8 flex items-center justify-center bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                          title="O'chirish"
-                        >
-                          🗑
-                        </button>
+                    <td style={{ padding: "11px 14px" }}>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        {(b.platforms || []).slice(0, 3).map(p => {
+                          const Icon = PLT_ICON[p.toLowerCase()] || FiTv;
+                          const color = PLT_COLOR[p.toLowerCase()] || "#6b7280";
+                          return (
+                            <span key={p} style={{ width: 24, height: 24, borderRadius: 6, background: color + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <Icon style={{ fontSize: 12, color }} />
+                            </span>
+                          );
+                        })}
                       </div>
+                    </td>
+                    <td style={{ padding: "11px 14px" }}><Pill verified={b.isVerified} /></td>
+                    <td style={{ padding: "11px 14px" }}>
+                      <button
+                        onClick={() => setSelected(b)}
+                        style={{ width: 32, height: 32, borderRadius: 8, background: "#eff6ff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        title="Ko'rish / Tasdiqlash"
+                      >
+                        <LuEye style={{ fontSize: 15, color: "#3b82f6" }} />
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
 
-        {/* --- MODAL: BATAFSIL MA'LUMOT --- */}
-        {selectedBlogger && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
-            <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden relative">
-               <button 
-                onClick={() => setSelectedBlogger(null)}
-                className="absolute top-6 right-6 text-slate-400 hover:text-rose-500 text-3xl font-light transition-colors"
-               >
-                ×
-               </button>
-
-               <div className="p-10">
-                  <div className="flex flex-col items-center text-center mb-8">
-                      <div className="w-24 h-24 rounded-3xl bg-slate-100 flex items-center justify-center text-5xl mb-4 border-4 border-white shadow-xl">
-                        {selectedBlogger.avatar}
-                      </div>
-                      <h2 className="text-3xl font-black text-slate-900">{selectedBlogger.name}</h2>
-                      <p className="text-indigo-600 font-bold uppercase tracking-widest text-sm mt-1">{selectedBlogger.platform}</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                          <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Kategoriya</p>
-                          <p className="font-bold text-slate-700">{selectedBlogger.category}</p>
-                      </div>
-                      <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                          <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Holati</p>
-                          <p className={`font-bold ${selectedBlogger.status === 'Tasdiqlangan' ? 'text-emerald-600' : 'text-amber-600'}`}>{selectedBlogger.status}</p>
-                      </div>
-                      <div className="bg-indigo-50 p-5 rounded-2xl border border-indigo-100 col-span-2">
-                          <p className="text-[10px] font-black text-indigo-400 uppercase mb-1 tracking-widest">Reklama Narxi</p>
-                          <p className="text-2xl font-black text-indigo-700">{selectedBlogger.price.toLocaleString()} UZS</p>
-                      </div>
-                  </div>
-
-                  <button 
-                    onClick={() => setSelectedBlogger(null)}
-                    className="w-full mt-8 py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all"
-                  >
-                    Yopish
-                  </button>
-               </div>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL: QO'SHISH FORM (Sizning kodingiz, tahrirlangan qismi) */}
-        {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-            <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden">
-              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
-                <h3 className="text-xl font-black text-slate-800">Yangi Bloger Qo'shish</h3>
-                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-rose-500 text-2xl">×</button>
+          {/* Pagination */}
+          {pages > 1 && (
+            <div style={{ padding: "12px 16px", borderTop: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 13, color: "#6b7280" }}>{(page - 1) * PER + 1}–{Math.min(page * PER, total)} / {total}</span>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb", background: page <= 1 ? "#f9fafb" : "#fff", cursor: page <= 1 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <LuChevronLeft style={{ fontSize: 15, color: page <= 1 ? "#d1d5db" : "#374151" }} />
+                </button>
+                <span style={{ padding: "0 12px", height: 32, display: "flex", alignItems: "center", fontSize: 13, fontWeight: 700, color: "#374151" }}>{page} / {pages}</span>
+                <button disabled={page >= pages} onClick={() => setPage(p => p + 1)} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb", background: page >= pages ? "#f9fafb" : "#fff", cursor: page >= pages ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <LuChevronRight style={{ fontSize: 15, color: page >= pages ? "#d1d5db" : "#374151" }} />
+                </button>
               </div>
-              <form onSubmit={handleSave} className="p-8 space-y-5">
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1.5 tracking-widest">Bloger Ismi</label>
-                  <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none transition-all font-medium" placeholder="Masalan: Ali Valiyev" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1.5 tracking-widest">Platforma</label>
-                    <select value={formData.platform} onChange={(e) => setFormData({ ...formData, platform: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-medium">
-                      <option>Instagram</option><option>YouTube</option><option>Telegram</option><option>TikTok</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-1.5 tracking-widest">Kategoriya</label>
-                    <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-medium">
-                      <option>Texnologiya</option><option>Lifestyle</option><option>Gaming</option><option>Go'zallik</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1.5 tracking-widest">Narxi (UZS)</label>
-                  <input required type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold" />
-                </div>
-                <div className="pt-4 flex gap-3">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3.5 text-slate-500 font-bold hover:bg-slate-50 rounded-2xl">Bekor qilish</button>
-                  <button type="submit" className="flex-1 py-3.5 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg hover:bg-indigo-700 active:scale-95">Saqlash</button>
-                </div>
-              </form>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {selected && (
+        <ViewModal blogger={selected} onClose={() => setSelected(null)} onVerify={fetchBloggers} />
+      )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
-};
-
-export default AdminBloggers;
+}

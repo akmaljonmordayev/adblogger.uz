@@ -1,282 +1,293 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "../../components/ui/toast";
+import { adminUsersService } from "../../services/adminService";
+import { LuSearch, LuRefreshCw, LuEye, LuLoader, LuChevronLeft, LuChevronRight } from "react-icons/lu";
 
-const AV = [
-  ["#e8eeff","#3C3489"],["#e8f5f0","#085041"],["#fde8e8","#c0392b"],
-  ["#fff8e8","#854F0B"],["#fde8f3","#72243E"],["#e8f8f5","#0f6e56"],
-  ["#f0e8ff","#534AB7"],["#fff0e8","#993C1D"],["#e6f1fb","#0C447C"],
-];
-
-const CAT_S = {
-  "Sport":       ["#e8f5f0","#085041"],
-  "Oziq-ovqat":  ["#fff8e8","#854F0B"],
-  "Telekom":     ["#e8eeff","#3C3489"],
-  "Moda":        ["#fde8f3","#72243E"],
-  "Bank":        ["#e6f1fb","#0C447C"],
-  "Texnologiya": ["#f0e8ff","#534AB7"],
-  "Sog'liq":    ["#e8f5f0","#0f6e56"],
-  "Savdo":       ["#fff0e8","#993C1D"],
-  "IT":          ["#ede9fe","#5b21b6"],
+const ROLE_LABELS = { user: "Foydalanuvchi", blogger: "Blogger", business: "Biznesmen", admin: "Admin" };
+const ROLE_COLORS = {
+  user:     { bg: "#eff6ff", c: "#1e40af", bd: "#bfdbfe" },
+  blogger:  { bg: "#f0fdf4", c: "#166534", bd: "#bbf7d0" },
+  business: { bg: "#fefce8", c: "#854d0e", bd: "#fde68a" },
+  admin:    { bg: "#fdf2f8", c: "#9d174d", bd: "#fbcfe8" },
 };
+const AVATAR_COLORS = ["#6366f1","#f43f5e","#f97316","#10b981","#8b5cf6","#0ea5e9","#ec4899","#14b8a6"];
 
-const ALL = [
-  {id:1, n:"Nike Uzbekistan",    e:"amir@nike.uz",             cat:"Sport",       st:"Faol",       b:85,  sp:62,  c:22, d:"2024-01-15"},
-  {id:2, n:"Coca-Cola UZ",       e:"promo@coca-cola.uz",        cat:"Oziq-ovqat",  st:"Faol",       b:120, sp:98,  c:18, d:"2023-12-10"},
-  {id:3, n:"Beeline Uzbekistan", e:"digital@beeline.uz",        cat:"Telekom",     st:"Faol",       b:200, sp:145, c:27, d:"2023-09-05"},
-  {id:4, n:"Zara Official UZ",   e:"zara@zara.uz",              cat:"Moda",        st:"Faol",       b:55,  sp:31,  c:11, d:"2023-11-20"},
-  {id:5, n:"Payme",              e:"marketing@payme.uz",        cat:"Bank",        st:"Faol",       b:75,  sp:58,  c:15, d:"2024-02-08"},
-  {id:6, n:"Artel Electronics",  e:"pr@artel.uz",               cat:"Texnologiya", st:"Faol",       b:40,  sp:22,  c:9,  d:"2024-03-14"},
-  {id:7, n:"MyFitness",          e:"info@myfitness.uz",         cat:"Sport",       st:"Kutilmoqda", b:15,  sp:0,   c:0,  d:"2024-07-01"},
-  {id:8, n:"UzCard",             e:"ads@uzcard.uz",             cat:"Bank",        st:"Faol",       b:90,  sp:67,  c:20, d:"2024-01-22"},
-  {id:9, n:"Hummo",              e:"media@hummo.uz",            cat:"Bank",        st:"Faol",       b:60,  sp:44,  c:13, d:"2024-02-28"},
-  {id:10,n:"Nutrilife UZ",       e:"nutrilife@mail.ru",         cat:"Sog'liq",    st:"Kutilmoqda", b:8,   sp:0,   c:0,  d:"2024-06-15"},
-  {id:11,n:"Pepsi UZ",           e:"pepsi@pepsiuz.com",         cat:"Oziq-ovqat",  st:"Faol",       b:70,  sp:52,  c:16, d:"2023-10-11"},
-  {id:12,n:"Click UZ",           e:"ads@click.uz",              cat:"Bank",        st:"Faol",       b:55,  sp:41,  c:12, d:"2024-01-30"},
-  {id:13,n:"Nestle Uzbekistan",  e:"promo@nestle.uz",           cat:"Oziq-ovqat",  st:"Faol",       b:95,  sp:78,  c:21, d:"2023-08-22"},
-  {id:14,n:"TechHub Tashkent",   e:"hello@techhub.uz",          cat:"Texnologiya", st:"Bloklangan", b:12,  sp:3,   c:2,  d:"2024-03-20"},
-  {id:15,n:"Husan",              e:"husan@gmail.com",           cat:"Savdo",       st:"Faol",       b:25,  sp:11,  c:4,  d:"2024-07-10"},
-  {id:16,n:"Akmal Mordayev",     e:"akmal.mordayev@mail.ru",   cat:"Texnologiya",  st:"Faol", b:18,  sp:0,   c:0,  d:"2024-07-17"},
-];
+const PER = 10;
 
+function ini(u) {
+  return `${u?.firstName?.[0] || ""}${u?.lastName?.[0] || ""}`.toUpperCase() || "?";
+}
+function avaColor(u) {
+  const code = (u?.email || u?.firstName || "?").charCodeAt(0);
+  return AVATAR_COLORS[code % AVATAR_COLORS.length];
+}
 
-const CATS = ["Sport","Oziq-ovqat","Telekom","Moda","Bank","Texnologiya","Sog'liq","Savdo","IT"];
-const PER  = 8;
+function Ava({ user, size = 36 }) {
+  const c = avaColor(user);
+  if (user?.avatar) return (
+    <img src={user.avatar} alt="" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+  );
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      background: c + "22", border: `1.5px solid ${c}44`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: size * 0.35, fontWeight: 800, color: c,
+    }}>{ini(user)}</div>
+  );
+}
 
-function ini(n) { return n.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(); }
-function pct(b,s) { return b>0 ? Math.round(s/b*100) : 0; }
+function RolePill({ role }) {
+  const c = ROLE_COLORS[role] || ROLE_COLORS.user;
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: c.bg, color: c.c, border: `1px solid ${c.bd}`, padding: "3px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700 }}>
+      {ROLE_LABELS[role] || role}
+    </span>
+  );
+}
 
-const ST = {
-  "Faol":        { color:"#15803d", dot:"#22c55e", bg:"#dcfce7" },
-  "Kutilmoqda":  { color:"#92400e", dot:"#f59e0b", bg:"#fef9c3" },
-  "Bloklangan":  { color:"#991b1b", dot:"#ef4444", bg:"#fee2e2" },
-};
+function StatusDot({ active }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: active ? "#166534" : "#991b1b" }}>
+      <span style={{ width: 7, height: 7, borderRadius: "50%", background: active ? "#22c55e" : "#ef4444", flexShrink: 0 }} />
+      {active ? "Faol" : "Nofaol"}
+    </span>
+  );
+}
 
-const BASE = { minHeight:"100vh", padding:"28px 32px", fontFamily:"'Plus Jakarta Sans',sans-serif", background:"#f4f6fb" };
-const CARD = { background:"#fff", border:"1px solid #e5e7eb", borderRadius:14 };
-const INP  = { background:"#fff", border:"1px solid #e5e7eb", borderRadius:9, height:36, padding:"0 12px", fontSize:13, color:"#111827", fontFamily:"inherit", outline:"none" };
-const TH   = { padding:"10px 14px", textAlign:"left", fontSize:11, fontWeight:600, color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.5px", borderBottom:"1px solid #f3f4f6", cursor:"pointer", userSelect:"none", whiteSpace:"nowrap" };
-const TD   = { padding:"11px 14px", borderBottom:"1px solid #f9fafb", verticalAlign:"middle", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" };
+function ViewModal({ user, onClose, onToggle }) {
+  const [saving, setSaving] = useState(false);
+  if (!user) return null;
 
-export default function BusinessesPage() {
-  const [data,   setData]   = useState(ALL);
-  const [search, setSearch] = useState("");
-  const [fcat,   setFcat]   = useState("");
-  const [fst,    setFst]    = useState("");
-  const [sk,     setSk]     = useState("d");
-  const [sd,     setSd]     = useState(-1);
-  const [pg,     setPg]     = useState(1);
-  const [sel,    setSel]    = useState(new Set());
-
-  const doSort = k => {
-    if (sk===k) setSd(d=>d*-1); else { setSk(k); setSd(-1); }
-    setPg(1);
+  const toggle = async () => {
+    setSaving(true);
+    try {
+      await adminUsersService.update(user._id, { isActive: !user.isActive });
+      toast.success(user.isActive ? "Foydalanuvchi bloklandi" : "Foydalanuvchi faollashtirildi");
+      onToggle();
+      onClose();
+    } catch {
+      toast.error("Xatolik yuz berdi");
+    } finally {
+      setSaving(false);
+    }
   };
-  const toggleStatus = id =>
-    setData(p => p.map(d => d.id===id ? {...d, st: d.st==="Bloklangan"?"Faol":"Bloklangan"} : d));
-  const toggleSel = id =>
-    setSel(p => { const s=new Set(p); s.has(id)?s.delete(id):s.add(id); return s; });
 
-  const filtered = data
-    .filter(d => {
-      if (search && !d.n.toLowerCase().includes(search.toLowerCase()) && !d.e.toLowerCase().includes(search.toLowerCase())) return false;
-      if (fcat && d.cat!==fcat) return false;
-      if (fst  && d.st!==fst)  return false;
-      return true;
-    })
-    .sort((a,b) => {
-      const av=a[sk], bv=b[sk];
-      return typeof av==="string" ? av.localeCompare(bv)*sd : (av-bv)*sd;
-    });
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 480, overflow: "hidden" }}>
+        <div style={{ padding: "18px 22px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>Foydalanuvchi</span>
+          <button onClick={onClose} style={{ fontSize: 22, color: "#6b7280", background: "none", border: "none", cursor: "pointer" }}>×</button>
+        </div>
+        <div style={{ padding: 22 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <Ava user={user} size={52} />
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: "#111827" }}>{user.firstName} {user.lastName}</div>
+              <div style={{ fontSize: 13, color: "#6b7280" }}>{user.email}</div>
+              <div style={{ marginTop: 6, display: "flex", gap: 8 }}>
+                <RolePill role={user.role} />
+                <StatusDot active={user.isActive} />
+              </div>
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 18 }}>
+            {[
+              ["Telefon", user.phone || "—"],
+              ["Ro'yxatdan o'tgan", new Date(user.createdAt).toLocaleDateString("uz-UZ")],
+            ].map(([k, v]) => (
+              <div key={k} style={{ background: "#f9fafb", borderRadius: 10, padding: "12px 14px", border: "1px solid #f3f4f6" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", marginBottom: 4 }}>{k}</div>
+                <div style={{ fontWeight: 700, color: "#111827", fontSize: 13 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={toggle}
+            disabled={saving}
+            style={{
+              width: "100%", padding: "11px 0", borderRadius: 10, border: "none", cursor: saving ? "not-allowed" : "pointer",
+              background: user.isActive ? "#fee2e2" : "#dcfce7",
+              color: user.isActive ? "#991b1b" : "#166534",
+              fontWeight: 800, fontSize: 13,
+            }}
+          >
+            {saving ? "Saqlanmoqda…" : user.isActive ? "Bloklash" : "Faollashtirish"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  const pages = Math.ceil(filtered.length/PER) || 1;
-  const curPg = Math.min(pg, pages);
-  const slice = filtered.slice((curPg-1)*PER, curPg*PER);
-  const Arr   = k => sk===k ? (sd===1?" ↑":" ↓") : "";
+export default function AdminUsers() {
+  const [users, setUsers] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [role, setRole] = useState("");
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState(null);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = { page, limit: PER };
+      if (role) params.role = role;
+      const res = await adminUsersService.getAll(params);
+      // filter by search client-side (backend doesn't have search for users)
+      let data = res.data || [];
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        data = data.filter(u =>
+          `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q)
+        );
+      }
+      setUsers(data);
+      setTotal(res.results || data.length);
+    } catch {
+      toast.error("Foydalanuvchilarni yuklashda xatolik");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, role, search]);
+
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  const pages = Math.ceil(total / PER) || 1;
 
   const stats = [
-    { l:"Jami",       v:data.length,                               c:"#111827" },
-    { l:"Faol",       v:data.filter(d=>d.st==="Faol").length,      c:"#15803d" },
-    { l:"Kutilmoqda", v:data.filter(d=>d.st==="Kutilmoqda").length, c:"#92400e" },
-    { l:"Bloklangan", v:data.filter(d=>d.st==="Bloklangan").length, c:"#991b1b" },
+    { l: "Jami", v: total, c: "#111827" },
+    { l: "Faol", v: users.filter(u => u.isActive).length, c: "#166534" },
+    { l: "Blogger", v: users.filter(u => u.role === "blogger").length, c: "#1e40af" },
+    { l: "Biznesmen", v: users.filter(u => u.role === "business").length, c: "#854d0e" },
   ];
+
+  const BASE = { minHeight: "100vh", padding: "28px 32px", fontFamily: "'Plus Jakarta Sans',sans-serif", background: "#f4f6fb" };
+  const CARD = { background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14 };
+  const INP  = { background: "#fff", border: "1px solid #e5e7eb", borderRadius: 9, height: 36, padding: "0 12px", fontSize: 13, color: "#111827", fontFamily: "inherit", outline: "none" };
+  const TH   = { padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "1px solid #f3f4f6", whiteSpace: "nowrap" };
+  const TD   = { padding: "11px 14px", borderBottom: "1px solid #f9fafb", verticalAlign: "middle" };
 
   return (
     <div style={BASE}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
 
-      {/* ── Header ── */}
-      <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:22}}>
-        <div>
-          <div style={{fontSize:22,fontWeight:700,color:"#111827",letterSpacing:"-0.4px"}}>Biznesmenlar</div>
-          <div style={{fontSize:12,color:"#9ca3af",marginTop:3}}>Reklam beruvchi kompaniyalar va shaxslar</div>
+        {/* Header */}
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#111827" }}>Foydalanuvchilar</div>
+          <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 3 }}>Platformadagi barcha foydalanuvchilar</div>
         </div>
-        <button style={{background:"#111827",color:"#fff",border:"none",borderRadius:10,padding:"10px 20px",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-          + Yangi qo'shish
-        </button>
-      </div>
 
-      {/* ── Stat cards ── */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:18}}>
-        {stats.map(s => (
-          <div key={s.l} style={{...CARD, padding:"16px 18px"}}>
-            <div style={{fontSize:11,color:"#9ca3af",fontWeight:500,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:7}}>{s.l}</div>
-            <div style={{fontSize:30,fontWeight:700,color:s.c,lineHeight:1}}>{s.v}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Filters ── */}
-      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:14,flexWrap:"wrap"}}>
-        <div style={{...INP, display:"flex", alignItems:"center", gap:8, width:210, padding:"0 12px"}}>
-          <span style={{color:"#9ca3af",fontSize:14,flexShrink:0}}>⌕</span>
-          <input
-            placeholder="Qidirish..."
-            value={search}
-            onChange={e=>{setSearch(e.target.value); setPg(1);}}
-            style={{background:"none",border:"none",outline:"none",color:"#111827",fontSize:13,fontFamily:"inherit",width:"100%"}}
-          />
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 18 }}>
+          {stats.map(s => (
+            <div key={s.l} style={{ ...CARD, padding: "16px 18px" }}>
+              <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 7 }}>{s.l}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: s.c, lineHeight: 1 }}>{s.v}</div>
+            </div>
+          ))}
         </div>
-        <select value={fcat} onChange={e=>{setFcat(e.target.value); setPg(1);}} style={INP}>
-          <option value="">Barcha kategoriya</option>
-          {CATS.map(c=><option key={c}>{c}</option>)}
-        </select>
-        <select value={fst} onChange={e=>{setFst(e.target.value); setPg(1);}} style={INP}>
-          <option value="">Barcha holat</option>
-          <option>Faol</option>
-          <option>Kutilmoqda</option>
-          <option>Bloklangan</option>
-        </select>
-        {sel.size > 0 && (
-          <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",background:"#f3f0ff",border:"1px solid #ddd6fe",borderRadius:9}}>
-            <span style={{fontSize:12,color:"#5b21b6",fontWeight:600}}>{sel.size} ta tanlandi</span>
-            <button onClick={()=>setSel(new Set())} style={{background:"none",border:"none",color:"#a78bfa",cursor:"pointer",fontSize:14,lineHeight:1}}>✕</button>
-          </div>
-        )}
-        <span style={{marginLeft:"auto",fontSize:12,color:"#9ca3af"}}>{filtered.length} ta natija</span>
-      </div>
 
-      {/* ── Table ── */}
-      <div style={CARD}>
-        <div style={{overflowX:"auto"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:13,tableLayout:"fixed"}}>
-            <thead>
-              <tr>
-                <th style={{...TH,width:40}}>
-                  <input type="checkbox" style={{accentColor:"#7c3aed"}} onChange={e=>{
-                    const ids = slice.map(d=>d.id);
-                    setSel(p=>{ const s=new Set(p); ids.forEach(id=>e.target.checked?s.add(id):s.delete(id)); return s; });
-                  }}/>
-                </th>
-                {[
-                  ["n",  "Biznesmen",  190],
-                  ["cat","Kategoriya", 105],
-                  ["st", "Holat",      105],
-                  ["b",  "Byudjet",     90],
-                  ["c",  "Kampaniya",   90],
-                  ["sp", "Sarflangan", 135],
-                  ["d",  "Sana",       100],
-                ].map(([k,l,w]) => (
-                  <th key={k} style={{...TH,width:w}} onClick={()=>doSort(k)}
-                    onMouseEnter={e=>e.target.style.color="#374151"}
-                    onMouseLeave={e=>e.target.style.color="#9ca3af"}>
-                    {l}{Arr(k)}
-                  </th>
-                ))}
-                <th style={{...TH,width:120}}>Amallar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {slice.map(d => {
-                const [bg, tc] = AV[(d.id-1) % AV.length];
-                const p        = pct(d.b, d.sp);
-                const bc       = p>80 ? "#16a34a" : p>40 ? "#2563eb" : "#d97706";
-                const [cbg,ctc]= CAT_S[d.cat] || ["#f3f4f6","#374151"];
-                const ss       = ST[d.st];
-                const isSel    = sel.has(d.id);
-                return (
-                  <tr key={d.id}
-                    style={{background: isSel ? "#f5f3ff" : "#fff"}}
-                    onMouseEnter={e => !isSel && (e.currentTarget.style.background="#fafafa")}
-                    onMouseLeave={e => !isSel && (e.currentTarget.style.background="#fff")}>
+        {/* Filters */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
+          <div style={{ ...INP, display: "flex", alignItems: "center", gap: 8, width: 220, padding: "0 12px" }}>
+            <LuSearch style={{ color: "#9ca3af", fontSize: 15, flexShrink: 0 }} />
+            <input
+              placeholder="Ism, email bo'yicha qidirish…"
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              style={{ background: "none", border: "none", outline: "none", color: "#111827", fontSize: 13, fontFamily: "inherit", width: "100%" }}
+            />
+          </div>
+          <select value={role} onChange={e => { setRole(e.target.value); setPage(1); }} style={INP}>
+            <option value="">Barcha rollar</option>
+            <option value="user">Foydalanuvchi</option>
+            <option value="blogger">Blogger</option>
+            <option value="business">Biznesmen</option>
+          </select>
+          <button onClick={fetchUsers} disabled={loading} style={{ width: 36, height: 36, border: "1px solid #e5e7eb", borderRadius: 9, background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <LuRefreshCw style={{ fontSize: 15, color: "#6b7280", animation: loading ? "spin 1s linear infinite" : "none" }} />
+          </button>
+          <span style={{ marginLeft: "auto", fontSize: 12, color: "#9ca3af" }}>{total} ta natija</span>
+        </div>
+
+        {/* Table */}
+        <div style={CARD}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr>
+                  {["Foydalanuvchi", "Email", "Rol", "Holat", "Ro'yxat sanasi", "Amallar"].map(h => (
+                    <th key={h} style={TH}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "#6b7280" }}>
+                    <LuLoader style={{ fontSize: 24, animation: "spin 1s linear infinite", display: "block", margin: "0 auto 8px" }} />
+                    Yuklanmoqda…
+                  </td></tr>
+                ) : users.length === 0 ? (
+                  <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "#9ca3af", fontSize: 14 }}>Foydalanuvchi topilmadi</td></tr>
+                ) : users.map(u => (
+                  <tr key={u._id}
+                    onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                  >
                     <td style={TD}>
-                      <input type="checkbox" style={{accentColor:"#7c3aed"}} checked={isSel} onChange={()=>toggleSel(d.id)}/>
-                    </td>
-                    <td style={TD}>
-                      <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-                        <div style={{width:36,height:36,borderRadius:10,background:bg,color:tc,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,flexShrink:0}}>
-                          {ini(d.n)}
-                        </div>
-                        <div style={{minWidth:0}}>
-                          <div style={{fontSize:13,fontWeight:600,color:"#111827",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.n}</div>
-                          <div style={{fontSize:11,color:"#9ca3af",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.e}</div>
-                        </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Ava user={u} size={34} />
+                        <span style={{ fontWeight: 700, color: "#111827" }}>{u.firstName} {u.lastName}</span>
                       </div>
                     </td>
+                    <td style={{ ...TD, color: "#6b7280", fontSize: 12 }}>{u.email}</td>
+                    <td style={TD}><RolePill role={u.role} /></td>
+                    <td style={TD}><StatusDot active={u.isActive} /></td>
+                    <td style={{ ...TD, fontSize: 12, color: "#9ca3af" }}>{new Date(u.createdAt).toLocaleDateString("uz-UZ")}</td>
                     <td style={TD}>
-                      <span style={{background:cbg,color:ctc,fontSize:11,fontWeight:600,padding:"3px 9px",borderRadius:6}}>{d.cat}</span>
-                    </td>
-                    <td style={TD}>
-                      <span style={{display:"inline-flex",alignItems:"center",gap:5,background:ss.bg,color:ss.color,fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20}}>
-                        <span style={{width:6,height:6,borderRadius:"50%",background:ss.dot,flexShrink:0}}/>
-                        {d.st}
-                      </span>
-                    </td>
-                    <td style={{...TD,fontWeight:700,color:"#111827"}}>{d.b} mln</td>
-                    <td style={{...TD,textAlign:"center",fontWeight:600,color:"#374151"}}>
-                      {d.c ? d.c : <span style={{color:"#d1d5db"}}>—</span>}
-                    </td>
-                    <td style={TD}>
-                      <div style={{fontSize:11,color:"#9ca3af",marginBottom:5}}>
-                        {d.sp ? `${d.sp} mln (${p}%)` : "—"}
-                      </div>
-                      <div style={{height:4,borderRadius:2,background:"#f3f4f6",overflow:"hidden"}}>
-                        <div style={{height:"100%",width:`${p}%`,background:bc,borderRadius:2}}/>
-                      </div>
-                    </td>
-                    <td style={{...TD,fontSize:12,color:"#9ca3af"}}>{d.d}</td>
-                    <td style={TD}>
-                      <div style={{display:"flex",gap:6}}>
-                        <button style={{background:"#f9fafb",border:"1px solid #e5e7eb",color:"#374151",borderRadius:8,padding:"5px 12px",fontSize:12,cursor:"pointer",fontFamily:"inherit",fontWeight:500,transition:"all 0.15s"}}
-                          onMouseEnter={e=>{e.target.style.background="#f3f4f6";}}
-                          onMouseLeave={e=>{e.target.style.background="#f9fafb";}}>
-                          Ko'r
-                        </button>
-                        <button onClick={()=>toggleStatus(d.id)} style={{
-                          border:      d.st==="Bloklangan" ? "1px solid #bbf7d0" : "1px solid #fecaca",
-                          color:       d.st==="Bloklangan" ? "#15803d"           : "#dc2626",
-                          background:  d.st==="Bloklangan" ? "#f0fdf4"           : "#fff5f5",
-                          borderRadius:8, padding:"5px 12px", fontSize:12,
-                          cursor:"pointer", fontFamily:"inherit", fontWeight:600, transition:"all 0.15s",
-                        }}>
-                          {d.st==="Bloklangan" ? "Ochish" : "Blok"}
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => setSelected(u)}
+                        style={{ width: 30, height: 30, borderRadius: 8, background: "#eff6ff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      >
+                        <LuEye style={{ fontSize: 14, color: "#3b82f6" }} />
+                      </button>
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* ── Pagination ── */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderTop:"1px solid #f3f4f6"}}>
-          <span style={{fontSize:12,color:"#9ca3af"}}>
-            {(curPg-1)*PER+1}–{Math.min(curPg*PER,filtered.length)} / {filtered.length} ta
-          </span>
-          <div style={{display:"flex",gap:3}}>
-            {Array.from({length:pages},(_,i)=>i+1).map(p => (
-              <button key={p} onClick={()=>setPg(p)} style={{
-                width:30, height:30, borderRadius:8, border:"none", cursor:"pointer",
-                fontSize:13, fontFamily:"inherit", fontWeight:p===curPg?700:400,
-                background: p===curPg ? "#111827" : "transparent",
-                color:      p===curPg ? "#fff"    : "#9ca3af",
-                transition:"all 0.15s",
-              }}>
-                {p}
-              </button>
-            ))}
+                ))}
+              </tbody>
+            </table>
           </div>
+
+          {/* Pagination */}
+          {pages > 1 && (
+            <div style={{ padding: "12px 16px", borderTop: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 12, color: "#9ca3af" }}>{(page - 1) * PER + 1}–{Math.min(page * PER, total)} / {total}</span>
+              <div style={{ display: "flex", gap: 4 }}>
+                <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid #e5e7eb", background: page <= 1 ? "#f9fafb" : "#fff", cursor: page <= 1 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <LuChevronLeft style={{ fontSize: 14, color: page <= 1 ? "#d1d5db" : "#374151" }} />
+                </button>
+                <span style={{ padding: "0 10px", height: 30, display: "flex", alignItems: "center", fontSize: 13, fontWeight: 700, color: "#374151" }}>{page} / {pages}</span>
+                <button disabled={page >= pages} onClick={() => setPage(p => p + 1)} style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid #e5e7eb", background: page >= pages ? "#f9fafb" : "#fff", cursor: page >= pages ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <LuChevronRight style={{ fontSize: 14, color: page >= pages ? "#d1d5db" : "#374151" }} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {selected && (
+        <ViewModal user={selected} onClose={() => setSelected(null)} onToggle={fetchUsers} />
+      )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
