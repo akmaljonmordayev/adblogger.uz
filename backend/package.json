@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "ADBlogger platform backend - influencer marketplace API",
   "main": "server.js",
- 
-  
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.3",
