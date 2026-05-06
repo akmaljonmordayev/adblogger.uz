@@ -1,14 +1,19 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTE_PATHS } from "../../config/constants";
 
-const fontLink = document.createElement("link");
-fontLink.rel = "stylesheet";
-fontLink.href = "https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@400;500;600&display=swap";
-document.head.appendChild(fontLink);
+/* ── Fonts (once) ── */
+if (!document.getElementById("hero-fonts")) {
+  const l = document.createElement("link");
+  l.id = "hero-fonts";
+  l.rel = "stylesheet";
+  l.href = "https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap";
+  document.head.appendChild(l);
+}
 
-const SYNE = { fontFamily: "'Syne', sans-serif" };
+const SYNE  = { fontFamily: "'Syne', sans-serif" };
 const INTER = { fontFamily: "'Inter', sans-serif" };
+const DURATION = 5500; // ms per slide
 
 const slides = [
   {
@@ -16,19 +21,18 @@ const slides = [
     badgeIcon: "🥇",
     title: ["Eng yirik", "Bloger Marketplace"],
     desc: "500+ tasdiqlangan bloger bir platformada. Toping, solishtiring va reklama bering — tez va oson.",
-    btn1: "Blogerlarni ko'rish",
-    btn1Route: ROUTE_PATHS.BLOGGERS,
-    btn2: "Reklama berish",
-    btn2Route: ROUTE_PATHS.ELON_BERISH,
+    btn1: "Blogerlarni ko'rish",  btn1Route: ROUTE_PATHS.BLOGGERS,
+    btn2: "Reklama berish",       btn2Route: ROUTE_PATHS.ELON_BERISH,
     trust: "Ro'yxatdan o'tish bepul · Kredit karta shart emas",
     stats: [
       { num: "500+", icon: "👤", label: "Tasdiqlangan Bloger" },
       { num: "12M+", icon: "👁️", label: "Faol Auditoriya" },
       { num: "3×",   icon: "📈", label: "O'rtacha ROI" },
     ],
-    gradient: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 45%, #991b1b 100%)",
+    gradient: "linear-gradient(135deg,#6b1212 0%,#c01f1f 50%,#7f1d1d 100%)",
     accent: "#fbbf24",
-    glow: "rgba(220,38,38,0.45)",
+    glowL: "rgba(185,28,28,0.55)",
+    glowR: "rgba(220,38,38,0.35)",
     btnColor: "#1a0a00",
   },
   {
@@ -36,19 +40,18 @@ const slides = [
     badgeIcon: "✦",
     title: ["Brendingizni", "Kuchaytiring"],
     desc: "AI yordamida eng mos blogerlarni toping. Kampaniyangizni boshqaring va natijalarni real vaqtda kuzating.",
-    btn1: "Bepul boshlash",
-    btn1Route: ROUTE_PATHS.REGISTER,
-    btn2: "Demo ko'rish",
-    btn2Route: ROUTE_PATHS.BLOGGERS,
+    btn1: "Bepul boshlash",  btn1Route: ROUTE_PATHS.REGISTER,
+    btn2: "Demo ko'rish",   btn2Route: ROUTE_PATHS.BLOGGERS,
     trust: "2 daqiqada sozlab oling · Texnik bilim kerak emas",
     stats: [
       { num: "98%",  icon: "⭐", label: "Mijozlar Mamnuniyati" },
       { num: "48h",  icon: "⚡", label: "Kampaniya Tezligi" },
       { num: "200+", icon: "🏢", label: "Ishonch Bildirgan Brend" },
     ],
-    gradient: "linear-gradient(135deg, #0b1120 0%, #0f2d52 55%, #0c1f3a 100%)",
+    gradient: "linear-gradient(135deg,#070e1e 0%,#0c2347 55%,#081829 100%)",
     accent: "#38bdf8",
-    glow: "rgba(56,189,248,0.3)",
+    glowL: "rgba(14,116,144,0.5)",
+    glowR: "rgba(56,189,248,0.25)",
     btnColor: "#001322",
   },
   {
@@ -56,401 +59,397 @@ const slides = [
     badgeIcon: "🚀",
     title: ["Bloger bo'lib", "Daromad Oling"],
     desc: "O'z auditoriyangizni monetizatsiya qiling. Brendlar bilan to'g'ridan-to'g'ri ishlang va daromadingizni oshiring.",
-    btn1: "Ro'yxatdan o'tish",
-    btn1Route: ROUTE_PATHS.REGISTER,
-    btn2: "Ko'proq bilish",
-    btn2Route: ROUTE_PATHS.BLOGER_BOLISH,
+    btn1: "Ro'yxatdan o'tish", btn1Route: ROUTE_PATHS.REGISTER,
+    btn2: "Ko'proq bilish",    btn2Route: ROUTE_PATHS.BLOGER_BOLISH,
     trust: "1 oy komissiyasiz · Istalgan vaqt bekor qilish",
     stats: [
       { num: "5M+", icon: "💰", label: "Blogerlarga To'lovlar" },
       { num: "30%", icon: "🔥", label: "Oylik Daromad O'sishi" },
       { num: "0%",  icon: "🎁", label: "Komissiya (1 oy)" },
     ],
-    gradient: "linear-gradient(135deg, #78350f 0%, #d97706 50%, #92400e 100%)",
-    accent: "#fef08a",
-    glow: "rgba(217,119,6,0.45)",
+    gradient: "linear-gradient(135deg,#5c2d00 0%,#b45309 50%,#78350f 100%)",
+    accent: "#fde68a",
+    glowL: "rgba(180,83,9,0.55)",
+    glowR: "rgba(251,191,36,0.3)",
     btnColor: "#1a0e00",
   },
 ];
 
-const DURATION = 5000;
-
 export default function HeroSwiper() {
   const navigate = useNavigate();
-  const [cur, setCur] = useState(0);
-  const [progress, setProgress] = useState(0);
+  const [cur, setCur]     = useState(0);
+  const [prev, setPrev]   = useState(null);   // previous slide index during transition
+  const [going, setGoing] = useState(false);  // transition in progress
   const [paused, setPaused] = useState(false);
-  const progRef = useRef(null);
-  const touchStartX = useRef(0);
-  const [w, setW] = useState(window.innerWidth);
+  const [progKey, setProgKey] = useState(0);  // increment → CSS animation restarts
 
-  const goTo = (n) => { setCur(n); setProgress(0); };
-  const next = () => goTo((cur + 1) % slides.length);
-  const prev = () => goTo((cur - 1 + slides.length) % slides.length);
+  const timerRef  = useRef(null);
+  const touchX    = useRef(0);
+  const touchY    = useRef(0);
 
-  useEffect(() => {
-    const onResize = () => setW(window.innerWidth);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+  /* ── advance to slide n ── */
+  const goTo = useCallback((n) => {
+    if (going) return;
+    setPrev(cur);
+    setGoing(true);
+    setCur(n);
+    setProgKey(k => k + 1);
+    setTimeout(() => { setPrev(null); setGoing(false); }, 620);
+  }, [cur, going]);
+
+  const next = useCallback(() => goTo((cur + 1) % slides.length), [cur, goTo]);
+  const prev_ = useCallback(() => goTo((cur - 1 + slides.length) % slides.length), [cur, goTo]);
+
+  /* ── auto-advance via setTimeout (not setInterval) ── */
+  const scheduleNext = useCallback(() => {
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setCur(c => {
+        const n = (c + 1) % slides.length;
+        setPrev(c);
+        setGoing(true);
+        setProgKey(k => k + 1);
+        setTimeout(() => { setPrev(null); setGoing(false); }, 620);
+        return n;
+      });
+    }, DURATION);
   }, []);
 
   useEffect(() => {
-    if (paused) return;
-    setProgress(0);
-    let val = 0;
-    const step = 100 / (DURATION / 50);
-    progRef.current = setInterval(() => {
-      val += step;
-      setProgress(Math.min(val, 100));
-      if (val >= 100) {
-        clearInterval(progRef.current);
-        setCur((c) => (c + 1) % slides.length);
-        setProgress(0);
-      }
-    }, 50);
-    return () => clearInterval(progRef.current);
-  }, [cur, paused]);
+    if (paused) { clearTimeout(timerRef.current); return; }
+    scheduleNext();
+    return () => clearTimeout(timerRef.current);
+  }, [cur, paused, scheduleNext]);
 
-  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
-  const handleTouchEnd = (e) => {
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (dx < -50) next();
-    else if (dx > 50) prev();
+  /* ── touch ── */
+  const onTouchStart = (e) => {
+    touchX.current = e.touches[0].clientX;
+    touchY.current = e.touches[0].clientY;
+  };
+  const onTouchEnd = (e) => {
+    const dx = e.changedTouches[0].clientX - touchX.current;
+    const dy = e.changedTouches[0].clientY - touchY.current;
+    if (Math.abs(dx) < Math.abs(dy) * 1.2) return; // mostly vertical scroll — ignore
+    if (dx < -44) next();
+    else if (dx > 44) prev_();
   };
 
-  const isMobile = w < 768;
-  const isSmall  = w < 480;
-  const slide    = slides[cur];
+  const s = slides[cur];
 
   return (
-    <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden", ...INTER }}>
-      <div
-        style={{ position: "relative", flex: 1, minHeight: 0, overflow: "hidden" }}
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        {/* ─── Slides track ─────────────────────────────────── */}
-        <div style={{
-          display: "flex", height: "100%",
-          transition: "transform 0.75s cubic-bezier(0.77,0,0.175,1)",
-          transform: `translateX(-${cur * 100}%)`,
-        }}>
-          {slides.map((s, i) => (
-            <div key={i} style={{
-              minWidth: "100%", height: "100%",
-              position: "relative", overflow: "hidden",
-              background: s.gradient,
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              alignItems: isMobile ? "flex-start" : "center",
-              justifyContent: "space-between",
-              padding: isSmall
-                ? "24px 18px 72px"
-                : isMobile
-                ? "28px 24px 72px"
-                : "0 72px",
-              gap: isSmall ? "10px" : isMobile ? "14px" : "48px",
-              boxSizing: "border-box",
-            }}>
+    <div
+      style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", ...INTER }}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* ════ SLIDES (absolute, layered) ════ */}
+      {slides.map((sl, i) => {
+        const isActive = i === cur;
+        const isPrev   = i === prev;
+        if (!isActive && !isPrev) return null; // unmount other slides entirely
 
-              {/* ── Decorations ── */}
-              {/* Dot-grid overlay */}
-              <div style={{
-                position: "absolute", inset: 0, pointerEvents: "none",
-                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
-                backgroundSize: "30px 30px",
-              }} />
+        return (
+          <SlidePanel
+            key={i}
+            sl={sl}
+            isActive={isActive}
+            navigate={navigate}
+          />
+        );
+      })}
 
-              {/* Big ring right */}
-              <div style={{
-                position: "absolute", borderRadius: "50%", pointerEvents: "none",
-                width: isMobile ? "340px" : "600px",
-                height: isMobile ? "340px" : "600px",
-                right: isMobile ? "-120px" : "-100px",
-                top: "50%", transform: "translateY(-50%)",
-                border: "1px solid rgba(255,255,255,0.06)",
-              }} />
-              {/* Inner ring */}
-              <div style={{
-                position: "absolute", borderRadius: "50%", pointerEvents: "none",
-                width: isMobile ? "200px" : "380px",
-                height: isMobile ? "200px" : "380px",
-                right: isMobile ? "-60px" : "-20px",
-                top: "50%", transform: "translateY(-50%)",
-                border: "1px solid rgba(255,255,255,0.08)",
-              }} />
+      {/* ════ CSS progress bar (no JS state updates) ════ */}
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, zIndex: 20, background: "rgba(255,255,255,0.08)" }}>
+        <div
+          key={progKey}
+          style={{
+            height: "100%",
+            background: s.accent,
+            boxShadow: `0 0 8px ${s.accent}cc`,
+            animation: paused ? "none" : `hsProgress ${DURATION}ms linear forwards`,
+            width: paused ? "0%" : undefined,
+          }}
+        />
+      </div>
 
-              {/* Glow blob bottom-left */}
-              <div style={{
-                position: "absolute", borderRadius: "50%", pointerEvents: "none",
-                width: "500px", height: "500px",
-                left: "-120px", bottom: "-200px",
-                background: s.glow, filter: "blur(80px)", opacity: 0.7,
-              }} />
-              {/* Glow blob top-right */}
-              <div style={{
-                position: "absolute", borderRadius: "50%", pointerEvents: "none",
-                width: "300px", height: "300px",
-                right: "-60px", top: "-60px",
-                background: s.glow, filter: "blur(60px)", opacity: 0.5,
-              }} />
+      {/* ════ CONTROLS ════ */}
+      <Controls
+        cur={cur}
+        slides={slides}
+        s={s}
+        goTo={goTo}
+        onPrev={prev_}
+        onNext={next}
+      />
 
-              {/* ── LEFT — Main content ── */}
-              <div style={{
-                position: "relative", zIndex: 2,
-                flex: isMobile ? "unset" : 1,
-                maxWidth: isMobile ? "100%" : "540px",
-                width: "100%",
-              }}>
-                {/* Badge pill */}
-                <div style={{
-                  display: "inline-flex", alignItems: "center", gap: "7px",
-                  background: "rgba(255,255,255,0.1)",
-                  border: `1px solid ${s.accent}55`,
-                  borderRadius: "100px",
-                  padding: "4px 14px 4px 9px",
-                  marginBottom: isSmall ? "10px" : isMobile ? "12px" : "24px",
-                }}>
-                  <span style={{ fontSize: isSmall ? "13px" : "15px", lineHeight: 1 }}>{s.badgeIcon}</span>
-                  <span style={{
-                    fontSize: "10px", fontWeight: 700,
-                    letterSpacing: "2px", color: s.accent,
-                    textTransform: "uppercase",
-                  }}>{s.badge}</span>
+      {/* ════ CSS animations ════ */}
+      <style>{`
+        @keyframes hsProgress {
+          from { width: 0% }
+          to   { width: 100% }
+        }
+        @keyframes hsIn {
+          from { opacity: 0; transform: translateY(14px) scale(0.985); }
+          to   { opacity: 1; transform: translateY(0)    scale(1); }
+        }
+        @keyframes hsOut {
+          from { opacity: 1; transform: translateY(0)     scale(1); }
+          to   { opacity: 0; transform: translateY(-10px) scale(0.99); }
+        }
+        @keyframes hsFadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/* ────────────────── SlidePanel ────────────────── */
+function SlidePanel({ sl, isActive, navigate }) {
+  return (
+    <div
+      style={{
+        position: "absolute", inset: 0,
+        background: sl.gradient,
+        animation: isActive ? "hsFadeIn 0.55s cubic-bezier(0.4,0,0.2,1) forwards" : "hsOut 0.55s cubic-bezier(0.4,0,0.2,1) forwards",
+        zIndex: isActive ? 2 : 1,
+        overflow: "hidden",
+      }}
+    >
+      {/* ── Dot grid ── */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        backgroundImage: "radial-gradient(rgba(255,255,255,0.055) 1px,transparent 1px)",
+        backgroundSize: "28px 28px",
+      }} />
+
+      {/* ── Glow blobs (no blur on mobile for perf) ── */}
+      <div style={{
+        position: "absolute", borderRadius: "50%", pointerEvents: "none",
+        width: "60vw", height: "60vw", maxWidth: 520, maxHeight: 520,
+        left: "-18%", bottom: "-25%",
+        background: sl.glowL, filter: "blur(72px)", opacity: 0.75,
+        willChange: "opacity",
+      }} />
+      <div style={{
+        position: "absolute", borderRadius: "50%", pointerEvents: "none",
+        width: "40vw", height: "40vw", maxWidth: 360, maxHeight: 360,
+        right: "-8%", top: "-10%",
+        background: sl.glowR, filter: "blur(56px)", opacity: 0.6,
+        willChange: "opacity",
+      }} />
+
+      {/* ── Decorative rings (desktop only) ── */}
+      <div className="hero-ring" style={{
+        position: "absolute", borderRadius: "50%", pointerEvents: "none",
+        width: 560, height: 560,
+        right: -100, top: "50%", transform: "translateY(-50%)",
+        border: "1px solid rgba(255,255,255,0.055)",
+      }} />
+      <div className="hero-ring" style={{
+        position: "absolute", borderRadius: "50%", pointerEvents: "none",
+        width: 360, height: 360,
+        right: -20, top: "50%", transform: "translateY(-50%)",
+        border: "1px solid rgba(255,255,255,0.075)",
+      }} />
+
+      {/* ── Content ── */}
+      <div className="hero-inner" style={{
+        position: "relative", zIndex: 2, height: "100%",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 72px 48px", gap: 48,
+        animation: isActive ? "hsIn 0.6s cubic-bezier(0.34,1.2,0.64,1) 0.05s both" : "none",
+      }}>
+        {/* LEFT */}
+        <div style={{ flex: 1, maxWidth: 540 }}>
+          {/* Badge */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 7,
+            background: "rgba(255,255,255,0.1)",
+            border: `1px solid ${sl.accent}50`,
+            borderRadius: 100, padding: "4px 14px 4px 9px",
+            marginBottom: 22,
+          }}>
+            <span style={{ fontSize: 16, lineHeight: 1 }}>{sl.badgeIcon}</span>
+            <span style={{ ...SYNE, fontSize: 9.5, fontWeight: 700, letterSpacing: "2.2px", color: sl.accent, textTransform: "uppercase" }}>
+              {sl.badge}
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h1 style={{
+            ...SYNE, fontWeight: 900, color: "#fff",
+            fontSize: "clamp(28px,4vw,52px)",
+            lineHeight: 1.05, letterSpacing: "-0.5px",
+            margin: "0 0 16px",
+          }}>
+            {sl.title[0]}<br />
+            <span style={{ color: sl.accent, textShadow: `0 0 44px ${sl.accent}55` }}>
+              {sl.title[1]}
+            </span>
+          </h1>
+
+          {/* Description */}
+          <p style={{
+            color: "rgba(255,255,255,0.62)",
+            fontSize: "clamp(13px,1.5vw,15.5px)", lineHeight: 1.72,
+            margin: "0 0 28px", maxWidth: 440,
+          }}>
+            {sl.desc}
+          </p>
+
+          {/* Buttons */}
+          <div className="hero-btns" style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+            <HeroBtn primary accent={sl.accent} btnColor={sl.btnColor} onClick={() => navigate(sl.btn1Route)}>
+              {sl.btn1} <span style={{ fontSize: 16 }}>→</span>
+            </HeroBtn>
+            <HeroBtn onClick={() => navigate(sl.btn2Route)}>
+              {sl.btn2}
+            </HeroBtn>
+          </div>
+
+          {/* Trust */}
+          <p className="hero-trust" style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", margin: 0, display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ color: sl.accent }}>✓</span> {sl.trust}
+          </p>
+        </div>
+
+        {/* RIGHT — Stat cards */}
+        <div className="hero-stats" style={{ display: "flex", flexDirection: "column", gap: 10, width: 224, flexShrink: 0 }}>
+          {sl.stats.map((st, j) => (
+            <div key={j} style={{
+              background: "rgba(255,255,255,0.065)",
+              border: "1px solid rgba(255,255,255,0.11)",
+              borderRadius: 18, padding: "16px 20px",
+              display: "flex", alignItems: "center", gap: 14,
+              transition: "border-color 0.2s, background 0.2s, transform 0.2s",
+            }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = `${sl.accent}45`;
+                e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+                e.currentTarget.style.transform = "translateX(-4px)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.11)";
+                e.currentTarget.style.background = "rgba(255,255,255,0.065)";
+                e.currentTarget.style.transform = "none";
+              }}
+            >
+              <span style={{ fontSize: 26, lineHeight: 1, flexShrink: 0 }}>{st.icon}</span>
+              <div>
+                <div style={{ ...SYNE, fontWeight: 900, color: sl.accent, fontSize: "clamp(18px,2.5vw,26px)", lineHeight: 1, textShadow: `0 0 18px ${sl.accent}44` }}>
+                  {st.num}
                 </div>
-
-                {/* Headline */}
-                <h1 style={{
-                  ...SYNE, fontWeight: 800, color: "#fff",
-                  margin: isSmall ? "0 0 10px" : isMobile ? "0 0 12px" : "0 0 16px",
-                  lineHeight: 1.06, letterSpacing: "-0.5px",
-                  fontSize: isSmall ? "24px" : isMobile ? "30px" : "52px",
-                }}>
-                  {s.title[0]}<br />
-                  <span style={{
-                    color: s.accent,
-                    textShadow: `0 0 40px ${s.accent}66`,
-                  }}>{s.title[1]}</span>
-                </h1>
-
-                {/* Description */}
-                <p style={{
-                  color: "rgba(255,255,255,0.68)",
-                  fontSize: isSmall ? "12.5px" : isMobile ? "13.5px" : "15.5px",
-                  lineHeight: 1.65,
-                  margin: isSmall ? "0 0 14px" : isMobile ? "0 0 16px" : "0 0 28px",
-                  maxWidth: "420px",
-                  display: "-webkit-box",
-                  WebkitLineClamp: isSmall ? 2 : 3,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }}>{s.desc}</p>
-
-                {/* Buttons */}
-                <div style={{
-                  display: "flex", gap: "10px",
-                  flexDirection: isSmall ? "column" : "row",
-                  marginBottom: isSmall ? "14px" : "18px",
-                }}>
-                  <button
-                    onClick={() => navigate(s.btn1Route)}
-                    style={{
-                      background: s.accent, color: s.btnColor,
-                      fontSize: isSmall ? "13px" : "14px", fontWeight: 700,
-                      padding: isSmall ? "11px 18px" : "13px 30px",
-                      borderRadius: "10px", border: "none", cursor: "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      gap: "6px",
-                      boxShadow: `0 4px 28px ${s.accent}55`,
-                      transition: "transform 0.2s, box-shadow 0.2s",
-                      width: isSmall ? "100%" : "auto",
-                      letterSpacing: "0.2px",
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow = `0 10px 36px ${s.accent}77`;
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.transform = "none";
-                      e.currentTarget.style.boxShadow = `0 4px 28px ${s.accent}55`;
-                    }}
-                  >
-                    {s.btn1}
-                    <span style={{ fontSize: "15px" }}>→</span>
-                  </button>
-
-                  <button
-                    onClick={() => navigate(s.btn2Route)}
-                    style={{
-                      background: "rgba(255,255,255,0.09)",
-                      backdropFilter: "blur(10px)",
-                      color: "#fff",
-                      fontSize: isSmall ? "13px" : "14px", fontWeight: 600,
-                      padding: isSmall ? "11px 18px" : "13px 30px",
-                      borderRadius: "10px",
-                      border: "1px solid rgba(255,255,255,0.22)",
-                      cursor: "pointer", transition: "all 0.2s",
-                      width: isSmall ? "100%" : "auto",
-                      letterSpacing: "0.2px",
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.background = "rgba(255,255,255,0.18)";
-                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.45)";
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.background = "rgba(255,255,255,0.09)";
-                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)";
-                    }}
-                  >
-                    {s.btn2}
-                  </button>
+                <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.5)", marginTop: 3, fontWeight: 500, lineHeight: 1.2 }}>
+                  {st.label}
                 </div>
-
-                {/* Trust line */}
-                {!isSmall && (
-                  <p style={{
-                    fontSize: "11px", color: "rgba(255,255,255,0.4)",
-                    display: "flex", alignItems: "center", gap: "5px",
-                    margin: 0,
-                  }}>
-                    <span style={{ color: s.accent, fontSize: "12px" }}>✓</span>
-                    {s.trust}
-                  </p>
-                )}
-              </div>
-
-              {/* ── RIGHT — Stat cards ── */}
-              <div style={{
-                position: "relative", zIndex: 2,
-                display: "flex",
-                flexDirection: isMobile ? "row" : "column",
-                gap: isSmall ? "6px" : isMobile ? "8px" : "10px",
-                width: isMobile ? "100%" : "250px",
-                flexShrink: 0,
-              }}>
-                {s.stats.map((st, j) => (
-                  <div key={j}
-                    style={{
-                      flex: isMobile ? 1 : "unset",
-                      background: "rgba(255,255,255,0.07)",
-                      backdropFilter: "blur(14px)",
-                      border: "1px solid rgba(255,255,255,0.13)",
-                      borderRadius: isSmall ? "10px" : "16px",
-                      padding: isSmall
-                        ? "7px 4px"
-                        : isMobile
-                        ? "10px 8px"
-                        : "16px 20px",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: "3px",
-                      transition: "transform 0.22s, border-color 0.22s, background 0.22s",
-                      cursor: "default",
-                      textAlign: "center",
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.transform = isMobile ? "translateY(-3px)" : "translateX(-5px)";
-                      e.currentTarget.style.borderColor = `${s.accent}55`;
-                      e.currentTarget.style.background = "rgba(255,255,255,0.12)";
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.transform = "none";
-                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.13)";
-                      e.currentTarget.style.background = "rgba(255,255,255,0.07)";
-                    }}
-                  >
-                    {/* Icon */}
-                    <div style={{
-                      fontSize: isSmall ? "16px" : isMobile ? "18px" : "26px",
-                      lineHeight: 1, flexShrink: 0,
-                    }}>{st.icon}</div>
-
-                    {/* Text */}
-                    <div style={{ ...SYNE, fontWeight: 800, color: s.accent,
-                      fontSize: isSmall ? "15px" : isMobile ? "18px" : "26px",
-                      lineHeight: 1,
-                      textShadow: `0 0 20px ${s.accent}55`,
-                    }}>{st.num}</div>
-                    <div style={{
-                      fontSize: isSmall ? "8px" : "10px",
-                      color: "rgba(255,255,255,0.55)",
-                      lineHeight: 1.2, fontWeight: 500,
-                    }}>{st.label}</div>
-                  </div>
-                ))}
               </div>
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
 
-        {/* ─── Progress bar ────────────────────────────────── */}
-        <div style={{
-          position: "absolute", bottom: 0, left: 0,
-          height: "2px", zIndex: 10,
-          background: slide.accent,
-          boxShadow: `0 0 10px ${slide.accent}`,
-          transition: "width 0.05s linear",
-          width: `${progress}%`,
-        }} />
+/* ────────────────── Button ────────────────── */
+function HeroBtn({ children, primary, accent, btnColor, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 7,
+        background: primary ? accent : "rgba(255,255,255,0.09)",
+        color: primary ? btnColor : "#fff",
+        fontWeight: primary ? 700 : 600,
+        fontSize: 14, padding: "13px 26px",
+        borderRadius: 11, border: primary ? "none" : "1px solid rgba(255,255,255,0.22)",
+        cursor: "pointer",
+        boxShadow: primary ? `0 4px 24px ${accent}44` : "none",
+        transition: "transform 0.2s, box-shadow 0.2s, background 0.2s, border-color 0.2s",
+        letterSpacing: "0.1px", whiteSpace: "nowrap",
+        fontFamily: "'Inter', sans-serif",
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = "translateY(-2px)";
+        if (primary) {
+          e.currentTarget.style.boxShadow = `0 10px 32px ${accent}66`;
+        } else {
+          e.currentTarget.style.background = "rgba(255,255,255,0.16)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.42)";
+        }
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = "none";
+        if (primary) {
+          e.currentTarget.style.boxShadow = `0 4px 24px ${accent}44`;
+        } else {
+          e.currentTarget.style.background = "rgba(255,255,255,0.09)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)";
+        }
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
-        {/* ─── Bottom controls ─────────────────────────────── */}
-        <div style={{
-          position: "absolute", bottom: "18px", left: 0, right: 0, zIndex: 10,
-          padding: isSmall ? "0 18px" : isMobile ? "0 28px" : "0 72px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}>
-          {/* Slide counter */}
-          <span style={{
-            ...SYNE, fontSize: "12px", color: "rgba(255,255,255,0.4)",
-            letterSpacing: "1px", fontWeight: 600,
-          }}>
-            <span style={{ color: "#fff", fontSize: "15px", fontWeight: 800 }}>
-              {String(cur + 1).padStart(2, "0")}
-            </span>
-            {" / "}
-            {String(slides.length).padStart(2, "0")}
-          </span>
+/* ────────────────── Controls ────────────────── */
+function Controls({ cur, slides, s, goTo, onPrev, onNext }) {
+  return (
+    <div className="hero-ctrl" style={{
+      position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 10,
+      height: 48,
+      padding: "0 72px",
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+    }}>
+      {/* Counter */}
+      <span style={{ ...SYNE, fontSize: 12, color: "rgba(255,255,255,0.35)", letterSpacing: "1px" }}>
+        <span style={{ color: "#fff", fontSize: 15, fontWeight: 900 }}>
+          {String(cur + 1).padStart(2, "0")}
+        </span>
+        {" / "}{String(slides.length).padStart(2, "0")}
+      </span>
 
-          {/* Dots */}
-          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-            {slides.map((_, i) => (
-              <button key={i} onClick={() => goTo(i)} style={{
-                height: "4px", borderRadius: "2px", border: "none",
-                cursor: "pointer", transition: "all 0.35s",
-                width: i === cur ? "32px" : "14px",
-                background: i === cur ? slide.accent : "rgba(255,255,255,0.28)",
-                boxShadow: i === cur ? `0 0 8px ${slide.accent}` : "none",
-              }} />
-            ))}
-          </div>
+      {/* Dot indicators */}
+      <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
+        {slides.map((sl, i) => (
+          <button key={i} onClick={() => goTo(i)} style={{
+            height: 4, borderRadius: 2, border: "none", cursor: "pointer",
+            transition: "all 0.35s cubic-bezier(0.34,1.56,0.64,1)",
+            width: i === cur ? 34 : 14,
+            background: i === cur ? s.accent : "rgba(255,255,255,0.25)",
+            boxShadow: i === cur ? `0 0 8px ${s.accent}` : "none",
+            padding: 0,
+          }} />
+        ))}
+      </div>
 
-          {/* Arrow buttons */}
-          <div style={{ display: "flex", gap: "8px" }}>
-            {[{ fn: prev, icon: "‹" }, { fn: next, icon: "›" }].map(({ fn, icon }) => (
-              <button key={icon} onClick={fn} style={{
-                width: "36px", height: "36px", borderRadius: "50%", border: "none",
-                background: "rgba(255,255,255,0.1)",
-                outline: "1px solid rgba(255,255,255,0.2)",
-                color: "#fff", fontSize: "22px", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                backdropFilter: "blur(6px)", transition: "all 0.2s",
-                lineHeight: 1,
-              }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = slide.accent + "33";
-                  e.currentTarget.style.outlineColor = slide.accent + "88";
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.1)";
-                  e.currentTarget.style.outlineColor = "rgba(255,255,255,0.2)";
-                }}
-              >{icon}</button>
-            ))}
-          </div>
-        </div>
+      {/* Arrow buttons */}
+      <div style={{ display: "flex", gap: 8 }}>
+        {[{ fn: onPrev, ch: "‹" }, { fn: onNext, ch: "›" }].map(({ fn, ch }) => (
+          <button key={ch} onClick={fn} style={{
+            width: 36, height: 36, borderRadius: "50%",
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            color: "#fff", fontSize: 22, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.2s", lineHeight: 1,
+            fontFamily: "sans-serif",
+          }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = s.accent + "28";
+              e.currentTarget.style.borderColor = s.accent + "80";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+              e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
+            }}
+          >{ch}</button>
+        ))}
       </div>
     </div>
   );

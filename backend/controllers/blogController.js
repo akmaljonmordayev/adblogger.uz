@@ -321,3 +321,13 @@ exports.deleteBlog = catchAsync(async (req, res, next) => {
   if (!blog) return next(new AppError('Blog maqolasi topilmadi.', 404));
   res.status(204).json({ success: true, data: null });
 });
+
+// PATCH /api/v1/blogs/admin/reset-views — reset all blog views to 0
+exports.resetAllViews = catchAsync(async (_req, res) => {
+  const result = await BlogPost.updateMany({}, { $set: { views: 0 } });
+  res.status(200).json({
+    success: true,
+    message: `${result.modifiedCount} ta blogning ko'rishlar soni 0 ga tushirildi.`,
+    modifiedCount: result.modifiedCount,
+  });
+});
