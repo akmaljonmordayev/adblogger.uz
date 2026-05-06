@@ -87,7 +87,7 @@ const TABS = [
   { id: "personal",  label: "Shaxsiy",         Icon: LuUser },
   { id: "blogger",   label: "Blogger profili",  Icon: LuStar,       roles: ["blogger"] },
   { id: "business",  label: "Biznes profili",   Icon: LuBriefcase,  roles: ["business"] },
-  { id: "my-blogs",  label: "Bloglarim",        Icon: LuBookOpen,   roles: ["blogger", "business"] },
+  { id: "my-blogs",  label: "Bloglarim",        Icon: LuBookOpen },
   { id: "my-ads",    label: "E'lonlarim",       Icon: LuMegaphone },
   { id: "wishlist",  label: "Saqlanganlar",     Icon: LuHeart },
   { id: "campaigns", label: "Kampaniyalar",     Icon: LuBriefcase },
