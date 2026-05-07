@@ -294,7 +294,7 @@ export default function CategoriesPage() {
               return (
                 <button
                   key={cat._id}
-                  onClick={() => navigate(`${ROUTE_PATHS.BLOGGERS}?category=${encodeURIComponent(cat.slug || cat.name)}`)}
+                  onClick={() => navigate(`${ROUTE_PATHS.BLOGGERS}?category=${encodeURIComponent(cat.name)}`)}
                   onMouseEnter={() => setHovered(cat._id)}
                   onMouseLeave={() => setHovered(null)}
                   style={{
