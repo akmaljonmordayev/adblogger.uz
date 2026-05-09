@@ -45,14 +45,14 @@ const BloggerCard = ({
   return (
     <Link
       to={_id ? `/bloggers/${_id}` : "#"}
-      style={{ textDecoration: "none", display: "block" }}
+      style={{ textDecoration: "none", display: "block" , width: "290px" }}
     >
-    <div className="group relative bg-white rounded-2xl w-full border border-gray-100 overflow-hidden flex flex-col h-[390px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_48px_rgba(220,38,38,0.18)] hover:-translate-y-2 transition-all duration-300 cursor-pointer">
+    <div className="group relative bg-white rounded-2xl w-full border border-gray-100 overflow-hidden flex flex-col h-200px shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_48px_rgba(220,38,38,0.18)] hover:-translate-y-2 transition-all duration-300 cursor-pointer" width="200px">
 
       {/* ── Header strip ── */}
-      <div className="h-22 relative shrink-0" style={{ background: headerGradient }}>
+      <div className="h-22 relative shrink-0" style={{ background: headerGradient, borderBottom: "1px solid rgba(0,0,0,0.05) ",   }}>  
         {/* Top-to-bottom fade for readability */}
-        <div className="absolute inset-0 bg-linear-to-b from-white/15 to-black/10 pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-b from-white/15 to-black/10 pointer-events-none"/>
 
         {/* Platform badge — top-left */}
         <div className={`absolute top-3 left-3 flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm ${badge.bg} ${badge.text}`}>
