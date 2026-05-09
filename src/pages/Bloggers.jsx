@@ -106,7 +106,11 @@ export default function Blogger() {
   useEffect(() => {
     if (!allRef.current.length) return;
     if (categoryFromQS) {
-      const filtered = allRef.current.filter(b => b.categoryText === categoryFromQS);
+      const q = categoryFromQS.toLowerCase();
+      const filtered = allRef.current.filter(b =>
+        b.categoryText.toLowerCase() === q ||
+        b.categoryType.toLowerCase() === q
+      );
       setBloggers(filtered.length > 0 ? filtered : allRef.current);
     } else {
       setBloggers(allRef.current);
