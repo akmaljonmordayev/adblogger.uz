@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pc = require('../controllers/profileController');
 const { protect } = require('../middleware/auth');
-const { uploadAvatar } = require('../config/cloudinary');
+
 
 /**
  * @swagger
@@ -61,6 +61,6 @@ const { uploadAvatar } = require('../config/cloudinary');
 
 router.use(protect);
 router.patch('/', pc.updateProfile);
-router.patch('/avatar', uploadAvatar.single('avatar'), pc.updateAvatar);
+router.patch('/avatar', pc.updateAvatar);  // accepts JSON { avatar: base64DataUri }
 
 module.exports = router;

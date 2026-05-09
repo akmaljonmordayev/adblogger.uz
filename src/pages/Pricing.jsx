@@ -1,4 +1,5 @@
 import { LuCheck, LuZap, LuStar, LuBuilding2, LuArrowRight } from "react-icons/lu";
+import SEO, { breadcrumbSchema } from "../components/SEO";
 
 const plans = [
   {
@@ -62,7 +63,12 @@ const faqs = [
 export default function Pricing() {
   return (
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
-
+      <SEO
+        title="Narxlar — Reklama Xizmatlari Tariflar"
+        description="O'zbekistondagi blogger reklama narxlari. Shaffof va qulay tariflar: boshlang'ich, professional va premium paketlar. Bugun reklamangizni joylashtiring!"
+        canonical="/pricing"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Narxlar", path: "/pricing" }])}
+      />
       {/* Hero */}
       <div style={{ textAlign: "center", padding: "40px 20px 48px", maxWidth: 640, margin: "0 auto" }}>
         <span style={{

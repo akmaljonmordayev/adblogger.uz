@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { LuInstagram, LuYoutube, LuCheck, LuArrowRight, LuUsers, LuTrendingUp, LuDollarSign, LuStar } from "react-icons/lu";
+import { useNavigate } from "react-router-dom";
+import { LuInstagram, LuYoutube, LuCheck, LuArrowRight, LuUsers, LuTrendingUp, LuDollarSign, LuStar, LuLoader } from "react-icons/lu";
+import SEO, { breadcrumbSchema } from "../components/SEO";
+import { useAuthStore } from "../store/useAuthStore";
+import { toast } from "../components/ui/toast";
 
 const steps = [
   { num: "01", title: "Ro'yxatdan o'ting", desc: "Bepul profil yarating va o'z ma'lumotlaringizni kiriting." },
@@ -21,10 +25,43 @@ const platforms = [
 ];
 
 export default function BlogerBolish() {
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", platform: "", followers: "", category: "" });
+  const navigate = useNavigate();
+  const { register } = useAuthStore();
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", platform: "", followers: "", category: "" });
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.email || !form.password || !form.platform || !form.followers) {
+      toast.error("Majburiy maydonlarni to'ldiring");
+      return;
+    }
+    if (form.password.length < 6) {
+      toast.error("Parol kamida 6 ta belgidan iborat bo'lishi kerak");
+      return;
+    }
+    const [firstName, ...rest] = form.name.trim().split(" ");
+    const lastName = rest.join(" ");
+    setLoading(true);
+    try {
+      await register({
+        firstName,
+        lastName,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+        role: "blogger",
+      });
+      toast.success("Blogger sifatida muvaffaqiyatli ro'yxatdan o'tdingiz!");
+      navigate("/");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Ro'yxatdan o'tish xatosi");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const inputStyle = {
     width: "100%", padding: "12px 14px", fontSize: 14,
@@ -36,6 +73,12 @@ export default function BlogerBolish() {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <SEO
+        title="Blogger Bo'lish — Daromad Oling"
+        description="ADBlogger platformasida blogger bo'ling. Auditoriyangizni monetizatsiya qiling, brendlar bilan hamkorlik qiling va daromad oling. Ro'yxatdan o'tish bepul!"
+        canonical="/blogger-bolish"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Blogger bo'lish", path: "/blogger-bolish" }])}
+      />
       <style>{`
         .bb-hero        { padding: 48px 32px; }
         .bb-hero h1     { font-size: 40px; }
@@ -161,7 +204,7 @@ export default function BlogerBolish() {
           </h3>
           <p style={{ fontSize: 13, color: "#64748b", marginBottom: 24 }}>Bepul · 2 daqiqa · Kredit karta shart emas</p>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <input style={inputStyle} placeholder="Ism Familiya *" value={form.name} onChange={e => set("name", e.target.value)}
               onFocus={e => e.target.style.borderColor = "#dc2626"}
               onBlur={e => e.target.style.borderColor = "#e2e8f0"}
@@ -171,6 +214,10 @@ export default function BlogerBolish() {
               onBlur={e => e.target.style.borderColor = "#e2e8f0"}
             />
             <input style={inputStyle} placeholder="Telefon +998 __ ___ __ __" value={form.phone} onChange={e => set("phone", e.target.value)}
+              onFocus={e => e.target.style.borderColor = "#dc2626"}
+              onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+            />
+            <input style={inputStyle} placeholder="Parol * (kamida 6 belgi)" type="password" value={form.password} onChange={e => set("password", e.target.value)}
               onFocus={e => e.target.style.borderColor = "#dc2626"}
               onBlur={e => e.target.style.borderColor = "#e2e8f0"}
             />
@@ -186,7 +233,7 @@ export default function BlogerBolish() {
               onBlur={e => e.target.style.borderColor = "#e2e8f0"}
             />
             <select style={{ ...inputStyle, color: form.category ? "#0f172a" : "#9ca3af" }} value={form.category} onChange={e => set("category", e.target.value)}>
-              <option value="">Kategoriya *</option>
+              <option value="">Kategoriya</option>
               <option>Texnologiya</option>
               <option>Lifestyle</option>
               <option>Ovqat</option>
@@ -197,22 +244,28 @@ export default function BlogerBolish() {
               <option>Musiqa</option>
             </select>
 
-            <button style={{
-              width: "100%", padding: "14px",
-              background: "linear-gradient(135deg,#dc2626,#b91c1c)",
-              color: "#fff", fontSize: 14, fontWeight: 700,
-              border: "none", borderRadius: 12, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              boxShadow: "0 4px 20px rgba(220,38,38,0.35)",
-              marginTop: 4,
-              transition: "opacity 0.2s",
-            }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: "100%", padding: "14px",
+                background: "linear-gradient(135deg,#dc2626,#b91c1c)",
+                color: "#fff", fontSize: 14, fontWeight: 700,
+                border: "none", borderRadius: 12, cursor: loading ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                boxShadow: "0 4px 20px rgba(220,38,38,0.35)",
+                marginTop: 4,
+                opacity: loading ? 0.75 : 1,
+                transition: "opacity 0.2s",
+              }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = "0.88"; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = loading ? "0.75" : "1"; }}
             >
-              Arizani yuborish <LuArrowRight size={16} />
+              {loading ? <LuLoader size={16} style={{ animation: "spin 1s linear infinite" }} /> : null}
+              {loading ? "Yuklanmoqda..." : <><span>Ro'yxatdan o'tish</span> <LuArrowRight size={16} /></>}
             </button>
-          </div>
+            <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+          </form>
 
           <p style={{ fontSize: 11.5, color: "#94a3b8", textAlign: "center", marginTop: 14, lineHeight: 1.6 }}>
             Ro'yxatdan o'tish orqali <a href="/shartlar" style={{ color: "#dc2626" }}>foydalanish shartlari</a>ga rozilik bildirasiz.

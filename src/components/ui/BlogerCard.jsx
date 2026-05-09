@@ -1,4 +1,4 @@
-import React from "react";
+import { Link } from "react-router-dom";
 
 const Icons = {
   Verified: (
@@ -26,6 +26,7 @@ const platformBadge = {
 };
 
 const BloggerCard = ({
+  _id,
   avatarIcon,
   name,
   username,
@@ -42,6 +43,10 @@ const BloggerCard = ({
   const badge = platformBadge[platform] ?? { bg: "bg-gray-700", text: "text-white" };
 
   return (
+    <Link
+      to={_id ? `/bloggers/${_id}` : "#"}
+      style={{ textDecoration: "none", display: "block" }}
+    >
     <div className="group relative bg-white rounded-2xl w-full border border-gray-100 overflow-hidden flex flex-col h-[390px] shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_48px_rgba(220,38,38,0.18)] hover:-translate-y-2 transition-all duration-300 cursor-pointer">
 
       {/* ── Header strip ── */}
@@ -116,13 +121,14 @@ const BloggerCard = ({
         </div>
 
         <button
-          onClick={onBronClick}
+          onClick={e => { e.preventDefault(); e.stopPropagation(); onBronClick?.(); }}
           className="bg-[#dc2626] hover:bg-[#b91c1c] text-white text-[12px] font-bold px-5 py-2.5 rounded-xl shadow-md shadow-red-200 hover:shadow-red-300 active:scale-95 transition-all duration-200"
         >
-          Bron qilish
+          Ko'rish
         </button>
       </div>
     </div>
+    </Link>
   );
 };
 

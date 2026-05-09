@@ -28,6 +28,7 @@ const CATEGORIES = [
   { id: "Gaming",     emoji: "🎮" },
   { id: "Sayohat",    emoji: "✈️" },
   { id: "Ta'lim",     emoji: "📚" },
+  { id: "Musiqa",     emoji: "🎵" },
 ];
 
 const PLATFORMS = [
@@ -342,16 +343,24 @@ function UserSelector({ users = [], selectedUser, onSelect }) {
 /* ═══════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════ */
-export default function FilterSidebar({ onApplyFilter, usersList = [] }) {
+export default function FilterSidebar({ onApplyFilter, usersList = [], initialCategory = null }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [filters, setFilters] = useState({
-    category: [],
+    category: initialCategory ? [initialCategory] : [],
     platform: [],
     subscribers: [],
     status: [],
     price: { min: PRICE_MIN, max: PRICE_MAX },
   });
   const [applied, setApplied] = useState(false);
+
+  useEffect(() => {
+    if (initialCategory) {
+      setFilters(p => ({ ...p, category: [initialCategory] }));
+    } else {
+      setFilters(p => ({ ...p, category: [] }));
+    }
+  }, [initialCategory]);
 
   const toggle = (type, value) => {
     setApplied(false);

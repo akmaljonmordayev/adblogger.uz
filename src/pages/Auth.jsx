@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import SEO from "../components/SEO";
 import { LuEye, LuEyeOff, LuArrowLeft, LuCheck, LuLoader } from "react-icons/lu";
 import { toast } from "../components/ui/toast";
 import { useAuthStore } from "../store/useAuthStore";
@@ -156,6 +157,7 @@ export default function Auth() {
 
   return (
     <div style={S.wrap}>
+      <SEO title="Kirish / Ro'yxatdan O'tish" noindex />
       <style>{`
         .auth-card { padding: 36px 32px; }
 

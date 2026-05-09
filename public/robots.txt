@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Private user routes
+Disallow: /admin
+Disallow: /admin/
+Disallow: /profile
+Disallow: /wishlist
+Disallow: /notifications
+Disallow: /login
+Disallow: /register
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
+
+Sitemap: https://adblogger.uz/sitemap.xml

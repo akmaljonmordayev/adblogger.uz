@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import SEO from "../components/SEO";
 import {
   LuUser, LuSettings, LuShield, LuLogOut, LuCamera, LuCheck,
   LuLoader, LuHeart, LuMegaphone, LuBriefcase,
@@ -7,6 +8,7 @@ import {
   LuCalendar, LuInstagram, LuYoutube, LuStar, LuTrendingUp,
   LuGlobe, LuMapPin, LuUsers, LuDollarSign, LuInfo,
   LuLink, LuBookmark, LuBell, LuChevronRight, LuSend,
+  LuBookOpen, LuPencil, LuX, LuClock,
 } from "react-icons/lu";
 import { toast } from "../components/ui/toast";
 import { useAuthStore } from "../store/useAuthStore";
@@ -85,6 +87,7 @@ const TABS = [
   { id: "personal",  label: "Shaxsiy",         Icon: LuUser },
   { id: "blogger",   label: "Blogger profili",  Icon: LuStar,       roles: ["blogger"] },
   { id: "business",  label: "Biznes profili",   Icon: LuBriefcase,  roles: ["business"] },
+  { id: "my-blogs",  label: "Bloglarim",        Icon: LuBookOpen },
   { id: "my-ads",    label: "E'lonlarim",       Icon: LuMegaphone },
   { id: "wishlist",  label: "Saqlanganlar",     Icon: LuHeart },
   { id: "campaigns", label: "Kampaniyalar",     Icon: LuBriefcase },
@@ -92,24 +95,49 @@ const TABS = [
   { id: "security",  label: "Xavfsizlik",       Icon: LuShield },
 ];
 
+const BLOG_CATEGORIES = [
+  "Tech","Lifestyle","Beauty","Food","Sports","Travel","Education","Business","Gaming","Music","Other"
+];
+
+const BLOG_STATUS_META = {
+  pending:  { bg:"#fef9c3", c:"#854d0e", bd:"#fde68a", t:"Tasdiq kutilmoqda", icon:"⏳" },
+  approved: { bg:"#dcfce7", c:"#166534", bd:"#86efac", t:"Tasdiqlangan",       icon:"✅" },
+  rejected: { bg:"#fee2e2", c:"#991b1b", bd:"#fca5a5", t:"Rad etilgan",        icon:"❌" },
+};
+
+const BlogStatusBadge = ({ s }) => {
+  const x = BLOG_STATUS_META[s] || BLOG_STATUS_META.pending;
+  return (
+    <span style={{ background:x.bg, color:x.c, fontSize:11, fontWeight:700, padding:"3px 9px",
+      borderRadius:6, border:`1px solid ${x.bd}`, display:"inline-flex", alignItems:"center", gap:4 }}>
+      {x.icon} {x.t}
+    </span>
+  );
+};
+
+const STATUS_META = {
+  pending:  { bg:"#fef9c3", c:"#854d0e", bd:"#fde68a", t:"Kutilmoqda",   icon:"⏳" },
+  approved: { bg:"#dcfce7", c:"#166534", bd:"#86efac", t:"Tasdiqlangan", icon:"✓"  },
+  active:   { bg:"#dbeafe", c:"#1e40af", bd:"#93c5fd", t:"Faol",         icon:"🔵" },
+  rejected: { bg:"#fee2e2", c:"#991b1b", bd:"#fca5a5", t:"Rad etilgan",  icon:"✕"  },
+  completed:{ bg:"#f3f4f6", c:"#374151", bd:"#d1d5db", t:"Yakunlangan",  icon:"✓"  },
+};
 const StatusBadge = ({ s }) => {
-  const m = {
-    pending:  { bg:"#fef9c3", c:"#854d0e", t:"Kutilmoqda" },
-    approved: { bg:"#dcfce7", c:"#166534", t:"Tasdiqlangan" },
-    active:   { bg:"#dbeafe", c:"#1e40af", t:"Faol" },
-    rejected: { bg:"#fee2e2", c:"#991b1b", t:"Rad etilgan" },
-    completed:{ bg:"#f3f4f6", c:"#374151", t:"Yakunlangan" },
-  };
-  const x = m[s] || m.pending;
-  return <span style={{ background:x.bg, color:x.c, fontSize:11, fontWeight:700, padding:"3px 9px", borderRadius:6 }}>{x.t}</span>;
+  const x = STATUS_META[s] || STATUS_META.pending;
+  return (
+    <span style={{ background:x.bg, color:x.c, fontSize:11, fontWeight:700, padding:"3px 9px", borderRadius:6, border:`1px solid ${x.bd}`, display:"inline-flex", alignItems:"center", gap:4 }}>
+      {x.icon} {x.t}
+    </span>
+  );
 };
 
 /* ══════════════════════════════════════════════════════════════ */
 export default function Profile() {
   const navigate          = useNavigate();
+  const [searchParams]    = useSearchParams();
   const { user, setUser } = useAuthStore();
 
-  const [tab,          setTab]          = useState("personal");
+  const [tab,          setTab]          = useState(searchParams.get("tab") || "personal");
   const [saving,       setSaving]       = useState(false);
   const [saved,        setSaved]        = useState(false);
   const [avatarLoading,setAvatarLoading]= useState(false);
@@ -121,6 +149,21 @@ export default function Profile() {
   const [bloggerProfile,  setBloggerProfile]  = useState(null);
   const [businessProfile, setBusinessProfile] = useState(null);
   const [showLogout,   setShowLogout]   = useState(false);
+  const [editAd,       setEditAd]       = useState(null);
+  const [editForm,     setEditForm]     = useState({});
+  const [editSaving,   setEditSaving]   = useState(false);
+
+  // My blogs
+  const [myBlogs,       setMyBlogs]       = useState([]);
+  const [blogsLoading,  setBlogsLoading]  = useState(false);
+  const [showBlogForm,  setShowBlogForm]  = useState(false);
+  const [editBlog,      setEditBlog]      = useState(null);  // blog being edited
+  const [blogSaving,    setBlogSaving]    = useState(false);
+  const [blogForm,      setBlogForm]      = useState({
+    title: "", category: "", excerpt: "", content: "", tags: "",
+  });
+  const [blogCoverFile, setBlogCoverFile] = useState(null);
+  const blogCoverRef = useRef(null);
 
   // Personal form
   const [pForm, setPForm] = useState({
@@ -175,12 +218,91 @@ export default function Profile() {
   useEffect(() => {
     if (tab === "my-ads")    fetchMyAds();
     if (tab === "campaigns") fetchCampaigns();
+    if (tab === "my-blogs")  fetchMyBlogs();
     if (tab === "wishlist") {
       setWishlist(JSON.parse(localStorage.getItem("adb_wishlist") || "[]"));
     }
     if (tab === "blogger"  && user?.role === "blogger")  fetchBloggerProfile();
     if (tab === "business" && user?.role === "business") fetchBusinessProfile();
   }, [tab]);
+
+  const fetchMyBlogs = async () => {
+    setBlogsLoading(true);
+    try {
+      const res = await api.get("/blogs/my");
+      setMyBlogs(res.data.data || []);
+    } catch {
+      setMyBlogs([]);
+    } finally {
+      setBlogsLoading(false);
+    }
+  };
+
+  const openCreateBlog = () => {
+    setEditBlog(null);
+    setBlogForm({ title:"", category:"", excerpt:"", content:"", tags:"" });
+    setBlogCoverFile(null);
+    setShowBlogForm(true);
+  };
+
+  const openEditBlog = (b) => {
+    setEditBlog(b);
+    setBlogForm({
+      title:    b.title    || "",
+      category: b.category || "",
+      excerpt:  b.excerpt  || "",
+      content:  b.content  || "",
+      tags:     (b.tags || []).join(", "),
+    });
+    setBlogCoverFile(null);
+    setShowBlogForm(true);
+  };
+
+  const closeBlogForm = () => { setShowBlogForm(false); setEditBlog(null); };
+
+  const handleBlogSubmit = async (e) => {
+    e.preventDefault();
+    if (!blogForm.title.trim() || !blogForm.category || !blogForm.content.trim()) {
+      toast.error("Sarlavha, kategoriya va kontent majburiy");
+      return;
+    }
+    setBlogSaving(true);
+    try {
+      const fd = new FormData();
+      fd.append("title",    blogForm.title.trim());
+      fd.append("category", blogForm.category);
+      fd.append("excerpt",  blogForm.excerpt.trim());
+      fd.append("content",  blogForm.content.trim());
+      fd.append("tags",     blogForm.tags);
+      if (blogCoverFile) fd.append("coverImage", blogCoverFile);
+
+      if (editBlog) {
+        const res = await api.patch(`/blogs/${editBlog._id}`, fd, { headers:{ "Content-Type":"multipart/form-data" } });
+        setMyBlogs(prev => prev.map(b => b._id === editBlog._id ? res.data.data : b));
+        toast.success("Blog yangilandi");
+      } else {
+        const res = await api.post("/blogs", fd, { headers:{ "Content-Type":"multipart/form-data" } });
+        setMyBlogs(prev => [res.data.data, ...prev]);
+        toast.success("Blog yuborildi! Admin tasdiqidan keyin e'lon qilinadi");
+      }
+      closeBlogForm();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Xatolik yuz berdi");
+    } finally {
+      setBlogSaving(false);
+    }
+  };
+
+  const handleDeleteBlog = async (id) => {
+    if (!window.confirm("Blogni o'chirishni tasdiqlaysizmi?")) return;
+    try {
+      await api.delete(`/blogs/${id}`);
+      setMyBlogs(prev => prev.filter(b => b._id !== id));
+      toast.success("Blog o'chirildi");
+    } catch {
+      toast.error("O'chirishda xatolik");
+    }
+  };
 
   const fetchBusinessProfile = async () => {
     setLoadingTab(true);
@@ -255,18 +377,62 @@ export default function Profile() {
     catch { /* */ } finally { setLoadingTab(false); }
   };
 
-  // ── Avatar ────────────────────────────────────────────────────
-  const handleAvatarChange = async e => {
+  // ── Avatar: canvas orqali resize + compress → base64 ─────────
+  const handleAvatarChange = e => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2*1024*1024) { toast.error("Rasm 2MB dan kichik bo'lsin"); return; }
-    const fd = new FormData(); fd.append("avatar", file);
+    if (!file.type.startsWith("image/")) {
+      toast.error("Faqat rasm fayllari qabul qilinadi");
+      return;
+    }
+
     setAvatarLoading(true);
-    try {
-      const r = await api.patch("/profile/avatar", fd, { headers:{ "Content-Type":"multipart/form-data" } });
-      setUser(r.data.data); toast.success("Avatar yangilandi!");
-    } catch { toast.error("Avatar yuklashda xatolik"); }
-    finally { setAvatarLoading(false); }
+    const reader = new FileReader();
+
+    reader.onload = evt => {
+      const img = new Image();
+      img.onload = async () => {
+        // Canvas: max 600x600, kvadrat crop markaz
+        const SIZE = 600;
+        const canvas = document.createElement("canvas");
+        canvas.width  = SIZE;
+        canvas.height = SIZE;
+        const ctx = canvas.getContext("2d");
+
+        // cover-fill: kichik tomoniga qarab scale
+        const scale = Math.max(SIZE / img.width, SIZE / img.height);
+        const w = img.width  * scale;
+        const h = img.height * scale;
+        const x = (SIZE - w) / 2;
+        const y = (SIZE - h) / 2;
+        ctx.drawImage(img, x, y, w, h);
+
+        // JPEG 0.82 sifat — ~50-150 KB chiqadi
+        const base64 = canvas.toDataURL("image/jpeg", 0.82);
+
+        try {
+          const r = await api.patch("/profile/avatar", { avatar: base64 });
+          setUser(r.data.data);
+          toast.success("Avatar yangilandi!");
+        } catch (err) {
+          toast.error(err?.response?.data?.message || "Avatar yuklashda xatolik");
+        } finally {
+          setAvatarLoading(false);
+          e.target.value = "";
+        }
+      };
+      img.onerror = () => {
+        toast.error("Rasm o'qishda xatolik");
+        setAvatarLoading(false);
+      };
+      img.src = evt.target.result;
+    };
+
+    reader.onerror = () => {
+      toast.error("Fayl o'qishda xatolik");
+      setAvatarLoading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   // ── Logo upload ───────────────────────────────────────────────
@@ -372,6 +538,46 @@ export default function Profile() {
     catch { toast.error("Xatolik"); }
   };
 
+  const openEditAd = ad => {
+    setEditAd(ad);
+    if (ad.type === "blogger") {
+      setEditForm({
+        title:       ad.title       || "",
+        description: ad.description || "",
+        phone:       ad.phone       || "",
+        followersRange: ad.followersRange || "",
+        pricing: {
+          post:  ad.pricing?.post  || "",
+          story: ad.pricing?.story || "",
+          video: ad.pricing?.video || "",
+        },
+        portfolio: ad.portfolio || "",
+      });
+    } else {
+      setEditForm({
+        companyName:        ad.companyName        || "",
+        productName:        ad.productName        || "",
+        productDescription: ad.productDescription || "",
+        phone:              ad.phone              || "",
+        targetAudience:     ad.targetAudience     || "",
+        campaignDuration:   ad.campaignDuration   || "",
+        budget: { range: ad.budget?.range || "" },
+      });
+    }
+  };
+
+  const saveEditAd = async () => {
+    if (!editAd) return;
+    setEditSaving(true);
+    try {
+      const r = await api.patch(`/ads/${editAd._id}`, editForm);
+      setMyAds(p => p.map(a => a._id === editAd._id ? r.data.data : a));
+      toast.success("E'lon yangilandi (tekshiruvga yuborildi)");
+      setEditAd(null);
+    } catch { toast.error("Xatolik"); }
+    finally { setEditSaving(false); }
+  };
+
   const removeWishlist = id => {
     const upd = wishlist.filter(w=>w._id!==id);
     setWishlist(upd); localStorage.setItem("adb_wishlist", JSON.stringify(upd));
@@ -402,6 +608,7 @@ export default function Profile() {
 
   return (
     <>
+    <SEO title="Profilim" noindex />
     <LogoutModal isOpen={showLogout} onClose={() => setShowLogout(false)} redirectTo="/" />
     <div style={{ fontFamily:"'Inter',sans-serif", maxWidth:960, margin:"0 auto", padding:"0 20px 80px" }}>
       <style>{`
@@ -411,7 +618,12 @@ export default function Profile() {
         .chip-btn{transition:all .15s;cursor:pointer;user-select:none}
         .chip-btn:hover{opacity:.85}
         .field-inp:focus{border-color:#dc2626!important;box-shadow:0 0 0 3px rgba(220,38,38,.08)!important}
-        @media(max-width:700px){.profile-grid{grid-template-columns:1fr!important}.profile-sidebar{position:static!important}}
+        @media(max-width:700px){.profile-grid{grid-template-columns:1fr!important}.profile-sidebar{position:static!important;max-height:none!important}.profile-main{position:static!important;max-height:none!important}}
+        .profile-main::-webkit-scrollbar{width:5px}
+        .profile-main::-webkit-scrollbar-track{background:transparent}
+        .profile-main::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:10px}
+        .profile-main::-webkit-scrollbar-thumb:hover{background:#cbd5e1}
+        .profile-sidebar::-webkit-scrollbar{display:none}
       `}</style>
 
       {/* ── Banner ───────────────────────────────────────────── */}
@@ -545,7 +757,10 @@ export default function Profile() {
         <div className="profile-sidebar" style={{
           background:"#fff", border:"1.5px solid #e2e8f0",
           borderRadius:16, padding:"12px 8px",
-          position:"sticky", top:80,
+          position:"sticky", top:20,
+          maxHeight:"calc(100vh - 100px)",
+          overflowY:"auto",
+          scrollbarWidth:"none",
         }}>
           {visibleTabs.map(({ id, label, Icon }) => (
             <button key={id} onClick={()=>setTab(id)} className="tab-btn" style={{
@@ -601,7 +816,15 @@ export default function Profile() {
         </div>
 
         {/* Main panel */}
-        <div style={{ background:"#fff", border:"1.5px solid #e2e8f0", borderRadius:18, padding:"28px 32px", minHeight:400 }}>
+        <div className="profile-main" style={{
+          background:"#fff", border:"1.5px solid #e2e8f0", borderRadius:18,
+          padding:"28px 32px", minHeight:400,
+          position:"sticky", top:20,
+          maxHeight:"calc(100vh - 100px)",
+          overflowY:"auto",
+          scrollbarWidth:"thin",
+          scrollbarColor:"#e2e8f0 transparent",
+        }}>
 
           {/* ══ TAB: PERSONAL ══════════════════════════════════ */}
           {tab === "personal" && (
@@ -639,9 +862,9 @@ export default function Profile() {
           {/* ══ TAB: BLOGGER PROFILE ═══════════════════════════ */}
           {tab === "blogger" && user.role === "blogger" && (
             loadingTab ? (
-              <div style={{ textAlign:"center", padding:"60px 0" }}>
+              <div style={{ display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", padding:"60px 0", gap:12 }}>
                 <LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/>
-                <p style={{ color:"#94a3b8", marginTop:12 }}>Profil yuklanmoqda...</p>
+                <p style={{ color:"#94a3b8", margin:0 }}>Profil yuklanmoqda...</p>
               </div>
             ) : (
               <form onSubmit={saveBlogger}>
@@ -917,9 +1140,9 @@ export default function Profile() {
           {/* ══ TAB: BUSINESS PROFILE ═════════════════════════ */}
           {tab === "business" && user.role === "business" && (
             loadingTab ? (
-              <div style={{ textAlign:"center", padding:"60px 0" }}>
+              <div style={{ display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", padding:"60px 0", gap:12 }}>
                 <LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/>
-                <p style={{ color:"#94a3b8", marginTop:12 }}>Profil yuklanmoqda...</p>
+                <p style={{ color:"#94a3b8", margin:0 }}>Profil yuklanmoqda...</p>
               </div>
             ) : (
               <form onSubmit={saveBusiness}>
@@ -1158,7 +1381,7 @@ export default function Profile() {
                 </Link>
               </div>
               {loadingTab ? (
-                <div style={{ textAlign:"center", padding:"60px 0" }}><LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/></div>
+                <div style={{ display:"flex", justifyContent:"center", alignItems:"center", padding:"60px 0" }}><LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/></div>
               ) : myAds.length===0 ? (
                 <div style={{ textAlign:"center", padding:"60px 20px" }}>
                   <div style={{ fontSize:52, marginBottom:12 }}>📢</div>
@@ -1170,32 +1393,139 @@ export default function Profile() {
               ) : (
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                   {myAds.map(ad => (
-                    <div key={ad._id} style={{ border:"1.5px solid #e2e8f0", borderRadius:14, padding:"16px 18px", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12 }}>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ display:"flex", gap:8, marginBottom:6, flexWrap:"wrap" }}>
+                    <div key={ad._id} style={{ border:"1.5px solid #e2e8f0", borderRadius:14, padding:"16px 18px", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, flexWrap:"wrap" }}>
+                      <div style={{ flex:1, minWidth:200 }}>
+                        <div style={{ display:"flex", gap:8, marginBottom:6, flexWrap:"wrap", alignItems:"center" }}>
                           <span style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:5, background:ad.type==="blogger"?"#ede9fe":"#dbeafe", color:ad.type==="blogger"?"#6d28d9":"#1e40af" }}>
                             {ad.type==="blogger"?"Blogger":"Biznes"}
                           </span>
                           <StatusBadge s={ad.status}/>
                         </div>
+                        {ad.status==="rejected" && (
+                          <div style={{ margin:"4px 0 6px", padding:"6px 10px", background:"#fef2f2", border:"1px solid #fca5a5", borderRadius:8, fontSize:12, color:"#991b1b", display:"flex", alignItems:"center", gap:6 }}>
+                            ✕ Admin tomonidan rad etildi. Tahrirlang va qayta yuboring.
+                          </div>
+                        )}
+                        {ad.status==="pending" && (
+                          <div style={{ margin:"4px 0 6px", padding:"6px 10px", background:"#fffbeb", border:"1px solid #fde68a", borderRadius:8, fontSize:12, color:"#92400e", display:"flex", alignItems:"center", gap:6 }}>
+                            ⏳ Admin tekshiruvi kutilmoqda (24 soat ichida)
+                          </div>
+                        )}
                         <p style={{ margin:0, fontSize:14, fontWeight:700, color:"#0f172a" }}>
                           {ad.title||ad.companyName||ad.productName||"—"}
                         </p>
-                        <p style={{ margin:"4px 0 0", fontSize:12, color:"#94a3b8", display:"flex", alignItems:"center", gap:8 }}>
+                        <p style={{ margin:"4px 0 0", fontSize:12, color:"#94a3b8" }}>
+                          {ad.description||ad.productDescription||""}
+                        </p>
+                        <p style={{ margin:"6px 0 0", fontSize:11, color:"#94a3b8", display:"flex", alignItems:"center", gap:8 }}>
                           <LuCalendar size={11}/> {new Date(ad.createdAt).toLocaleDateString("uz-UZ")}
-                          <LuEye size={11}/> {ad.views||0}
+                          <LuEye size={11}/> {ad.views||0} ko'rildi
+                          {ad.phone && <><LuPhone size={11}/> {ad.phone}</>}
                         </p>
                       </div>
                       <div style={{ display:"flex", gap:8, flexShrink:0 }}>
-                        <Link to={`/ads/${ad._id}`} style={{ padding:"7px 14px", border:"1.5px solid #e2e8f0", borderRadius:8, textDecoration:"none", color:"#374151", fontSize:12, fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
-                          <LuEye size={12}/> Ko'rish
-                        </Link>
+                        {(ad.status==="approved"||ad.status==="active") && (
+                          <Link to={`/ads/${ad._id}`} style={{ padding:"7px 12px", border:"1.5px solid #e2e8f0", borderRadius:8, textDecoration:"none", color:"#374151", fontSize:12, fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
+                            <LuEye size={12}/> Ko'rish
+                          </Link>
+                        )}
+                        <button onClick={()=>openEditAd(ad)} style={{ padding:"7px 12px", border:"1.5px solid #bfdbfe", borderRadius:8, background:"#eff6ff", color:"#2563eb", cursor:"pointer", display:"flex", alignItems:"center", gap:5, fontSize:12, fontWeight:600 }}>
+                          <LuSettings size={12}/> Tahrirlash
+                        </button>
                         <button onClick={()=>deleteAd(ad._id)} style={{ padding:"7px 10px", border:"1.5px solid #fee2e2", borderRadius:8, background:"#fef2f2", color:"#dc2626", cursor:"pointer", display:"flex", alignItems:"center" }}>
                           <LuTrash2 size={13}/>
                         </button>
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* ── Edit Ad Modal ── */}
+              {editAd && (
+                <div style={{ position:"fixed", inset:0, zIndex:1000, background:"rgba(0,0,0,0.45)", backdropFilter:"blur(4px)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={()=>setEditAd(null)}>
+                  <div style={{ background:"#fff", borderRadius:20, padding:"28px 24px", maxWidth:500, width:"100%", maxHeight:"90vh", overflowY:"auto", boxShadow:"0 24px 64px rgba(0,0,0,0.2)" }} onClick={e=>e.stopPropagation()}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+                      <div>
+                        <h3 style={{ margin:0, fontSize:16, fontWeight:800, color:"#0f172a" }}>E'lonni tahrirlash</h3>
+                        <p style={{ margin:"4px 0 0", fontSize:12, color:"#94a3b8" }}>Saqlangandan so'ng admin tekshiruviga yuboriladi</p>
+                      </div>
+                      <button onClick={()=>setEditAd(null)} style={{ background:"none", border:"none", cursor:"pointer", color:"#94a3b8", padding:4 }}>✕</button>
+                    </div>
+
+                    {editAd.type==="blogger" ? (
+                      <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                        <FieldWrap>
+                          <Label>E'lon sarlavhasi</Label>
+                          <input style={inp()} value={editForm.title||""} onChange={e=>setEditForm(p=>({...p,title:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="Sarlavha" />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Tavsif</Label>
+                          <textarea style={{...inp(),resize:"vertical"}} rows={3} value={editForm.description||""} onChange={e=>setEditForm(p=>({...p,description:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="O'zingiz haqingizda qisqacha..." />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Telefon</Label>
+                          <input style={inp()} value={editForm.phone||""} onChange={e=>setEditForm(p=>({...p,phone:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="+998 90 000 00 00" />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Portfolio havolasi</Label>
+                          <input style={inp()} value={editForm.portfolio||""} onChange={e=>setEditForm(p=>({...p,portfolio:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="https://..." />
+                        </FieldWrap>
+                        <div>
+                          <Label>Narxlar (so'm)</Label>
+                          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginTop:6 }}>
+                            {[{k:"post",l:"Post"},{k:"story",l:"Story"},{k:"video",l:"Video"}].map(({k,l})=>(
+                              <div key={k}>
+                                <div style={{ fontSize:11, color:"#6b7280", marginBottom:4 }}>{l}</div>
+                                <input style={inp({fontSize:13})} value={editForm.pricing?.[k]||""} onChange={e=>setEditForm(p=>({...p,pricing:{...p.pricing,[k]:e.target.value}}))} onFocus={onFocus} onBlur={onBlur} placeholder="0" type="number" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                        <FieldWrap>
+                          <Label>Kompaniya nomi</Label>
+                          <input style={inp()} value={editForm.companyName||""} onChange={e=>setEditForm(p=>({...p,companyName:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="Kompaniya nomi" />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Mahsulot / xizmat nomi</Label>
+                          <input style={inp()} value={editForm.productName||""} onChange={e=>setEditForm(p=>({...p,productName:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="Mahsulot nomi" />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Tavsif</Label>
+                          <textarea style={{...inp(),resize:"vertical"}} rows={3} value={editForm.productDescription||""} onChange={e=>setEditForm(p=>({...p,productDescription:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="Mahsulot haqida..." />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Telefon</Label>
+                          <input style={inp()} value={editForm.phone||""} onChange={e=>setEditForm(p=>({...p,phone:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="+998 90 000 00 00" />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Maqsadli auditoriya</Label>
+                          <input style={inp()} value={editForm.targetAudience||""} onChange={e=>setEditForm(p=>({...p,targetAudience:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="Yoshlar, ayollar..." />
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Byudjet</Label>
+                          <select style={{...inp(),cursor:"pointer"}} value={editForm.budget?.range||""} onChange={e=>setEditForm(p=>({...p,budget:{range:e.target.value}}))}>
+                            <option value="">Tanlang</option>
+                            {BUDGET_RANGES.map(r=><option key={r} value={r}>{BUDGET_LABELS[r]||r}</option>)}
+                          </select>
+                        </FieldWrap>
+                        <FieldWrap>
+                          <Label>Kampaniya davomiyligi</Label>
+                          <input style={inp()} value={editForm.campaignDuration||""} onChange={e=>setEditForm(p=>({...p,campaignDuration:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="1 oy, 2 hafta..." />
+                        </FieldWrap>
+                      </div>
+                    )}
+
+                    <div style={{ display:"flex", gap:10, marginTop:22 }}>
+                      <button onClick={saveEditAd} disabled={editSaving} style={{ flex:1, padding:"12px", background:"linear-gradient(135deg,#2563eb,#1d4ed8)", color:"#fff", border:"none", borderRadius:10, fontSize:14, fontWeight:700, cursor:editSaving?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:7, opacity:editSaving?0.7:1 }}>
+                        {editSaving ? <><LuLoader size={15} style={{animation:"spin 1s linear infinite"}}/> Saqlanmoqda...</> : <><LuCheck size={15}/> Saqlash</>}
+                      </button>
+                      <button onClick={()=>setEditAd(null)} style={{ padding:"12px 18px", background:"none", border:"1.5px solid #e2e8f0", borderRadius:10, fontSize:13, color:"#64748b", cursor:"pointer" }}>Bekor</button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -1239,12 +1569,213 @@ export default function Profile() {
             </div>
           )}
 
+          {/* ══ TAB: MY BLOGS ══════════════════════════════════ */}
+          {tab === "my-blogs" && (
+            <div>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:22 }}>
+                <div>
+                  <h2 style={{ fontSize:16, fontWeight:800, color:"#0f172a", margin:0 }}>Mening bloglarim</h2>
+                  <p style={{ fontSize:13, color:"#94a3b8", margin:"4px 0 0" }}>
+                    Yaratgan bloglaringiz admin tomonidan tasdiqlanadi
+                  </p>
+                </div>
+                <button onClick={openCreateBlog} style={{
+                  display:"flex", alignItems:"center", gap:7,
+                  padding:"9px 18px", background:"linear-gradient(135deg,#dc2626,#b91c1c)",
+                  color:"#fff", border:"none", borderRadius:10, fontSize:13,
+                  fontWeight:700, cursor:"pointer",
+                }}>
+                  <LuPlus size={15}/> Blog yozish
+                </button>
+              </div>
+
+              {/* Blog create/edit form modal */}
+              {showBlogForm && (
+                <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.5)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
+                  onClick={e=>{ if(e.target===e.currentTarget) closeBlogForm(); }}>
+                  <div style={{ background:"#fff", borderRadius:20, width:"100%", maxWidth:680, maxHeight:"90vh", overflow:"auto", boxShadow:"0 24px 64px rgba(0,0,0,.2)" }}>
+                    {/* modal header */}
+                    <div style={{ padding:"20px 24px", borderBottom:"1px solid #f1f5f9", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, background:"#fff", zIndex:1 }}>
+                      <span style={{ fontSize:16, fontWeight:800, color:"#0f172a" }}>
+                        {editBlog ? "Blogni tahrirlash" : "Yangi blog yozish"}
+                      </span>
+                      <button onClick={closeBlogForm} style={{ width:32, height:32, border:"1.5px solid #e2e8f0", borderRadius:8, background:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"#64748b" }}>
+                        <LuX size={15}/>
+                      </button>
+                    </div>
+                    <form onSubmit={handleBlogSubmit} style={{ padding:"24px" }}>
+                      {/* Title */}
+                      <FieldWrap>
+                        <Label>Sarlavha *</Label>
+                        <input style={inp()} value={blogForm.title}
+                          onChange={e=>setBlogForm(p=>({...p,title:e.target.value}))}
+                          onFocus={onFocus} onBlur={onBlur}
+                          placeholder="Blog sarlavhasi" required/>
+                      </FieldWrap>
+
+                      {/* Category */}
+                      <FieldWrap>
+                        <Label>Kategoriya *</Label>
+                        <select style={inp()} value={blogForm.category}
+                          onChange={e=>setBlogForm(p=>({...p,category:e.target.value}))} required>
+                          <option value="">Kategoriya tanlang</option>
+                          {(user?.role === "blogger" && bloggerProfile?.categories?.length > 0
+                            ? bloggerProfile.categories
+                            : BLOG_CATEGORIES
+                          ).map(cat=>(
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      </FieldWrap>
+
+                      {/* Excerpt */}
+                      <FieldWrap>
+                        <Label>Qisqacha tavsif</Label>
+                        <textarea style={{...inp(), resize:"vertical"}} rows={2}
+                          value={blogForm.excerpt}
+                          onChange={e=>setBlogForm(p=>({...p,excerpt:e.target.value}))}
+                          onFocus={onFocus} onBlur={onBlur}
+                          placeholder="Blog haqida qisqacha (max 300 belgi)" maxLength={300}/>
+                      </FieldWrap>
+
+                      {/* Content */}
+                      <FieldWrap>
+                        <Label>Kontent *</Label>
+                        <textarea style={{...inp(), resize:"vertical", lineHeight:1.7}} rows={10}
+                          value={blogForm.content}
+                          onChange={e=>setBlogForm(p=>({...p,content:e.target.value}))}
+                          onFocus={onFocus} onBlur={onBlur}
+                          placeholder="Blog matni..." required/>
+                      </FieldWrap>
+
+                      {/* Tags */}
+                      <FieldWrap>
+                        <Label>Teglar (vergul bilan)</Label>
+                        <input style={inp()} value={blogForm.tags}
+                          onChange={e=>setBlogForm(p=>({...p,tags:e.target.value}))}
+                          onFocus={onFocus} onBlur={onBlur}
+                          placeholder="marketing, reklama, biznes"/>
+                      </FieldWrap>
+
+                      {/* Cover image */}
+                      <FieldWrap>
+                        <Label>Muqova rasm (ixtiyoriy)</Label>
+                        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                          {(blogCoverFile || editBlog?.coverImage) && (
+                            <img
+                              src={blogCoverFile ? URL.createObjectURL(blogCoverFile) : editBlog.coverImage}
+                              alt="cover" style={{ width:80, height:50, objectFit:"cover", borderRadius:8, border:"1.5px solid #e2e8f0" }}/>
+                          )}
+                          <button type="button" onClick={()=>blogCoverRef.current?.click()} style={{
+                            padding:"8px 16px", border:"1.5px dashed #e2e8f0", borderRadius:8,
+                            background:"#f8fafc", color:"#64748b", fontSize:13, cursor:"pointer",
+                          }}>
+                            <LuCamera size={13} style={{ marginRight:6 }}/> Rasm tanlash
+                          </button>
+                          <input ref={blogCoverRef} type="file" accept="image/*" hidden
+                            onChange={e=>setBlogCoverFile(e.target.files[0]||null)}/>
+                        </div>
+                      </FieldWrap>
+
+                      <div style={{ display:"flex", gap:10, justifyContent:"flex-end", paddingTop:8, borderTop:"1px solid #f1f5f9" }}>
+                        <button type="button" onClick={closeBlogForm} style={{ padding:"10px 20px", border:"1.5px solid #e2e8f0", borderRadius:10, background:"#fff", color:"#374151", fontSize:13, fontWeight:600, cursor:"pointer" }}>
+                          Bekor
+                        </button>
+                        <button type="submit" disabled={blogSaving} style={{
+                          display:"flex", alignItems:"center", gap:6,
+                          padding:"10px 22px", background:"linear-gradient(135deg,#dc2626,#b91c1c)",
+                          color:"#fff", border:"none", borderRadius:10, fontSize:13, fontWeight:700, cursor:"pointer",
+                        }}>
+                          {blogSaving ? <LuLoader size={14} className="spin"/> : <LuCheck size={14}/>}
+                          {editBlog ? "Saqlash" : "Yuborish"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* Blogs list */}
+              {blogsLoading ? (
+                <div style={{ display:"flex", justifyContent:"center", padding:"60px 0" }}>
+                  <LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/>
+                </div>
+              ) : myBlogs.length === 0 ? (
+                <div style={{ textAlign:"center", padding:"60px 20px" }}>
+                  <div style={{ fontSize:52, marginBottom:12 }}>✍️</div>
+                  <p style={{ color:"#94a3b8", fontSize:14, marginBottom:20 }}>Hali blog yozmadingiz</p>
+                  <button onClick={openCreateBlog} style={{
+                    padding:"10px 22px", background:"linear-gradient(135deg,#dc2626,#b91c1c)",
+                    color:"#fff", border:"none", borderRadius:10, fontSize:13, fontWeight:700, cursor:"pointer",
+                  }}>
+                    Birinchi blogni yozing
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                  {myBlogs.map(b => (
+                    <div key={b._id} style={{ border:"1.5px solid #f1f5f9", borderRadius:14, padding:"16px 18px", background:"#fff" }}>
+                      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6, flexWrap:"wrap" }}>
+                            <BlogStatusBadge s={b.status || "pending"}/>
+                            <span style={{ fontSize:11, fontWeight:600, background:"#f1f5f9", color:"#64748b", padding:"2px 8px", borderRadius:5 }}>
+                              {b.category}
+                            </span>
+                            <span style={{ fontSize:11, color:"#94a3b8", display:"flex", alignItems:"center", gap:3 }}>
+                              <LuClock size={10}/>
+                              {b.createdAt ? new Date(b.createdAt).toLocaleDateString("uz-UZ") : ""}
+                            </span>
+                          </div>
+                          <h4 style={{ margin:"0 0 4px", fontSize:14, fontWeight:700, color:"#0f172a", lineHeight:1.4,
+                            overflow:"hidden", display:"-webkit-box", WebkitLineClamp:1, WebkitBoxOrient:"vertical" }}>
+                            {b.title}
+                          </h4>
+                          <p style={{ margin:0, fontSize:12, color:"#64748b", overflow:"hidden", display:"-webkit-box", WebkitLineClamp:1, WebkitBoxOrient:"vertical" }}>
+                            {b.excerpt || b.content?.slice(0,100)}
+                          </p>
+                          <div style={{ display:"flex", gap:14, marginTop:8 }}>
+                            <span style={{ fontSize:11, color:"#94a3b8" }}>👁 {b.views || 0}</span>
+                            <span style={{ fontSize:11, color:"#94a3b8" }}>❤️ {b.likesCount || 0}</span>
+                            <span style={{ fontSize:11, color:"#94a3b8" }}>💬 {b.commentsCount || 0}</span>
+                            <span style={{ fontSize:11, color:"#94a3b8" }}>⏱ {b.readTime || 1} min</span>
+                          </div>
+                        </div>
+                        <div style={{ display:"flex", gap:6, flexShrink:0 }}>
+                          {b.status === "approved" && (
+                            <a href={`/blog/${b.slug || b._id}`} target="_blank" rel="noreferrer"
+                              style={{ padding:"7px 10px", border:"1.5px solid #e2e8f0", borderRadius:8,
+                                background:"#f8fafc", color:"#374151", display:"flex", alignItems:"center", textDecoration:"none" }}>
+                              <LuEye size={13}/>
+                            </a>
+                          )}
+                          <button onClick={()=>openEditBlog(b)} style={{
+                            padding:"7px 10px", border:"1.5px solid #e2e8f0", borderRadius:8,
+                            background:"#f8fafc", color:"#374151", cursor:"pointer", display:"flex", alignItems:"center",
+                          }}>
+                            <LuPencil size={13}/>
+                          </button>
+                          <button onClick={()=>handleDeleteBlog(b._id)} style={{
+                            padding:"7px 10px", border:"1.5px solid #fee2e2", borderRadius:8,
+                            background:"#fef2f2", color:"#dc2626", cursor:"pointer", display:"flex", alignItems:"center",
+                          }}>
+                            <LuTrash2 size={13}/>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ══ TAB: CAMPAIGNS ═════════════════════════════════ */}
           {tab === "campaigns" && (
             <div>
               <SectionTitle sub="Faol va tugallangan kampaniyalar">Kampaniyalarim</SectionTitle>
               {loadingTab ? (
-                <div style={{ textAlign:"center", padding:"60px 0" }}><LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/></div>
+                <div style={{ display:"flex", justifyContent:"center", alignItems:"center", padding:"60px 0" }}><LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/></div>
               ) : campaigns.length===0 ? (
                 <div style={{ textAlign:"center", padding:"60px 20px" }}>
                   <div style={{ fontSize:52, marginBottom:12 }}>🤝</div>

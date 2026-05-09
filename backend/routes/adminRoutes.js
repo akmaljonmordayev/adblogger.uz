@@ -283,6 +283,7 @@ router.delete('/careers/:id',  careerController.deleteCareer);
 router.get('/contacts',              contactController.getAllContacts);
 router.get('/contacts/:id',          contactController.getContact);
 router.patch('/contacts/:id/status', contactController.updateContactStatus);
+router.patch('/contacts/:id/reply',  contactController.replyContact);
 router.delete('/contacts/:id',       contactController.deleteContact);
 
 // ── Campaigns ──────────────────────────────────────────────────────────────────

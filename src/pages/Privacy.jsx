@@ -1,3 +1,5 @@
+import SEO from "../components/SEO";
+
 export default function Privacy() {
   const sections = [
     { title: "1. Ma'lumotlar yig'ish", body: "Biz siz haqingizda faqat xizmatimizdan foydalanish uchun zarur bo'lgan ma'lumotlarni yig'amiz: ism, email, telefon raqami va platforma foydalanish ma'lumotlari." },
@@ -10,6 +12,7 @@ export default function Privacy() {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: 720, margin: "0 auto", padding: "0 20px 60px" }}>
+      <SEO title="Maxfiylik Siyosati" description="ADBlogger maxfiylik siyosati — foydalanuvchi ma'lumotlari qanday yig'ilishi va ishlatilishi haqida." canonical="/privacy" noindex />
       <div style={{ marginBottom: 36 }}>
         <span style={{
           display: "inline-block", background: "#fef2f2", color: "#dc2626",

@@ -1,0 +1,20 @@
+{
+  "name": "ADBlogger",
+  "short_name": "ADBlogger",
+  "description": "O'zbekistonning eng yirik blogger va reklama platformasi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#e31e24",
+  "lang": "uz",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "marketing", "social"]
+}

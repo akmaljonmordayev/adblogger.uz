@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { optionalAuth } = require('../middleware/auth');
 const cc = require('../controllers/contactController');
 
 /**
@@ -28,6 +29,6 @@ const cc = require('../controllers/contactController');
  *       400:
  *         description: Noto'g'ri ma'lumot
  */
-router.post('/', cc.sendContact);
+router.post('/', optionalAuth, cc.sendContact);
 
 module.exports = router;

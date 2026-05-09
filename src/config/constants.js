@@ -1,5 +1,5 @@
 export const APP_CONFIG = {
-  API_URL: import.meta.env.VITE_API_URL || "https://api.adbloger.uz",
+  API_URL: import.meta.env.VITE_API_URL || "https://adblogger-uz.onrender.com/api/v1",
   SITE_NAME: "adblogger",
   TITLE_SUFFIX: " | adblogger",
 };

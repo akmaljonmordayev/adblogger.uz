@@ -1,3 +1,5 @@
+import SEO from "../components/SEO";
+
 export default function Terms() {
   const sections = [
     { title: "1. Xizmatdan foydalanish", body: "adblogger.uz platformasidan foydalanish uchun 18 yoshdan katta bo'lish va haqiqiy ma'lumotlar bilan ro'yxatdan o'tish shart." },
@@ -10,6 +12,7 @@ export default function Terms() {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: 720, margin: "0 auto", padding: "0 20px 60px" }}>
+      <SEO title="Foydalanish Shartlari" description="ADBlogger foydalanish shartlari va qoidalari." canonical="/terms" noindex />
       <div style={{ marginBottom: 36 }}>
         <span style={{
           display: "inline-block", background: "#fef2f2", color: "#dc2626",
