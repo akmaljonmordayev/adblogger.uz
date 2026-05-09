@@ -211,7 +211,7 @@ export default function Blogger() {
             background: "#f8fafc", border: "1.5px solid #e2e8f0",
             borderRadius: 8, width: 30, height: 30,
             display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", color: "#64748b",
+            cursor: "pointer", color: "#64748b", marginTop: 100,
           }}>
             <LuX size={15} />
           </button>
@@ -269,7 +269,7 @@ export default function Blogger() {
                 fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer",
               }}
             >
-              <LuSlidersHorizontal size={14} /> Filtr
+              <LuSlidersHorizontal size={14} /> Filter
             </button>
           </div>
 
