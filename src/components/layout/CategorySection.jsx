@@ -21,11 +21,11 @@ const CATEGORIES = [
 ];
 
 export default function CategorySection() {
-  const [active, setActive]         = useState("all");
-  const [canLeft, setCanLeft]       = useState(false);
-  const [canRight, setCanRight]     = useState(true);
+  const [active, setActive]     = useState("all");
+  const [canLeft, setCanLeft]   = useState(false);
+  const [canRight, setCanRight] = useState(true);
   const scrollRef = useRef(null);
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
 
   const checkScroll = () => {
     const el = scrollRef.current;
@@ -49,7 +49,7 @@ export default function CategorySection() {
   const slide = (dir) => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir * 220, behavior: "smooth" });
+    el.scrollBy({ left: dir * 200, behavior: "smooth" });
   };
 
   const handleClick = (id, label) => {
@@ -57,12 +57,8 @@ export default function CategorySection() {
     const el = scrollRef.current;
     const btn = el?.querySelector(`[data-id="${id}"]`);
     if (btn) btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-
-    if (id === "all") {
-      navigate("/bloggers");
-    } else {
-      navigate(`/bloggers?category=${encodeURIComponent(label)}`);
-    }
+    if (id === "all") navigate("/bloggers");
+    else navigate(`/bloggers?category=${encodeURIComponent(label)}`);
   };
 
   const activeItem = CATEGORIES.find(c => c.id === active);
@@ -79,34 +75,19 @@ export default function CategorySection() {
         {/* ── Left fade + arrow ── */}
         {canLeft && (
           <>
-            <div style={{
-              position: "absolute", left: 0, top: 0, bottom: 0,
-              width: 72, zIndex: 2, pointerEvents: "none",
-              background: "linear-gradient(to right, #fff 40%, transparent)",
-            }} />
-            <button
-              onClick={() => slide(-1)}
-              style={{
-                position: "absolute", left: 6, top: "50%",
-                transform: "translateY(-50%)",
-                zIndex: 3, width: 30, height: 30,
-                borderRadius: "50%", border: "1px solid #e5e7eb",
-                background: "#fff", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
-                color: "#374151",
-                transition: "box-shadow 0.2s, border-color 0.2s",
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
-                e.currentTarget.style.borderColor = "#d1d5db";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.10)";
-                e.currentTarget.style.borderColor = "#e5e7eb";
-              }}
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 60, zIndex: 2, pointerEvents: "none", background: "linear-gradient(to right, #fff 40%, transparent)" }} />
+            <button onClick={() => slide(-1)} style={{
+              position: "absolute", left: 4, top: "50%", transform: "translateY(-50%)",
+              zIndex: 3, width: 28, height: 28, borderRadius: "50%",
+              border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)", color: "#374151",
+              transition: "box-shadow 0.2s, border-color 0.2s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.10)"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
             >
-              <LuChevronLeft size={15} strokeWidth={2.5} />
+              <LuChevronLeft size={14} strokeWidth={2.5} />
             </button>
           </>
         )}
@@ -114,34 +95,19 @@ export default function CategorySection() {
         {/* ── Right fade + arrow ── */}
         {canRight && (
           <>
-            <div style={{
-              position: "absolute", right: 0, top: 0, bottom: 0,
-              width: 72, zIndex: 2, pointerEvents: "none",
-              background: "linear-gradient(to left, #fff 40%, transparent)",
-            }} />
-            <button
-              onClick={() => slide(1)}
-              style={{
-                position: "absolute", right: 6, top: "50%",
-                transform: "translateY(-50%)",
-                zIndex: 3, width: 30, height: 30,
-                borderRadius: "50%", border: "1px solid #e5e7eb",
-                background: "#fff", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
-                color: "#374151",
-                transition: "box-shadow 0.2s, border-color 0.2s",
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
-                e.currentTarget.style.borderColor = "#d1d5db";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.10)";
-                e.currentTarget.style.borderColor = "#e5e7eb";
-              }}
+            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 60, zIndex: 2, pointerEvents: "none", background: "linear-gradient(to left, #fff 40%, transparent)" }} />
+            <button onClick={() => slide(1)} style={{
+              position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)",
+              zIndex: 3, width: 28, height: 28, borderRadius: "50%",
+              border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)", color: "#374151",
+              transition: "box-shadow 0.2s, border-color 0.2s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.10)"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
             >
-              <LuChevronRight size={15} strokeWidth={2.5} />
+              <LuChevronRight size={14} strokeWidth={2.5} />
             </button>
           </>
         )}
@@ -149,18 +115,18 @@ export default function CategorySection() {
         {/* ── Scrollable row ── */}
         <div
           ref={scrollRef}
+          className="cat-scroll"
           style={{
             overflowX: "auto", overflowY: "visible",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-            padding: "0 16px",
+            scrollbarWidth: "none", msOverflowStyle: "none",
+            padding: "0 12px",
             WebkitOverflowScrolling: "touch",
           }}
         >
           <div style={{
             display: "flex", alignItems: "center",
             gap: 2, whiteSpace: "nowrap",
-            padding: "6px 0",
+            padding: "5px 0",
           }}>
             {CATEGORIES.map(({ id, label, Icon, count, color }) => {
               const isActive = active === id;
@@ -170,56 +136,34 @@ export default function CategorySection() {
                   data-id={id}
                   onClick={() => handleClick(id, label)}
                   style={{
-                    display: "inline-flex", alignItems: "center", gap: 7,
-                    padding: "7px 14px",
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    padding: "6px 11px",
                     borderRadius: 10,
-                    border: isActive
-                      ? `1.5px solid ${color}33`
-                      : "1.5px solid transparent",
+                    border: isActive ? `1.5px solid ${color}33` : "1.5px solid transparent",
                     background: isActive ? `${color}0f` : "transparent",
-                    cursor: "pointer",
-                    flexShrink: 0,
-                    transition: "background 0.18s, border-color 0.18s, transform 0.15s",
-                    transform: isActive ? "scale(1.0)" : "scale(1)",
+                    cursor: "pointer", flexShrink: 0,
+                    transition: "background 0.18s, border-color 0.18s",
                     outline: "none",
+                    WebkitTapHighlightColor: "transparent",
                   }}
-                  onMouseEnter={e => {
-                    if (!isActive) {
-                      e.currentTarget.style.background = "#f8fafc";
-                      e.currentTarget.style.borderColor = "#e2e8f0";
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    if (!isActive) {
-                      e.currentTarget.style.background = "transparent";
-                      e.currentTarget.style.borderColor = "transparent";
-                    }
-                  }}
+                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.borderColor = "#e2e8f0"; } }}
+                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; } }}
                 >
                   {/* Icon wrapper */}
                   <span style={{
-                    width: 26, height: 26,
-                    borderRadius: 7,
+                    width: 24, height: 24, borderRadius: 7,
                     background: isActive ? `${color}20` : "#f1f5f9",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0,
-                    transition: "background 0.18s",
+                    flexShrink: 0, transition: "background 0.18s",
                   }}>
-                    <Icon
-                      size={13}
-                      style={{
-                        color: isActive ? color : "#64748b",
-                        transition: "color 0.18s",
-                      }}
-                      strokeWidth={2.2}
-                    />
+                    <Icon size={12} style={{ color: isActive ? color : "#64748b", transition: "color 0.18s" }} strokeWidth={2.2} />
                   </span>
 
                   {/* Label */}
                   <span style={{
                     fontSize: 13, fontWeight: isActive ? 700 : 500,
                     color: isActive ? color : "#374151",
-                    transition: "color 0.18s, font-weight 0.1s",
+                    transition: "color 0.18s",
                   }}>
                     {label}
                   </span>
@@ -231,7 +175,7 @@ export default function CategorySection() {
                     background: isActive ? `${color}20` : "#f1f5f9",
                     color: isActive ? color : "#94a3b8",
                     transition: "background 0.18s, color 0.18s",
-                    minWidth: 22, textAlign: "center",
+                    minWidth: 20, textAlign: "center",
                   }}>
                     {count}
                   </span>
@@ -242,22 +186,17 @@ export default function CategorySection() {
         </div>
 
         {/* ── Active indicator bar ── */}
-        <div style={{
-          position: "absolute", bottom: 0, left: 0, right: 0,
-          height: 2, overflow: "hidden",
-        }}>
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, overflow: "hidden" }}>
           <div style={{
             height: "100%",
             background: `linear-gradient(90deg, transparent, ${activeItem?.color ?? "#dc2626"}66, transparent)`,
             transition: "background 0.3s",
           }} />
         </div>
-
       </div>
 
-      {/* hide scrollbar for webkit */}
       <style>{`
-        div[style*="overflowX: auto"]::-webkit-scrollbar { display: none; }
+        .cat-scroll::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
   );

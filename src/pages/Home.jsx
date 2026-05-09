@@ -600,11 +600,11 @@ export default function Home() {
             </h2>
           </div>
           {TESTIMONIALS.map((t, i) => (
-            <div key={i} style={{ display:i===activeT ? "block" : "none", background:"rgba(255,255,255,0.04)", backdropFilter:"blur(28px)", borderRadius:32, padding:"48px 52px", border:"1px solid rgba(255,255,255,0.07)", boxShadow:"0 24px 80px rgba(0,0,0,0.4)", animation:"fi .4s ease" }}>
+            <div key={i} className="hp-testimonial" style={{ display:i===activeT ? "block" : "none", background:"rgba(255,255,255,0.04)", backdropFilter:"blur(28px)", borderRadius:32, padding:"40px 36px", border:"1px solid rgba(255,255,255,0.07)", boxShadow:"0 24px 80px rgba(0,0,0,0.4)", animation:"fi .4s ease" }}>
               <div style={{ width:48, height:48, borderRadius:14, background:`${t.color}18`, color:t.color, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:28, border:`1px solid ${t.color}22` }}>
                 <LuQuote size={22} />
               </div>
-              <p style={{ fontSize:"clamp(15px,2vw,18px)", color:"rgba(255,255,255,0.84)", lineHeight:1.85, margin:"0 0 36px", fontStyle:"italic" }}>"{t.text}"</p>
+              <p style={{ fontSize:"clamp(14px,2vw,17px)", color:"rgba(255,255,255,0.84)", lineHeight:1.85, margin:"0 0 28px", fontStyle:"italic" }}>"{t.text}"</p>
               <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
                 <div style={{ width:50, height:50, borderRadius:"50%", background:`linear-gradient(135deg,${t.color},${t.color}88)`, display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:800, fontSize:15, flexShrink:0, ...S }}>{t.init}</div>
                 <div>
@@ -720,7 +720,7 @@ export default function Home() {
 
       {/* ══════ CTA ══════ */}
       <section style={{ padding:"96px 32px", maxWidth:1280, margin:"0 auto" }}>
-        <div style={{ background:"linear-gradient(135deg,#7f1d1d 0%,#dc2626 50%,#b91c1c 100%)", borderRadius:36, padding:"80px 72px", position:"relative", overflow:"hidden", textAlign:"center" }}>
+        <div className="hp-cta-section" style={{ background:"linear-gradient(135deg,#7f1d1d 0%,#dc2626 50%,#b91c1c 100%)", borderRadius:36, padding:"80px 72px", position:"relative", overflow:"hidden", textAlign:"center" }}>
           <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(rgba(255,255,255,0.05) 1px,transparent 1px)", backgroundSize:"28px 28px", pointerEvents:"none" }} />
           <div style={{ position:"absolute", top:"50%", right:-180, marginTop:-320, width:640, height:640, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.05)", pointerEvents:"none" }} />
           <div style={{ position:"absolute", top:"50%", right:-80, marginTop:-220, width:440, height:440, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.07)", pointerEvents:"none" }} />
@@ -736,7 +736,7 @@ export default function Home() {
             <p style={{ fontSize:17.5, color:"rgba(255,255,255,0.6)", maxWidth:480, margin:"0 auto 48px", lineHeight:1.8 }}>
               {allBloggers.length || 26}+ tasdiqlangan bloger sizni kutmoqda. Bepul ro'yxatdan o'ting va birinchi kampaniyangizni boshlang.
             </p>
-            <div style={{ display:"flex", gap:16, justifyContent:"center", flexWrap:"wrap" }}>
+            <div className="hp-cta-btns" style={{ display:"flex", gap:16, justifyContent:"center", flexWrap:"wrap" }}>
               <Link to={ROUTE_PATHS.BLOGGERS} style={{ display:"inline-flex", alignItems:"center", gap:10, background:"#fbbf24", color:"#78350f", fontWeight:800, fontSize:16, padding:"17px 42px", borderRadius:16, textDecoration:"none", boxShadow:"0 6px 32px rgba(251,191,36,0.4)", transition:"all .25s" }}
                 onMouseEnter={e => { e.currentTarget.style.transform="translateY(-3px)"; e.currentTarget.style.boxShadow="0 16px 44px rgba(251,191,36,0.55)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="0 6px 32px rgba(251,191,36,0.4)"; }}
@@ -760,23 +760,65 @@ export default function Home() {
       <style>{`
         @keyframes sk { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
         @keyframes fi { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
         @media(max-width:1024px){
           .hp-bloggers{grid-template-columns:repeat(2,1fr)!important}
           .hp-feats{grid-template-columns:repeat(2,1fr)!important}
           .hp-platforms{grid-template-columns:repeat(2,1fr)!important}
         }
+
         @media(max-width:768px){
           .hp-stats{grid-template-columns:repeat(2,1fr)!important}
+          .hp-stats > div{
+            border-right:none!important;
+            border-bottom:1px solid #f1f5f9;
+            padding:16px 12px!important;
+          }
+          .hp-stats > div:nth-child(odd){
+            border-right:1px solid #f1f5f9!important;
+          }
+          .hp-stats > div:nth-last-child(-n+2){
+            border-bottom:none!important;
+          }
+
+          .hp-platforms{grid-template-columns:1fr!important}
+
           .hp-steps{grid-template-columns:1fr!important}
-          .hp-feats{grid-template-columns:1fr!important}
-          .hp-bloggers{grid-template-columns:repeat(2,1fr)!important}
-          .hp-blogs{grid-template-columns:1fr!important}
           .hp-conn{display:none!important}
+
+          .hp-feats{grid-template-columns:1fr!important}
+
+          .hp-bloggers{grid-template-columns:1fr!important}
+
+          .hp-blogs{grid-template-columns:1fr!important}
+
+          .hp-testimonial{
+            padding:28px 20px!important;
+            border-radius:20px!important;
+          }
+
+          .hp-cta-section{
+            padding:52px 24px!important;
+            border-radius:24px!important;
+          }
+          .hp-cta-btns{
+            flex-direction:column!important;
+            align-items:stretch!important;
+            gap:12px!important;
+          }
+          .hp-cta-btns a{
+            justify-content:center!important;
+            text-align:center!important;
+            padding:15px 24px!important;
+            font-size:15px!important;
+            box-sizing:border-box!important;
+          }
         }
+
         @media(max-width:540px){
           .hp-bloggers{grid-template-columns:1fr!important}
-          .hp-platforms{grid-template-columns:1fr 1fr!important}
-          .hp-stats{grid-template-columns:1fr 1fr!important}
+          .hp-platforms{grid-template-columns:1fr!important}
+          .hp-stats{grid-template-columns:repeat(2,1fr)!important}
         }
       `}</style>
     </div>
