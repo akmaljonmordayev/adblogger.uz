@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "../../components/ui/toast";
 import { adminBloggersService } from "../../services/adminService";
 import {
@@ -135,9 +135,8 @@ export default function AdminBloggers() {
   const fetchBloggers = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { page, limit: PER };
-      if (search.trim()) params.search = search.trim();
-      const res = await adminBloggersService.getAll(params);
+      // Hammasini olib kelamiz — frontend da filter qilamiz
+      const res = await adminBloggersService.getAll({ page: 1, limit: 9999 });
       setBloggers(res.data || []);
       setTotal(res.total || 0);
     } catch {
@@ -145,14 +144,28 @@ export default function AdminBloggers() {
     } finally {
       setLoading(false);
     }
-  }, [page, search]);
+  }, []);
 
   useEffect(() => { fetchBloggers(); }, [fetchBloggers]);
 
-  const pages = Math.ceil(total / PER) || 1;
+  // Frontend qidiruv
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return bloggers;
+    return bloggers.filter(b =>
+      b.handle?.toLowerCase().includes(q) ||
+      b.user?.firstName?.toLowerCase().includes(q) ||
+      b.user?.lastName?.toLowerCase().includes(q) ||
+      b.user?.email?.toLowerCase().includes(q) ||
+      `${b.user?.firstName ?? ""} ${b.user?.lastName ?? ""}`.toLowerCase().includes(q)
+    );
+  }, [bloggers, search]);
+
+  const pages = Math.ceil(filtered.length / PER) || 1;
+  const pageData = filtered.slice((page - 1) * PER, page * PER);
 
   const stats = {
-    total,
+    total: bloggers.length,
     verified: bloggers.filter(b => b.isVerified).length,
     pending: bloggers.filter(b => !b.isVerified).length,
   };
@@ -164,13 +177,13 @@ export default function AdminBloggers() {
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111827", margin: 0 }}>Bloggerlar</h1>
-          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>Jami: {total} ta blogger</p>
+          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>Jami: {bloggers.length} ta blogger</p>
         </div>
 
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
           {[
-            { l: "Jami", v: total, c: "#111827" },
+            { l: "Jami", v: stats.total, c: "#111827" },
             { l: "Tasdiqlangan", v: stats.verified, c: "#166534" },
             { l: "Kutilmoqda", v: stats.pending, c: "#854d0e" },
           ].map(({ l, v, c }) => (
@@ -188,7 +201,7 @@ export default function AdminBloggers() {
             <input
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Handle, ism bo'yicha qidirish…"
+              placeholder="Handle, ism, email bo'yicha qidirish…"
               style={{ width: "100%", paddingLeft: 38, paddingRight: 14, height: 40, border: "1px solid #e5e7eb", borderRadius: 10, fontSize: 13, color: "#111827", background: "#fff", outline: "none", boxSizing: "border-box" }}
             />
           </div>
@@ -203,24 +216,29 @@ export default function AdminBloggers() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #f3f4f6", background: "#f9fafb" }}>
-                  {["Blogger", "Handle", "Followers", "Platformalar", "Holat", "Amallar"].map(h => (
+                  {["#", "Blogger", "Handle", "Followers", "Platformalar", "Holat", "Amallar"].map(h => (
                     <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "#6b7280" }}>
+                  <tr><td colSpan={7} style={{ textAlign: "center", padding: 40, color: "#6b7280" }}>
                     <LuLoader style={{ fontSize: 24, animation: "spin 1s linear infinite", display: "block", margin: "0 auto 8px" }} />
                     Yuklanmoqda…
                   </td></tr>
-                ) : bloggers.length === 0 ? (
-                  <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "#9ca3af", fontSize: 14 }}>Blogger topilmadi</td></tr>
-                ) : bloggers.map(b => (
+                ) : pageData.length === 0 ? (
+                  <tr><td colSpan={7} style={{ textAlign: "center", padding: 40, color: "#9ca3af", fontSize: 14 }}>Blogger topilmadi</td></tr>
+                ) : pageData.map((b, index) => (
                   <tr key={b._id} style={{ borderBottom: "1px solid #f9fafb", cursor: "pointer" }}
                     onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                   >
+                    {/* Tartib raqam */}
+                    <td style={{ padding: "11px 14px", fontSize: 12, fontWeight: 700, color: "#9ca3af" }}>
+                      {(page - 1) * PER + index + 1}
+                    </td>
+
                     <td style={{ padding: "11px 14px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <Ava user={b.user} size={36} />
@@ -268,7 +286,7 @@ export default function AdminBloggers() {
           {/* Pagination */}
           {pages > 1 && (
             <div style={{ padding: "12px 16px", borderTop: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 13, color: "#6b7280" }}>{(page - 1) * PER + 1}–{Math.min(page * PER, total)} / {total}</span>
+              <span style={{ fontSize: 13, color: "#6b7280" }}>{(page - 1) * PER + 1}–{Math.min(page * PER, filtered.length)} / {filtered.length}</span>
               <div style={{ display: "flex", gap: 6 }}>
                 <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb", background: page <= 1 ? "#f9fafb" : "#fff", cursor: page <= 1 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <LuChevronLeft style={{ fontSize: 15, color: page <= 1 ? "#d1d5db" : "#374151" }} />
