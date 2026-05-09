@@ -116,3 +116,75 @@ button {
   }
 }
 
+/* ════ HeroSwiper responsive ════ */
+
+/* Tablet: stack layout, reduce padding */
+@media (max-width: 1024px) {
+  .hero-inner {
+    padding: 0 40px 52px !important;
+    gap: 32px !important;
+  }
+  .hero-ctrl {
+    padding: 0 40px !important;
+  }
+  .hero-stats {
+    width: 190px !important;
+  }
+}
+
+/* Mobile: full column layout */
+@media (max-width: 768px) {
+  .hero-inner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding: 28px 22px 56px !important;
+    gap: 18px !important;
+  }
+  .hero-ctrl {
+    padding: 0 22px !important;
+    height: 44px !important;
+  }
+  .hero-stats {
+    flex-direction: row !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+  .hero-stats > div {
+    flex: 1;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 10px 8px !important;
+    border-radius: 14px !important;
+    text-align: center;
+  }
+  .hero-ring {
+    display: none !important;
+  }
+  .hero-trust {
+    display: none !important;
+  }
+  .hero-btns {
+    gap: 8px !important;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .hero-inner {
+    padding: 22px 16px 52px !important;
+    gap: 14px !important;
+  }
+  .hero-ctrl {
+    padding: 0 16px !important;
+  }
+  .hero-stats > div span:first-child {
+    font-size: 20px !important;
+  }
+  .hero-btns button {
+    font-size: 13px !important;
+    padding: 11px 18px !important;
+  }
+}
+

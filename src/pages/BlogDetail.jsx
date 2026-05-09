@@ -280,16 +280,133 @@ export default function BlogDetail() {
   /* ── loading ── */
   if (loading) {
     return (
-      <div style={{ fontFamily: "'Inter',sans-serif", maxWidth: 860, margin: "0 auto", padding: "40px 24px 80px" }}>
-        <Skeleton w={80} h={14} r={8} mb={32} />
-        <Skeleton w="60%" h={36} r={10} mb={12} />
-        <Skeleton w="40%" h={14} r={8} mb={32} />
-        <Skeleton h={280} r={20} mb={32} />
-        <Skeleton h={14} r={8} mb={10} />
-        <Skeleton h={14} r={8} mb={10} />
-        <Skeleton w="80%" h={14} r={8} mb={10} />
-        <Skeleton h={14} r={8} mb={10} />
-        <Skeleton w="60%" h={14} r={8} />
+      <div style={{ fontFamily: "'Inter',sans-serif", background: "#f8fafc", minHeight: "100vh" }}>
+        {/* breadcrumb */}
+        <div style={{ background: "#fff", borderBottom: "1px solid #f1f5f9" }}>
+          <div style={{ maxWidth: 860, margin: "0 auto", padding: "12px 24px", display: "flex", alignItems: "center", gap: 8 }}>
+            <Skeleton w={70} h={12} r={6} />
+            <Skeleton w={6} h={12} r={3} />
+            <Skeleton w={40} h={12} r={6} />
+            <Skeleton w={6} h={12} r={3} />
+            <Skeleton w={100} h={12} r={6} />
+          </div>
+        </div>
+
+        <div style={{ maxWidth: 860, margin: "0 auto", padding: "40px 24px 80px" }}>
+
+          {/* category badge + title + excerpt */}
+          <div style={{ marginBottom: 32 }}>
+            <Skeleton w={90} h={24} r={8} mb={16} />
+            <Skeleton w="90%" h={40} r={10} mb={10} />
+            <Skeleton w="70%" h={40} r={10} mb={20} />
+            <Skeleton w="100%" h={16} r={8} mb={8} />
+            <Skeleton w="85%" h={16} r={8} mb={24} />
+
+            {/* author meta card */}
+            <div style={{ padding: "20px", background: "#fff", borderRadius: 16, border: "1.5px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <Skeleton w={44} h={44} r={22} />
+                <div>
+                  <Skeleton w={120} h={14} r={7} mb={8} />
+                  <Skeleton w={180} h={11} r={6} />
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <Skeleton w={40} h={14} r={7} />
+                <Skeleton w={40} h={14} r={7} />
+                <Skeleton w={40} h={14} r={7} />
+                <Skeleton w={90} h={34} r={10} />
+              </div>
+            </div>
+          </div>
+
+          {/* cover image */}
+          <Skeleton w="100%" h={380} r={20} mb={40} />
+
+          {/* article content box */}
+          <div style={{ background: "#fff", borderRadius: 20, padding: "40px 44px", border: "1.5px solid #f1f5f9", marginBottom: 32 }}>
+            <Skeleton w="100%" h={15} r={7} mb={10} />
+            <Skeleton w="95%" h={15} r={7} mb={10} />
+            <Skeleton w="88%" h={15} r={7} mb={10} />
+            <Skeleton w="100%" h={15} r={7} mb={10} />
+            <Skeleton w="72%" h={15} r={7} mb={28} />
+
+            <Skeleton w="50%" h={22} r={8} mb={14} />
+            <Skeleton w="100%" h={15} r={7} mb={10} />
+            <Skeleton w="93%" h={15} r={7} mb={10} />
+            <Skeleton w="100%" h={15} r={7} mb={10} />
+            <Skeleton w="80%" h={15} r={7} mb={28} />
+
+            <Skeleton w="100%" h={15} r={7} mb={10} />
+            <Skeleton w="90%" h={15} r={7} mb={10} />
+            <Skeleton w="65%" h={15} r={7} mb={28} />
+
+            {/* tags */}
+            <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 28, display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {[70, 90, 60, 80].map((w, i) => <Skeleton key={i} w={w} h={28} r={14} />)}
+            </div>
+          </div>
+
+          {/* like button */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 48 }}>
+            <Skeleton w={200} h={52} r={16} />
+          </div>
+
+          {/* comments section */}
+          <div style={{ marginBottom: 48 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+              <Skeleton w={24} h={24} r={12} />
+              <Skeleton w={120} h={24} r={8} />
+              <Skeleton w={36} h={24} r={12} />
+            </div>
+
+            {/* comment input box */}
+            <div style={{ background: "#fff", border: "1.5px solid #f1f5f9", borderRadius: 16, padding: "20px", marginBottom: 24 }}>
+              <Skeleton w="100%" h={80} r={12} mb={12} />
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <Skeleton w={140} h={38} r={10} />
+              </div>
+            </div>
+
+            {/* comment items */}
+            {[1, 2, 3].map(i => (
+              <div key={i} style={{ display: "flex", gap: 12, padding: "16px 0", borderBottom: "1px solid #f8fafc" }}>
+                <Skeleton w={36} h={36} r={18} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", gap: 10, marginBottom: 8 }}>
+                    <Skeleton w={100} h={13} r={6} />
+                    <Skeleton w={70} h={11} r={5} />
+                  </div>
+                  <Skeleton w="100%" h={13} r={6} mb={6} />
+                  <Skeleton w="75%" h={13} r={6} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* related posts */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <Skeleton w={180} h={22} r={8} />
+              <Skeleton w={80} h={16} r={8} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+              {[1, 2, 3].map(i => (
+                <div key={i} style={{ background: "#fff", border: "1.5px solid #f1f5f9", borderRadius: 16, padding: "16px" }}>
+                  <Skeleton w={70} h={20} r={6} mb={10} />
+                  <Skeleton w="100%" h={14} r={7} mb={6} />
+                  <Skeleton w="80%" h={14} r={7} mb={12} />
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <Skeleton w={50} h={11} r={5} />
+                    <Skeleton w={50} h={11} r={5} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+        <style>{`@keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }`}</style>
       </div>
     );
   }

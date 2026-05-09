@@ -3,7 +3,7 @@ import { toast } from "../components/ui/toast";
 
 // Axios instance yaratish
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://api.adbloger.uz/v1",
+  baseURL: import.meta.env.VITE_API_URL || "https://adblogger-uz.onrender.com/api/v1",
   timeout: 60000,
   headers: {
     "Content-Type": "application/json",

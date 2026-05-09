@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   LuSearch, LuEye, LuPencil, LuTrash2, LuCheck, LuX,
   LuLoader, LuChevronLeft, LuChevronRight, LuRefreshCw,
   LuBookOpen, LuClock, LuCalendar, LuTriangleAlert,
-  LuCircleCheck, LuCircleX, LuClock3,
+  LuCircleCheck, LuCircleX, LuClock3, LuPlus, LuRotateCcw,
 } from "react-icons/lu";
 import { toast } from "../../components/ui/toast";
 import api from "../../services/api";
@@ -292,6 +292,130 @@ function EditModal({ blog, onClose, onSave }) {
   );
 }
 
+/* ── CreateModal ────────────────────────────────────────────────── */
+function CreateModal({ onClose, onCreated }) {
+  const [form, setForm] = useState({
+    title: "", category: "Tech", excerpt: "", content: "", tags: "", status: "approved",
+  });
+  const [coverFile, setCoverFile] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const fileRef = React.useRef(null);
+
+  const inp = (extra = {}) => ({
+    width:"100%", padding:"10px 13px", fontSize:13.5,
+    border:"1.5px solid #e2e8f0", borderRadius:9, outline:"none",
+    background:"#fff", color:"#0f172a", boxSizing:"border-box",
+    fontFamily:"inherit", ...extra,
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.title.trim() || !form.content.trim()) return;
+    setSaving(true);
+    try {
+      const fd = new FormData();
+      fd.append("title",       form.title.trim());
+      fd.append("category",    form.category);
+      fd.append("excerpt",     form.excerpt.trim());
+      fd.append("content",     form.content.trim());
+      fd.append("tags",        form.tags);
+      fd.append("status",      form.status);
+      fd.append("isPublished", form.status === "approved" ? "true" : "false");
+      if (coverFile) fd.append("coverImage", coverFile);
+      const res = await api.post("/blogs/admin", fd, { headers:{ "Content-Type":"multipart/form-data" } });
+      onCreated(res.data.data);
+      onClose();
+    } catch {
+      /* toast shown by interceptor */
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.5)", zIndex:300,
+      display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ background:"#fff", borderRadius:20, width:"100%", maxWidth:640,
+        maxHeight:"90vh", overflow:"auto" }}>
+        <div style={{ padding:"18px 22px", borderBottom:"1px solid #f1f5f9",
+          display:"flex", justifyContent:"space-between", alignItems:"center",
+          position:"sticky", top:0, background:"#fff", zIndex:1 }}>
+          <span style={{ fontSize:15, fontWeight:800, color:"#0f172a" }}>Yangi blog yaratish</span>
+          <button onClick={onClose} style={{ width:30, height:30, border:"1.5px solid #e2e8f0",
+            borderRadius:8, background:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <LuX size={13} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} style={{ padding:"22px" }}>
+          <div style={{ marginBottom:14 }}>
+            <label style={{ fontSize:12.5, fontWeight:700, color:"#374151", display:"block", marginBottom:5 }}>Sarlavha *</label>
+            <input style={inp()} value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))} required />
+          </div>
+
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
+            <div>
+              <label style={{ fontSize:12.5, fontWeight:700, color:"#374151", display:"block", marginBottom:5 }}>Kategoriya *</label>
+              <select style={inp()} value={form.category} onChange={e=>setForm(p=>({...p,category:e.target.value}))}>
+                {CATEGORIES.slice(1).map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize:12.5, fontWeight:700, color:"#374151", display:"block", marginBottom:5 }}>Status</label>
+              <select style={inp()} value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value}))}>
+                <option value="approved">Tasdiqlangan (nashr qilish)</option>
+                <option value="pending">Kutilmoqda</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ marginBottom:14 }}>
+            <label style={{ fontSize:12.5, fontWeight:700, color:"#374151", display:"block", marginBottom:5 }}>Qisqacha tavsif</label>
+            <textarea style={{...inp(), resize:"vertical"}} rows={2} value={form.excerpt}
+              onChange={e=>setForm(p=>({...p,excerpt:e.target.value}))} placeholder="Blog haqida qisqacha..." />
+          </div>
+
+          <div style={{ marginBottom:14 }}>
+            <label style={{ fontSize:12.5, fontWeight:700, color:"#374151", display:"block", marginBottom:5 }}>Kontent *</label>
+            <textarea style={{...inp(), resize:"vertical"}} rows={10} value={form.content}
+              onChange={e=>setForm(p=>({...p,content:e.target.value}))} required
+              placeholder="Blog mazmunini bu yerga yozing..." />
+          </div>
+
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
+            <div>
+              <label style={{ fontSize:12.5, fontWeight:700, color:"#374151", display:"block", marginBottom:5 }}>Teglar (vergul bilan)</label>
+              <input style={inp()} value={form.tags} onChange={e=>setForm(p=>({...p,tags:e.target.value}))} placeholder="marketing, reklama" />
+            </div>
+            <div>
+              <label style={{ fontSize:12.5, fontWeight:700, color:"#374151", display:"block", marginBottom:5 }}>Muqova rasm</label>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <button type="button" onClick={()=>fileRef.current?.click()}
+                  style={{ padding:"9px 16px", border:"1.5px solid #e2e8f0", borderRadius:9, background:"#f8fafc",
+                    fontSize:12.5, fontWeight:600, color:"#374151", cursor:"pointer", whiteSpace:"nowrap" }}>
+                  {coverFile ? "✅ Rasm tanlandi" : "📷 Rasm tanlash"}
+                </button>
+                <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }}
+                  onChange={e => setCoverFile(e.target.files?.[0] || null)} />
+                {coverFile && <span style={{ fontSize:11.5, color:"#94a3b8", overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis" }}>{coverFile.name}</span>}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
+            <button type="button" onClick={onClose} style={{ padding:"9px 20px", border:"1.5px solid #e2e8f0", borderRadius:9, background:"#fff", color:"#374151", fontSize:13, fontWeight:600, cursor:"pointer" }}>
+              Bekor
+            </button>
+            <button type="submit" disabled={saving} style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 22px", background:"linear-gradient(135deg,#dc2626,#b91c1c)", color:"#fff", border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor:"pointer" }}>
+              {saving ? <LuLoader size={13} className="spin"/> : <LuPlus size={13}/>} Yaratish
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 /* ── DeleteConfirm ────────────────────────────────────────────────── */
 function DeleteConfirm({ onConfirm, onCancel }) {
   return (
@@ -337,6 +461,8 @@ export default function AdminBlogs() {
   const [viewBlog,   setViewBlog]   = useState(null);
   const [editBlog,   setEditBlog]   = useState(null);
   const [deleteId,   setDeleteId]   = useState(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [resetting,  setResetting]  = useState(false);
   const [actionLoading, setActionLoading] = useState({});
 
   const debRef = useRef(null);
@@ -364,6 +490,35 @@ export default function AdminBlogs() {
 
   useEffect(() => { fetchBlogs(); }, [fetchBlogs]);
 
+  /* ── reset all views (uses existing PATCH /blogs/admin/:id endpoint) ── */
+  const resetViews = async () => {
+    if (!window.confirm("Barcha bloglarning ko'rishlar sonini 0 ga tushirishni istaysizmi?")) return;
+    setResetting(true);
+    try {
+      // fetch ALL blogs (high limit) to reset every single one
+      const res = await api.get("/blogs/admin/all", { params: { limit: 1000, page: 1 } });
+      const allBlogs = res.data.data || [];
+
+      if (allBlogs.length === 0) {
+        toast.success("Resetlanadigan blog topilmadi");
+        return;
+      }
+
+      // reset each blog's views to 0 via existing update endpoint
+      await Promise.all(
+        allBlogs.map(b => api.patch(`/blogs/admin/${b._id}`, { views: 0 }))
+      );
+
+      // update current page UI
+      setBlogs(prev => prev.map(b => ({ ...b, views: 0 })));
+      toast.success(`${allBlogs.length} ta blogning ko'rishlar soni 0 ga tushirildi ✅`);
+    } catch {
+      toast.error("Xatolik yuz berdi");
+    } finally {
+      setResetting(false);
+    }
+  };
+
   /* ── search debounce ── */
   const handleSearchInput = (val) => {
     setSearchInput(val);
@@ -375,7 +530,7 @@ export default function AdminBlogs() {
   const changeStatus = async (id, status) => {
     setActionLoading(p => ({...p, [id]: true}));
     try {
-      const res = await api.patch(`/blogs/admin/${id}/status`, { status });
+      await api.patch(`/blogs/admin/${id}/status`, { status });
       setBlogs(prev => prev.map(b => b._id === id ? { ...b, status, isPublished: status === "approved" } : b));
       setCounts(p => {
         const old = blogs.find(b => b._id === id)?.status || "pending";
@@ -428,9 +583,19 @@ export default function AdminBlogs() {
           <h1 style={{ fontSize:22, fontWeight:800, color:"#0f172a", margin:"0 0 4px" }}>Blog boshqaruvi</h1>
           <p style={{ fontSize:13, color:"#94a3b8", margin:0 }}>Barcha bloglar, tasdiqlash va tahrirlash</p>
         </div>
-        <button onClick={fetchBlogs} style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 16px", border:"1.5px solid #e2e8f0", borderRadius:10, background:"#fff", color:"#374151", fontSize:13, fontWeight:600, cursor:"pointer" }}>
-          <LuRefreshCw size={14} /> Yangilash
-        </button>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          <button onClick={() => setShowCreate(true)} style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 18px", border:"none", borderRadius:10, background:"linear-gradient(135deg,#dc2626,#b91c1c)", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer", boxShadow:"0 4px 14px rgba(220,38,38,0.3)" }}>
+            <LuPlus size={14} /> Yangi blog
+          </button>
+          <button onClick={resetViews} disabled={resetting} title="Barcha ko'rishlar sonini 0 ga tushirish"
+            style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 16px", border:"1.5px solid #fca5a5", borderRadius:10, background:"#fef2f2", color:"#dc2626", fontSize:13, fontWeight:600, cursor:"pointer", opacity: resetting ? 0.6 : 1 }}>
+            {resetting ? <LuLoader size={13} className="spin"/> : <LuRotateCcw size={13} />}
+            Viewlarni tiklash
+          </button>
+          <button onClick={fetchBlogs} style={{ display:"flex", alignItems:"center", gap:6, padding:"9px 16px", border:"1.5px solid #e2e8f0", borderRadius:10, background:"#fff", color:"#374151", fontSize:13, fontWeight:600, cursor:"pointer" }}>
+            <LuRefreshCw size={14} /> Yangilash
+          </button>
+        </div>
       </div>
 
       {/* status tabs */}
@@ -631,6 +796,20 @@ export default function AdminBlogs() {
       )}
 
       {/* Modals */}
+      {showCreate && (
+        <CreateModal
+          onClose={() => setShowCreate(false)}
+          onCreated={(newBlog) => {
+            setBlogs(prev => [newBlog, ...prev]);
+            setTotal(p => p + 1);
+            setCounts(p => ({
+              ...p,
+              all: p.all + 1,
+              [newBlog.status || "pending"]: (p[newBlog.status || "pending"] || 0) + 1,
+            }));
+          }}
+        />
+      )}
       {viewBlog && (
         <ViewModal
           blog={viewBlog}

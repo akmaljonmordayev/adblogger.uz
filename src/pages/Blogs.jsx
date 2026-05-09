@@ -60,7 +60,10 @@ const EMOJI = {
   Travel: "✈️", Education: "📚", Business: "📊", Gaming: "🎮", Music: "🎵", Other: "📝",
 };
 
-const PER_PAGE = 9;
+function getPerPage() {
+  if (typeof window === "undefined") return 12;
+  return window.innerWidth <= 640 ? 5 : 12;
+}
 
 /* ── helpers ──────────────────────────────────────────────────────────── */
 function fmtDate(iso) {
@@ -244,6 +247,7 @@ export default function Blogs() {
   const [loading, setLoading]     = useState(true);
   const [total, setTotal]         = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [perPage, setPerPage]     = useState(getPerPage);
 
   const [search, setSearch]           = useState(searchParams.get("search") || "");
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
@@ -255,11 +259,24 @@ export default function Blogs() {
 
   const debounceRef = useRef(null);
 
+  /* ── responsive perPage ── */
+  useEffect(() => {
+    const handler = () => {
+      const next = getPerPage();
+      setPerPage(prev => {
+        if (prev !== next) { setPage(1); return next; }
+        return prev;
+      });
+    };
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+
   /* ── fetch ── */
   const fetchBlogs = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { page, limit: PER_PAGE, sort };
+      const params = { page, limit: perPage, sort };
       if (search)   params.search   = search;
       if (category) params.category = category;
 
@@ -272,7 +289,7 @@ export default function Blogs() {
     } finally {
       setLoading(false);
     }
-  }, [page, sort, search, category]);
+  }, [page, sort, search, category, perPage]);
 
   useEffect(() => { fetchBlogs(); }, [fetchBlogs]);
 
@@ -448,24 +465,69 @@ export default function Blogs() {
       {/* ── Content ── */}
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 24px 64px" }}>
         {loading ? (
-          <div style={{ display: "grid", gridTemplateColumns: view === "list" ? "1fr" : "repeat(3,1fr)", gap: 20 }}>
-            {Array.from({ length: PER_PAGE }).map((_, i) => (
-              <div key={i} style={{ background: "#fff", borderRadius: 20, overflow: "hidden", border: "1px solid #f1f5f9" }}>
-                <div style={{ height: view === "list" ? 0 : 170, background: "#f1f5f9" }} />
-                <div style={{ padding: 18 }}>
-                  <Skeleton w="40%" h={12} r={6} mb={12} />
-                  <Skeleton h={16} r={8} mb={8} />
-                  <Skeleton w="90%" h={13} r={6} mb={4} />
-                  <Skeleton w="70%" h={13} r={6} mb={16} />
-                  <Skeleton h={1} r={0} mb={12} />
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <Skeleton w="35%" h={12} r={6} />
-                    <Skeleton w="20%" h={12} r={6} />
+          view === "list" ? (
+            /* ── list skeleton ── */
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} style={{ display: "flex", background: "#fff", border: "1.5px solid #f1f5f9", borderRadius: 16, overflow: "hidden" }}>
+                  {/* thumb */}
+                  <div style={{ width: 180, flexShrink: 0, background: "linear-gradient(90deg,#f1f5f9 25%,#e8eef4 50%,#f1f5f9 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
+                  {/* content */}
+                  <div style={{ padding: "20px 20px 20px 0", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <Skeleton w={72} h={22} r={6} />
+                      <Skeleton w={90} h={14} r={6} />
+                    </div>
+                    <Skeleton w="75%" h={17} r={8} />
+                    <Skeleton h={13} r={6} />
+                    <Skeleton w="85%" h={13} r={6} />
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <Skeleton w={28} h={28} r={14} />
+                        <Skeleton w={80} h={12} r={6} />
+                      </div>
+                      <div style={{ display: "flex", gap: 10 }}>
+                        <Skeleton w={36} h={12} r={6} />
+                        <Skeleton w={36} h={12} r={6} />
+                        <Skeleton w={36} h={12} r={6} />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            /* ── grid skeleton ── */
+            <div className="blogs-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}>
+              {Array.from({ length: perPage }).map((_, i) => (
+                <div key={i} style={{ background: "#fff", borderRadius: 20, overflow: "hidden", border: "1.5px solid #f1f5f9", display: "flex", flexDirection: "column" }}>
+                  {/* cover */}
+                  <div style={{ height: 170, background: "linear-gradient(90deg,#f1f5f9 25%,#e8eef4 50%,#f1f5f9 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite", flexShrink: 0 }} />
+                  {/* body */}
+                  <div style={{ padding: "18px 18px 20px", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <Skeleton w={64} h={20} r={6} />
+                      <Skeleton w={72} h={12} r={6} />
+                    </div>
+                    <Skeleton w="90%" h={15} r={7} />
+                    <Skeleton w="70%" h={15} r={7} />
+                    <Skeleton h={13} r={6} />
+                    <Skeleton w="80%" h={13} r={6} />
+                    <div style={{ borderTop: "1px solid #f8fafc", paddingTop: 12, marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <Skeleton w={28} h={28} r={14} />
+                        <Skeleton w={68} h={11} r={5} />
+                      </div>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <Skeleton w={28} h={11} r={5} />
+                        <Skeleton w={40} h={11} r={5} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
         ) : posts.length === 0 ? (
           <div style={{ textAlign: "center", padding: "80px 20px" }}>
             <div style={{ fontSize: 64, marginBottom: 16 }}>🔍</div>
@@ -481,7 +543,7 @@ export default function Blogs() {
             className="blogs-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: view === "list" ? "1fr" : "repeat(3,1fr)",
+              gridTemplateColumns: view === "list" ? "1fr" : "repeat(4,1fr)",
               gap: 20,
             }}
           >
@@ -493,48 +555,69 @@ export default function Blogs() {
 
         {/* ── Pagination ── */}
         {!loading && totalPages > 1 && (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 48 }}>
-            <button
-              onClick={() => handlePage(page - 1)}
-              disabled={page === 1}
-              style={{
-                width: 38, height: 38, borderRadius: 10, border: "1.5px solid #e2e8f0",
-                background: "#fff", cursor: page === 1 ? "not-allowed" : "pointer",
-                opacity: page === 1 ? .4 : 1, display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-              <LuChevronLeft size={16} />
-            </button>
+          <div style={{ marginTop: 48 }}>
+            {/* page info */}
+            <div style={{ textAlign: "center", marginBottom: 14, fontSize: 12.5, color: "#94a3b8", fontWeight: 500 }}>
+              {page}-sahifa / {totalPages} · jami {total} ta maqola
+            </div>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
-              .reduce((acc, p, idx, arr) => {
-                if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-                acc.push(p);
-                return acc;
-              }, [])
-              .map((p, i) => p === "..." ? (
-                <span key={`dots-${i}`} style={{ padding: "0 4px", color: "#94a3b8", fontSize: 14 }}>…</span>
-              ) : (
-                <button key={p} onClick={() => handlePage(p)} style={{
-                  width: 38, height: 38, borderRadius: 10, fontSize: 13.5, fontWeight: 600,
-                  border: page === p ? "1.5px solid #dc2626" : "1.5px solid #e2e8f0",
-                  background: page === p ? "#dc2626" : "#fff",
-                  color: page === p ? "#fff" : "#374151",
-                  cursor: "pointer", transition: "all .2s",
-                }}>{p}</button>
-              ))
-            }
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 5 }}>
+              {/* prev */}
+              <button
+                onClick={() => handlePage(page - 1)}
+                disabled={page === 1}
+                style={{
+                  display: "flex", alignItems: "center", gap: 4,
+                  padding: "0 14px", height: 38, borderRadius: 10,
+                  border: "1.5px solid #e2e8f0", background: "#fff",
+                  cursor: page === 1 ? "not-allowed" : "pointer",
+                  opacity: page === 1 ? .35 : 1,
+                  fontSize: 13, fontWeight: 600, color: "#374151", transition: "all .2s",
+                }}>
+                <LuChevronLeft size={15} />
+                <span className="pag-label">Oldingi</span>
+              </button>
 
-            <button
-              onClick={() => handlePage(page + 1)}
-              disabled={page === totalPages}
-              style={{
-                width: 38, height: 38, borderRadius: 10, border: "1.5px solid #e2e8f0",
-                background: "#fff", cursor: page === totalPages ? "not-allowed" : "pointer",
-                opacity: page === totalPages ? .4 : 1, display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-              <LuChevronRight size={16} />
-            </button>
+              {/* page numbers */}
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) => p === "..." ? (
+                    <span key={`dots-${i}`} style={{ padding: "0 2px", color: "#94a3b8", fontSize: 14, lineHeight: "38px" }}>…</span>
+                  ) : (
+                    <button key={p} onClick={() => handlePage(p)} style={{
+                      width: 38, height: 38, borderRadius: 10, fontSize: 13.5, fontWeight: 700,
+                      border: page === p ? "1.5px solid #dc2626" : "1.5px solid #e2e8f0",
+                      background: page === p ? "linear-gradient(135deg,#dc2626,#b91c1c)" : "#fff",
+                      color: page === p ? "#fff" : "#374151",
+                      cursor: "pointer", transition: "all .2s",
+                      boxShadow: page === p ? "0 4px 12px rgba(220,38,38,.3)" : "none",
+                    }}>{p}</button>
+                  ))
+                }
+              </div>
+
+              {/* next */}
+              <button
+                onClick={() => handlePage(page + 1)}
+                disabled={page === totalPages}
+                style={{
+                  display: "flex", alignItems: "center", gap: 4,
+                  padding: "0 14px", height: 38, borderRadius: 10,
+                  border: "1.5px solid #e2e8f0", background: "#fff",
+                  cursor: page === totalPages ? "not-allowed" : "pointer",
+                  opacity: page === totalPages ? .35 : 1,
+                  fontSize: 13, fontWeight: 600, color: "#374151", transition: "all .2s",
+                }}>
+                <span className="pag-label">Keyingi</span>
+                <LuChevronRight size={15} />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -546,8 +629,10 @@ export default function Blogs() {
         .blog-card-grid:hover { box-shadow: 0 20px 48px rgba(0,0,0,.1); transform: translateY(-4px); border-color: #fecaca !important; }
         .blog-card-list:hover { box-shadow: 0 8px 24px rgba(0,0,0,.08); border-color: #fecaca !important; }
         ::-webkit-scrollbar { display: none; }
+        @media(max-width:1280px) { .blogs-grid { grid-template-columns: repeat(3,1fr) !important; } }
         @media(max-width:1024px) { .blogs-grid { grid-template-columns: repeat(2,1fr) !important; } }
         @media(max-width:640px)  { .blogs-grid { grid-template-columns: 1fr !important; } }
+        @media(max-width:480px)  { .pag-label { display: none; } }
       `}</style>
     </div>
   );
