@@ -18,6 +18,7 @@ export const adminBloggersService = {
   getAll: (params) => api.get("/admin/bloggers", { params }).then((r) => r.data),
   verify: (id, isVerified) =>
     api.patch(`/admin/bloggers/${id}/verify`, { isVerified }).then((r) => r.data),
+  remove: (id) => api.delete(`/admin/bloggers/${id}`).then((r) => r.data),
 };
 
 // ── Ads ────────────────────────────────────────────────────────────────────────
