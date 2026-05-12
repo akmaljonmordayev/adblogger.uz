@@ -4,7 +4,7 @@ import BloggerCard from "../components/ui/BlogerCard";
 import FilterSidebar from '../components/layout/FilterSidebar';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTE_PATHS } from "../config/constants";
-import { LuSlidersHorizontal, LuX, LuUsers, LuLoader } from "react-icons/lu";
+import { LuSlidersHorizontal, LuX, LuUsers, LuLoader, LuArrowUpDown } from "react-icons/lu";
 import api from "../services/api";
 
 /* ── Kategoriya nomi (uz) ─────────────────────────────────── */
@@ -59,21 +59,24 @@ function mapBlogger(b) {
   const cat  = b.categories?.[0] || "Other";
   const plat = b.platforms?.[0]  || "youtube";
   return {
-    _id:          b._id,
-    id:           b._id,
-    name:         `${b.user?.firstName || ""} ${b.user?.lastName || ""}`.trim(),
-    username:     `@${b.handle || (b.user?.firstName || "").toLowerCase()}`,
-    avatar:       b.user?.avatar || null,
-    platform:     PLATFORM_DISPLAY[plat] ?? plat,
-    categoryType: cat,
-    categoryText: CATEGORY_LABELS[cat] ?? cat,
-    followers:    formatFollowers(b.followers),
-    rawFollowers: b.followers || 0,
-    engagement:   `${b.engagementRate || 0}%`,
-    price:        formatPrice(b.pricing?.post),
-    rawPrice:     b.pricing?.post || 0,
-    gradient:     CATEGORY_GRADIENTS[cat] ?? CATEGORY_GRADIENTS.Other,
-    isVerified:   b.isVerified || false,
+    _id:           b._id,
+    id:            b._id,
+    name:          `${b.user?.firstName || ""} ${b.user?.lastName || ""}`.trim(),
+    username:      `@${b.handle || (b.user?.firstName || "").toLowerCase()}`,
+    avatar:        b.user?.avatar || null,
+    platform:      PLATFORM_DISPLAY[plat] ?? plat,
+    allPlatforms:  (b.platforms || [plat]).map(p => PLATFORM_DISPLAY[p] ?? p),
+    categoryType:  cat,
+    categoryText:  CATEGORY_LABELS[cat] ?? cat,
+    allCategories: (b.categories || [cat]).map(c => CATEGORY_LABELS[c] ?? c),
+    followers:     formatFollowers(b.followers),
+    rawFollowers:  b.followers || 0,
+    engagement:    `${b.engagementRate || 0}%`,
+    rawEngagement: b.engagementRate || 0,
+    price:         formatPrice(b.pricing?.post),
+    rawPrice:      b.pricing?.post || 0,
+    gradient:      CATEGORY_GRADIENTS[cat] ?? CATEGORY_GRADIENTS.Other,
+    isVerified:    b.isVerified || false,
   };
 }
 
@@ -87,7 +90,9 @@ export default function Blogger() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
+  const [sortBy, setSortBy]             = useState("default");
   const allRef = useRef([]);
+  const filteredRef = useRef([]);
 
   /* ── API'dan blogerlarni olish ── */
   useEffect(() => {
@@ -109,13 +114,33 @@ export default function Blogger() {
       const q = categoryFromQS.toLowerCase();
       const filtered = allRef.current.filter(b =>
         b.categoryText.toLowerCase() === q ||
-        b.categoryType.toLowerCase() === q
+        b.categoryType.toLowerCase() === q ||
+        b.allCategories.some(c => c.toLowerCase() === q)
       );
-      setBloggers(filtered.length > 0 ? filtered : allRef.current);
+      const result = filtered.length > 0 ? filtered : allRef.current;
+      filteredRef.current = result;
+      setBloggers(applySort(result, sortBy));
     } else {
-      setBloggers(allRef.current);
+      filteredRef.current = allRef.current;
+      setBloggers(applySort(allRef.current, sortBy));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryFromQS, allBloggers]);
+
+  const applySort = (list, sort) => {
+    const arr = [...list];
+    if (sort === "followers_desc") arr.sort((a, b) => b.rawFollowers - a.rawFollowers);
+    else if (sort === "followers_asc") arr.sort((a, b) => a.rawFollowers - b.rawFollowers);
+    else if (sort === "price_asc")  arr.sort((a, b) => a.rawPrice - b.rawPrice);
+    else if (sort === "price_desc") arr.sort((a, b) => b.rawPrice - a.rawPrice);
+    else if (sort === "engagement") arr.sort((a, b) => b.rawEngagement - a.rawEngagement);
+    return arr;
+  };
+
+  const handleSortChange = (newSort) => {
+    setSortBy(newSort);
+    setBloggers(applySort(filteredRef.current.length ? filteredRef.current : allRef.current, newSort));
+  };
 
   const handleBron = (id) => {
     const path = ROUTE_PATHS.BLOGGER_DETAIL.replace(":id", id);
@@ -129,12 +154,16 @@ export default function Blogger() {
       result = result.filter(b => b.id === selectedUser.id);
     }
     if (filters.category?.length) {
-      result = result.filter(b => filters.category.includes(b.categoryText));
+      result = result.filter(b =>
+        b.allCategories.some(c => filters.category.includes(c))
+      );
     }
     if (filters.platform?.length) {
-      result = result.filter(b => filters.platform.includes(b.platform));
+      result = result.filter(b =>
+        b.allPlatforms.some(p => filters.platform.includes(p))
+      );
     }
-    if (filters.price) {
+    if (filters.price && (filters.price.min > 0 || filters.price.max < 20_000_000)) {
       result = result.filter(b => b.rawPrice >= filters.price.min && b.rawPrice <= filters.price.max);
     }
     if (filters.status?.includes("Tasdiqlangan")) {
@@ -151,7 +180,8 @@ export default function Blogger() {
         })
       );
     }
-    setBloggers(result);
+    filteredRef.current = result;
+    setBloggers(applySort(result, sortBy));
   };
 
   return (
@@ -263,18 +293,43 @@ export default function Blogger() {
               </span>
             </div>
 
-            <button
-              onClick={() => setIsFilterOpen(true)}
-              className="bl-mobile-btn"
-              style={{
-                display: "none", alignItems: "center", gap: 6,
-                background: "#fff", border: "1.5px solid #e2e8f0",
-                borderRadius: 10, padding: "7px 14px",
-                fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer",
-              }}
-            >
-              <LuSlidersHorizontal size={14} /> Filter
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {/* Sort dropdown */}
+              <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                <LuArrowUpDown size={13} style={{ position: "absolute", left: 10, color: "#64748b", pointerEvents: "none" }} />
+                <select
+                  value={sortBy}
+                  onChange={e => handleSortChange(e.target.value)}
+                  style={{
+                    appearance: "none", WebkitAppearance: "none",
+                    background: "#fff", border: "1.5px solid #e2e8f0",
+                    borderRadius: 10, padding: "7px 28px 7px 28px",
+                    fontSize: 12.5, fontWeight: 600, color: "#374151",
+                    cursor: "pointer", outline: "none",
+                  }}
+                >
+                  <option value="default">Saralash</option>
+                  <option value="followers_desc">Obunachi ↓</option>
+                  <option value="followers_asc">Obunachi ↑</option>
+                  <option value="price_asc">Narx ↑</option>
+                  <option value="price_desc">Narx ↓</option>
+                  <option value="engagement">Engagement ↓</option>
+                </select>
+              </div>
+
+              <button
+                onClick={() => setIsFilterOpen(true)}
+                className="bl-mobile-btn"
+                style={{
+                  display: "none", alignItems: "center", gap: 6,
+                  background: "#fff", border: "1.5px solid #e2e8f0",
+                  borderRadius: 10, padding: "7px 14px",
+                  fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer",
+                }}
+              >
+                <LuSlidersHorizontal size={14} /> Filter
+              </button>
+            </div>
           </div>
 
           {/* Loading */}
