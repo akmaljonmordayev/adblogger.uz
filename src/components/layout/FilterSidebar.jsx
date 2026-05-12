@@ -29,6 +29,7 @@ const CATEGORIES = [
   { id: "Sayohat",    emoji: "✈️" },
   { id: "Ta'lim",     emoji: "📚" },
   { id: "Musiqa",     emoji: "🎵" },
+  { id: "Biznes",     emoji: "💼" },
 ];
 
 const PLATFORMS = [

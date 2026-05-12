@@ -4,7 +4,6 @@ import SEO, { breadcrumbSchema } from "../components/SEO";
 import {
   LuTag, LuSearch, LuUsers, LuArrowRight,
   LuTrendingUp, LuX, LuSparkles, LuFlame,
-  LuLayoutGrid,
 } from "react-icons/lu";
 import { ROUTE_PATHS } from "../config/constants";
 import api from "../services/api";
@@ -27,6 +26,26 @@ function Sk({ w = "100%", h = 18, r = 8, mb = 0 }) {
       backgroundSize: "200% 100%", animation: "sk 1.5s infinite",
     }} />
   );
+}
+
+/* ── Uzbek name map ── */
+const NAME_UZ = {
+  tech:      "Texnologiya",
+  lifestyle: "Lifestyle",
+  beauty:    "Go'zallik",
+  food:      "Ovqat",
+  sports:    "Sport",
+  sport:     "Sport",
+  travel:    "Sayohat",
+  education: "Ta'lim",
+  business:  "Biznes",
+  gaming:    "Gaming",
+  music:     "Musiqa",
+};
+
+function getUzName(cat) {
+  const key = (cat.slug || cat.name || "").toLowerCase();
+  return NAME_UZ[key] || cat.name;
 }
 
 /* ── Fallback icon map (if no emoji in DB) ── */
@@ -85,6 +104,7 @@ export default function CategoriesPage() {
   const filtered = categories.filter(
     (c) =>
       (c.name || "").toLowerCase().includes(search.toLowerCase()) ||
+      getUzName(c).toLowerCase().includes(search.toLowerCase()) ||
       (c.description || "").toLowerCase().includes(search.toLowerCase())
   );
 
@@ -248,9 +268,7 @@ export default function CategoriesPage() {
               {loading ? "Yuklanmoqda..." : `${filtered.length} ta kategoriya`}
             </h2>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#94a3b8", fontSize: 13 }}>
-            <LuLayoutGrid size={15} /> Grid ko'rinish
-          </div>
+          <div />
         </div>
 
         {/* Loading skeleton */}
@@ -294,7 +312,7 @@ export default function CategoriesPage() {
               return (
                 <button
                   key={cat._id}
-                  onClick={() => navigate(`${ROUTE_PATHS.BLOGGERS}?category=${encodeURIComponent(cat.name)}`)}
+                  onClick={() => navigate(`${ROUTE_PATHS.BLOGGERS}?category=${encodeURIComponent(getUzName(cat))}`)}
                   onMouseEnter={() => setHovered(cat._id)}
                   onMouseLeave={() => setHovered(null)}
                   style={{
@@ -362,7 +380,7 @@ export default function CategoriesPage() {
                     color: "#0f172a", marginBottom: 8,
                     fontFamily: "'Syne','Inter',sans-serif",
                   }}>
-                    {cat.name}
+                    {getUzName(cat)}
                   </div>
 
                   {/* Description */}
