@@ -395,6 +395,18 @@ export default function Ads() {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
+      <style>{`
+        @media(max-width:640px){
+          .ads-hero{padding:28px 18px 24px!important;border-radius:14px!important}
+          .ads-hero h1{font-size:26px!important}
+          .ads-hero p{font-size:13px!important}
+          .ads-filter-wrap{flex-direction:column!important;gap:10px!important;padding:12px 14px!important}
+          .ads-tabs{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+          .ads-tabs::-webkit-scrollbar{display:none}
+          .ads-tabs>button{white-space:nowrap;flex-shrink:0}
+          .ads-search{min-width:0!important;width:100%!important}
+        }
+      `}</style>
       <SEO
         title="E'lonlar — Blogger va Biznes Reklamalari"
         description="O'zbekistondagi blogger va biznes reklamalari. ADBlogger platformasida eng mos hamkorni toping. 500+ faol e'lon, qulay narxlar va ishonchli bloggerlar."
@@ -402,7 +414,7 @@ export default function Ads() {
         schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "E'lonlar", path: "/ads" }])}
       />
       {/* ── HERO ── */}
-      <div style={{ background: "linear-gradient(135deg, #fff 0%, #fef2f2 60%, #fff 100%)", borderRadius: 20, padding: "48px 40px 40px", marginBottom: 24, border: "1px solid #fecaca", position: "relative", overflow: "hidden" }}>
+      <div className="ads-hero" style={{ background: "linear-gradient(135deg, #fff 0%, #fef2f2 60%, #fff 100%)", borderRadius: 20, padding: "48px 40px 40px", marginBottom: 24, border: "1px solid #fecaca", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(220,38,38,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20 }}>
           <div>
@@ -423,8 +435,8 @@ export default function Ads() {
       </div>
 
       {/* ── FILTERS ── */}
-      <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #f3f4f6", padding: "16px 20px", marginBottom: 20, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ display: "flex", gap: 8 }}>
+      <div className="ads-filter-wrap" style={{ background: "#fff", borderRadius: 16, border: "1px solid #f3f4f6", padding: "16px 20px", marginBottom: 20, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <div className="ads-tabs" style={{ display: "flex", gap: 8 }}>
           {tabs.map(({ key, label, Icon, count }) => (
             <button key={key} onClick={() => setFilter(key)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, border: "1.5px solid", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", background: filter === key ? "#fef2f2" : "#f9fafb", borderColor: filter === key ? "#fecaca" : "#e5e7eb", color: filter === key ? "#dc2626" : "#374151", transition: "all 0.15s" }}>
               <Icon size={14} />
@@ -435,7 +447,7 @@ export default function Ads() {
             </button>
           ))}
         </div>
-        <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 8, background: "#f9fafb", border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "0 12px" }}>
+        <div className="ads-search" style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", gap: 8, background: "#f9fafb", border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "0 12px" }}>
           <LuSearch size={14} style={{ color: "#9ca3af", flexShrink: 0 }} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Qidirish: bloger, kategoriya, xizmat..." style={{ flex: 1, border: "none", background: "transparent", padding: "10px 0", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
         </div>

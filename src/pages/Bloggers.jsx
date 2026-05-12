@@ -184,7 +184,7 @@ export default function Blogger() {
           .bl-main       { height: auto; overflow: visible; }
           .bl-cards-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
-        @media (max-width: 540px) { .bl-cards-grid { grid-template-columns: 1fr !important; } }
+        @media (max-width: 540px) { .bl-cards-grid { grid-template-columns: minmax(260px, 340px) !important; justify-content: center; } }
       `}</style>
 
       {/* Mobile drawer overlay */}
@@ -295,7 +295,7 @@ export default function Blogger() {
           {/* Cards */}
           {!loading && !error && (
             bloggers.length > 0 ? (
-              <div className="bl-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 18, paddingBottom: 24 }}>
+              <div className="bl-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 320px))", gap: 18, paddingBottom: 24, justifyContent: "center" }}>
                 {bloggers.map(blogger => (
                   <BloggerCard
                     key={blogger._id}
