@@ -7,7 +7,7 @@ const APIFeatures = require('../utils/apiFeatures');
 // GET /api/v1/bloggers
 exports.getAllBloggers = catchAsync(async (req, res) => {
   const features = new APIFeatures(
-    Blogger.find({ isActive: true }).populate('user', 'firstName lastName avatar email phone'),
+    Blogger.find({ isActive: true, isVerified: true }).populate('user', 'firstName lastName avatar email phone'),
     req.query
   )
     .filter()
@@ -18,7 +18,7 @@ exports.getAllBloggers = catchAsync(async (req, res) => {
 
   const [bloggers, total] = await Promise.all([
     features.query,
-    Blogger.countDocuments({ isActive: true }),
+    Blogger.countDocuments({ isActive: true, isVerified: true }),
   ]);
 
   res.status(200).json({

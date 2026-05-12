@@ -138,6 +138,7 @@ export default function Profile() {
   const { user, setUser } = useAuthStore();
 
   const [tab,          setTab]          = useState(searchParams.get("tab") || "personal");
+  const [menuOpen,     setMenuOpen]     = useState(false);
   const [saving,       setSaving]       = useState(false);
   const [saved,        setSaved]        = useState(false);
   const [avatarLoading,setAvatarLoading]= useState(false);
@@ -618,7 +619,20 @@ export default function Profile() {
         .chip-btn{transition:all .15s;cursor:pointer;user-select:none}
         .chip-btn:hover{opacity:.85}
         .field-inp:focus{border-color:#dc2626!important;box-shadow:0 0 0 3px rgba(220,38,38,.08)!important}
-        @media(max-width:700px){.profile-grid{grid-template-columns:1fr!important}.profile-sidebar{position:static!important;max-height:none!important}.profile-main{position:static!important;max-height:none!important}}
+        @media(max-width:700px){
+          .profile-grid{grid-template-columns:1fr!important}
+          .profile-sidebar{display:none!important}
+          .profile-main{position:static!important;max-height:none!important;border-radius:16px!important;padding:20px 16px!important}
+          .profile-mobile-menu{display:flex!important}
+          .hidden-sm{display:none!important}
+          .banner-info p{font-size:11px!important}
+          .banner-info h1{font-size:16px!important}
+          .banner-wrap{padding:18px 14px!important;gap:12px!important;border-radius:16px!important;margin-bottom:12px!important}
+          .banner-avatar{width:60px!important;height:60px!important;font-size:20px!important}
+          .grid-2col{grid-template-columns:1fr!important}
+          .grid-3col{grid-template-columns:1fr 1fr!important}
+        }
+        @media(min-width:701px){.profile-mobile-menu{display:none!important}}
         .profile-main::-webkit-scrollbar{width:5px}
         .profile-main::-webkit-scrollbar-track{background:transparent}
         .profile-main::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:10px}
@@ -627,9 +641,9 @@ export default function Profile() {
       `}</style>
 
       {/* ── Banner ───────────────────────────────────────────── */}
-      <div style={{
+      <div className="banner-wrap" style={{
         background:"linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#0f172a 100%)",
-        borderRadius:24, padding:"36px 32px", marginBottom:28,
+        borderRadius:24, padding:"36px 32px", marginBottom:16,
         display:"flex", alignItems:"center", gap:24,
         position:"relative", overflow:"hidden",
       }}>
@@ -638,7 +652,7 @@ export default function Profile() {
 
         {/* Avatar */}
         <div style={{ position:"relative", flexShrink:0, zIndex:1 }}>
-          <div style={{
+          <div className="banner-avatar" style={{
             width:84, height:84, borderRadius:"50%",
             background: user.avatar ? "transparent" : "linear-gradient(135deg,#dc2626,#b91c1c)",
             display:"flex", alignItems:"center", justifyContent:"center",
@@ -669,8 +683,8 @@ export default function Profile() {
         </div>
 
         {/* Info */}
-        <div style={{ flex:1, zIndex:1 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
+        <div className="banner-info" style={{ flex:1, zIndex:1, minWidth:0 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4, flexWrap:"wrap" }}>
             <h1 style={{ fontSize:22, fontWeight:800, color:"#fff", margin:0 }}>
               {user.firstName} {user.lastName}
             </h1>
@@ -746,6 +760,100 @@ export default function Profile() {
                 <div style={{ fontSize:11, color:"rgba(255,255,255,.45)" }}>{s.label}</div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Mobile menu ───────────────────────────────────────── */}
+      <div className="profile-mobile-menu" style={{
+        display:"none", position:"relative", marginBottom:12, zIndex:100,
+      }}>
+        {/* Overlay */}
+        {menuOpen && (
+          <div onClick={()=>setMenuOpen(false)} style={{
+            position:"fixed", inset:0, zIndex:98,
+            background:"rgba(15,23,42,0.4)", backdropFilter:"blur(2px)",
+          }}/>
+        )}
+
+        {/* Toggle button */}
+        <button
+          onClick={()=>setMenuOpen(o=>!o)}
+          style={{
+            width:"100%", display:"flex", alignItems:"center", gap:10,
+            padding:"12px 16px", borderRadius:12,
+            background:"#fff", border:"1.5px solid #e2e8f0",
+            fontSize:14, fontWeight:700, color:"#dc2626", cursor:"pointer",
+            boxShadow:"0 1px 6px rgba(0,0,0,.06)",
+          }}
+        >
+          {(() => { const t = visibleTabs.find(t=>t.id===tab); return t ? <><t.Icon size={15} style={{color:"#dc2626"}}/>{t.label}</> : "Menyu"; })()}
+          <LuChevronRight size={15} style={{
+            marginLeft:"auto", color:"#dc2626",
+            transform: menuOpen ? "rotate(90deg)" : "rotate(0deg)",
+            transition:"transform .2s",
+          }}/>
+        </button>
+
+        {/* Dropdown */}
+        {menuOpen && (
+          <div style={{
+            position:"absolute", top:"calc(100% + 6px)", left:0, right:0,
+            background:"#fff", border:"1.5px solid #e2e8f0",
+            borderRadius:16, padding:"8px", zIndex:99,
+            boxShadow:"0 8px 32px rgba(0,0,0,.12)",
+          }}>
+            {/* Active tab highlight (Shaxsiy style) */}
+            <button
+              onClick={()=>{ setTab(tab); setMenuOpen(false); }}
+              style={{
+                display:"flex", alignItems:"center", gap:10,
+                padding:"10px 12px", borderRadius:10, border:"none",
+                background:"#fef2f2", color:"#dc2626",
+                fontSize:13, fontWeight:700, cursor:"pointer", width:"100%", marginBottom:4,
+              }}
+            >
+              {(() => { const t = visibleTabs.find(x=>x.id===tab); return t ? <><t.Icon size={15} style={{color:"#dc2626",flexShrink:0}}/>{t.label}</> : null; })()}
+              <LuChevronRight size={13} style={{ marginLeft:"auto", color:"#dc2626" }}/>
+            </button>
+
+            {visibleTabs.filter(t=>t.id!==tab).map(({ id, label, Icon }) => (
+              <button key={id} onClick={()=>{ setTab(id); setMenuOpen(false); }} style={{
+                display:"flex", alignItems:"center", gap:10,
+                padding:"10px 12px", borderRadius:10, border:"none",
+                background:"transparent", color:"#374151",
+                fontSize:13, fontWeight:500, cursor:"pointer", width:"100%",
+              }}>
+                <Icon size={15} style={{ color:"#9ca3af", flexShrink:0 }}/>{label}
+              </button>
+            ))}
+
+            <div style={{ borderTop:"1px solid #f1f5f9", marginTop:4, paddingTop:4 }}>
+              <Link to="/notifications" onClick={()=>setMenuOpen(false)} style={{
+                display:"flex", alignItems:"center", gap:10,
+                padding:"10px 12px", borderRadius:10, color:"#374151",
+                fontSize:13, fontWeight:500, textDecoration:"none",
+              }}>
+                <LuBell size={15} style={{ color:"#9ca3af" }}/> Bildirishnomalar
+              </Link>
+              <Link to="/wishlist" onClick={()=>setMenuOpen(false)} style={{
+                display:"flex", alignItems:"center", gap:10,
+                padding:"10px 12px", borderRadius:10, color:"#374151",
+                fontSize:13, fontWeight:500, textDecoration:"none",
+              }}>
+                <LuBookmark size={15} style={{ color:"#9ca3af" }}/> Wishlist
+              </Link>
+            </div>
+            <div style={{ borderTop:"1px solid #f1f5f9", marginTop:4, paddingTop:4 }}>
+              <button onClick={()=>{ handleLogout(); setMenuOpen(false); }} style={{
+                display:"flex", alignItems:"center", gap:10,
+                padding:"10px 12px", borderRadius:10, border:"none",
+                background:"transparent", color:"#ef4444",
+                fontSize:13, fontWeight:500, cursor:"pointer", width:"100%",
+              }}>
+                <LuLogOut size={15}/> Chiqish
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -831,7 +939,7 @@ export default function Profile() {
             <form onSubmit={savePersonal}>
               <SectionTitle sub="Asosiy ma'lumotlaringizni tahrirlang">Shaxsiy ma'lumotlar</SectionTitle>
 
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:0 }}>
+              <div className="grid-2col" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:0 }}>
                 <FieldWrap>
                   <Label>Ism</Label>
                   <input className="field-inp" style={inp()} value={pForm.firstName}
@@ -871,7 +979,7 @@ export default function Profile() {
                 {/* ── Asosiy ── */}
                 <SectionTitle sub="Kanallar va asosiy ma'lumotlar">Blogger profili</SectionTitle>
 
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+                <div className="grid-2col" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
                   <FieldWrap>
                     <Label>@ Handle (username) *</Label>
                     <div style={{ position:"relative" }}>
@@ -902,7 +1010,7 @@ export default function Profile() {
                 {/* ── Platformalar ── */}
                 <SectionTitle sub="Faol ijtimoiy tarmoqlaringizni belgilang">Platformalar</SectionTitle>
                 <FieldWrap>
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:20 }}>
+                  <div className="grid-2col" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:20 }}>
                     {PLATFORMS.map(({ id, label, color, bg, Icon }) => {
                       const active = bForm.platforms.includes(id);
                       return (
@@ -955,7 +1063,7 @@ export default function Profile() {
 
                 {/* ── Auditoriya ── */}
                 <SectionTitle sub="Kanalingizdagi obunachilar haqida">Auditoriya statistikasi</SectionTitle>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>
+                <div className="grid-3col" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>
                   <FieldWrap>
                     <Label><LuUsers size={12} style={{ marginRight:4 }}/>Obunachilar soni</Label>
                     <input className="field-inp" style={inp()} type="number" value={bForm.followers}
@@ -976,7 +1084,7 @@ export default function Profile() {
                       onChange={e=>setBForm(p=>({...p,engagementRate:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="3.5"/>
                   </FieldWrap>
                 </div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+                <div className="grid-2col" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
                   <FieldWrap>
                     <Label>Auditoriya yoshi</Label>
                     <select className="field-inp" style={{ ...inp(), appearance:"none", cursor:"pointer" }}
@@ -1020,7 +1128,7 @@ export default function Profile() {
 
                 <SectionTitle sub="Qanday reklama xizmatlarini ko'rsatasiz?">Xizmatlar</SectionTitle>
                 <FieldWrap>
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+                  <div className="grid-3col" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
                     {SERVICES.map(({ id, label, emoji }) => {
                       const active = bForm.services.includes(id);
                       return (
@@ -1047,7 +1155,7 @@ export default function Profile() {
                 <SectionTitle sub="Har bir xizmat uchun narxlarni so'm da kiriting">
                   <LuDollarSign size={16} style={{ marginRight:6 }}/>Narxlar (so'm)
                 </SectionTitle>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
+                <div className="grid-3col" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
                   {PRICING_FIELDS.map(({ key, label, icon, placeholder }) => (
                     <FieldWrap key={key}>
                       <Label>{icon} {label}</Label>
@@ -1092,7 +1200,7 @@ export default function Profile() {
 
                 {/* ── Qo'shimcha ── */}
                 <SectionTitle sub="Portfolio va veb sayt">Qo'shimcha</SectionTitle>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+                <div className="grid-2col" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
                   <FieldWrap>
                     <Label><LuLink size={12} style={{ marginRight:4 }}/>Portfolio (havola)</Label>
                     <input className="field-inp" style={inp()} value={bForm.portfolio}
@@ -1191,7 +1299,7 @@ export default function Profile() {
                 </div>
 
                 {/* ── Asosiy ── */}
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+                <div className="grid-2col" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
                   <FieldWrap>
                     <Label>Kompaniya nomi *</Label>
                     <input className="field-inp" style={inp()} value={bizForm.companyName}
@@ -1218,7 +1326,7 @@ export default function Profile() {
                   <div style={{ fontSize:11, color:"#94a3b8", textAlign:"right", marginTop:4 }}>{bizForm.description.length}/600</div>
                 </FieldWrap>
 
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+                <div className="grid-2col" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
                   <FieldWrap>
                     <Label><LuMapPin size={12} style={{ marginRight:4 }}/>Joylashuv</Label>
                     <input className="field-inp" style={inp()} value={bizForm.location}
@@ -1237,7 +1345,7 @@ export default function Profile() {
 
                 {/* ── Aloqa ── */}
                 <SectionTitle sub="Bloggerlar siz bilan qanday bog'lansin?">Aloqa ma'lumotlari</SectionTitle>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+                <div className="grid-2col" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
                   <FieldWrap>
                     <Label><LuPhone size={12} style={{ marginRight:4 }}/>Kompaniya telefoni</Label>
                     <input className="field-inp" style={inp()} value={bizForm.contactPhone}
@@ -1284,7 +1392,7 @@ export default function Profile() {
 
                 <FieldWrap>
                   <Label>Maqsadli platformalar</Label>
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
+                  <div className="grid-2col" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
                     {PLATFORMS.map(({ id, label, color, bg, Icon }) => {
                       const active = bizForm.targetPlatforms.includes(id);
                       return (

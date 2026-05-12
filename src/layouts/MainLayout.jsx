@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { ROUTE_PATHS } from "../config/constants";
 import Header from "../components/layout/Header"
@@ -6,6 +7,10 @@ import Footer from "../components/layout/Footer";
 const MainLayout = () => {
   const { pathname } = useLocation();
   const isHome = pathname === "/";
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [pathname]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc]">
