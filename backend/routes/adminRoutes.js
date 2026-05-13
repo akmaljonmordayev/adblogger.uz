@@ -125,6 +125,9 @@ router.delete('/users/:id', profileController.adminDeleteUser);
  */
 router.get('/bloggers', bloggerController.adminGetAllBloggers);
 router.patch('/bloggers/:id/verify', bloggerController.verifyBlogger);
+router.patch('/bloggers/:id/block', bloggerController.blockBlogger);
+router.patch('/bloggers/:id/freeze', bloggerController.freezeBlogger);
+router.delete('/bloggers/:id', bloggerController.adminDeleteBlogger);
 
 // ── Ads ────────────────────────────────────────────────────────────────────────
 /**
@@ -168,6 +171,7 @@ router.patch('/bloggers/:id/verify', bloggerController.verifyBlogger);
  */
 router.get('/ads', adController.adminGetAllAds);
 router.patch('/ads/:id/status', adController.changeAdStatus);
+router.delete('/ads/:id', adController.adminDeleteAd);
 
 // ── Blogs ──────────────────────────────────────────────────────────────────────
 /**

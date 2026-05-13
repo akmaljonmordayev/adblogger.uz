@@ -18,6 +18,10 @@ export const adminBloggersService = {
   getAll: (params) => api.get("/admin/bloggers", { params }).then((r) => r.data),
   verify: (id, isVerified) =>
     api.patch(`/admin/bloggers/${id}/verify`, { isVerified }).then((r) => r.data),
+  block: (id, isBlocked) =>
+    api.patch(`/admin/bloggers/${id}/block`, { isBlocked }).then((r) => r.data),
+  freeze: (id, isFrozen) =>
+    api.patch(`/admin/bloggers/${id}/freeze`, { isFrozen }).then((r) => r.data),
   remove: (id) => api.delete(`/admin/bloggers/${id}`).then((r) => r.data),
 };
 
@@ -26,6 +30,7 @@ export const adminAdsService = {
   getAll: (params) => api.get("/admin/ads", { params }).then((r) => r.data),
   changeStatus: (id, status) =>
     api.patch(`/admin/ads/${id}/status`, { status }).then((r) => r.data),
+  remove: (id) => api.delete(`/admin/ads/${id}`).then((r) => r.data),
 };
 
 // ── Blogs ──────────────────────────────────────────────────────────────────────
