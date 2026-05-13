@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "../../components/ui/toast";
-import { adminBloggersService } from "../../services/adminService";
+import { adminBloggersService, adminUsersService } from "../../services/adminService";
 import { FiInstagram, FiYoutube } from "react-icons/fi";
 import { BsTiktok, BsTelegram } from "react-icons/bs";
 import {
@@ -210,9 +210,11 @@ function DetailModal({ blogger, onClose, onUpdate }) {
   };
 
   const doBlock = async () => {
+    const userId = local.user?._id || local.user?.id;
+    if (!userId) { toast.error("Foydalanuvchi topilmadi"); return; }
     setSaving(true);
     try {
-      await adminBloggersService.block(local._id, !local.isBlocked);
+      await adminUsersService.update(String(userId), { isBlocked: !local.isBlocked });
       push({ isBlocked: !local.isBlocked });
       toast.success(local.isBlocked ? "Bloklash bekor qilindi" : "Blogger bloklandi");
     } catch { toast.error("Bloklashda xatolik yuz berdi"); }
@@ -220,9 +222,11 @@ function DetailModal({ blogger, onClose, onUpdate }) {
   };
 
   const doFreeze = async () => {
+    const userId = local.user?._id || local.user?.id;
+    if (!userId) { toast.error("Foydalanuvchi topilmadi"); return; }
     setSaving(true);
     try {
-      await adminBloggersService.freeze(local._id, !local.isFrozen);
+      await adminUsersService.update(String(userId), { isFrozen: !local.isFrozen });
       push({ isFrozen: !local.isFrozen });
       toast.success(local.isFrozen ? "Muzlatish bekor qilindi" : "Hisob muzlatildi");
     } catch { toast.error("Muzlatishda xatolik yuz berdi"); }
@@ -571,13 +575,11 @@ export default function AdminBloggers() {
 
   /* ── Quick row action (unblock / unfreeze) ── */
   const rowAction = useCallback(async (blogger, patch) => {
+    const userId = blogger.user?._id || blogger.user?.id;
+    if (!userId) { toast.error("Foydalanuvchi topilmadi"); return; }
     setRowSaving(blogger._id);
     try {
-      if (patch.isBlocked !== undefined) {
-        await adminBloggersService.block(blogger._id, patch.isBlocked);
-      } else if (patch.isFrozen !== undefined) {
-        await adminBloggersService.freeze(blogger._id, patch.isFrozen);
-      }
+      await adminUsersService.update(String(userId), patch);
       const updated = { ...blogger, ...patch };
       setBloggers(p => p.map(b => b._id === blogger._id ? updated : b));
       if (patch.isBlocked === false) toast.success("Bloklash bekor qilindi");
