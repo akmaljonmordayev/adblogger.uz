@@ -1,346 +1,483 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import {
+  LuSearch, LuEye, LuTrash2, LuCheck, LuX, LuLoader,
+  LuChevronLeft, LuChevronRight, LuRefreshCw,
+  LuCircleCheck, LuCircleX, LuClock3, LuBookOpen,
+  LuTriangleAlert, LuUserRound, LuBriefcase,
+} from "react-icons/lu";
+import { toast } from "../../components/ui/toast";
+import { adminAdsService } from "../../services/adminService";
 
-/* ─── KENGAYTIRILGAN MOCK DATA (Barcha maydonlar bilan) ─── */
-const INITIAL_ADS = [
-  {
-    id: "B-001",
-    userType: "blogger",
-    status: "Kutilmoqda",
-    date: "2026-04-28",
-    name: "Alisher Uzoqov",
-    phone: "+998 90 123 45 67",
-    platforms: ["Instagram", "Telegram"],
-    followers: "100k - 500k",
-    niches: ["Lifestyle", "Texnologiya", "Gaming"],
-    services: ["Post (feed)", "Story", "Reel / Shorts"],
-    prices: { post: "1,200,000", story: "600,000", video: "3,000,000" },
-    portfolio: "https://portfolio.uz/alisher",
-    about: "Asosan texnologiya va gadjetlar haqida sifatli kontent tayyorlayman.",
-  },
-  {
-    id: "B-002",
-    userType: "blogger",
-    status: "Faol",
-    date: "2026-04-27",
-    name: "Sardor Tech",
-    phone: "+998 91 777 88 99",
-    platforms: ["YouTube", "Instagram"],
-    followers: "500k - 1M",
-    niches: ["Texnologiya", "Review"],
-    services: ["Video review", "Shorts"],
-    prices: { post: "2,000,000", story: "800,000", video: "5,000,000" },
-    portfolio: "https://portfolio.uz/sardor",
-    about: "Smartfon va texnika reviewlari bilan shug‘ullanaman.",
-  },
-  {
-    id: "B-003",
-    userType: "blogger",
-    status: "Faol",
-    date: "2026-04-25",
-    name: "Madina Life",
-    phone: "+998 93 555 44 33",
-    platforms: ["Instagram"],
-    followers: "50k - 100k",
-    niches: ["Lifestyle", "Beauty"],
-    services: ["Post", "Story"],
-    prices: { post: "700,000", story: "300,000", video: "1,500,000" },
-    portfolio: "https://portfolio.uz/madina",
-    about: "Beauty va kundalik hayot haqida kontent qilaman.",
-  },
-   {
-    id: "C-102",
-    userType: "business",
-    status: "Faol",
-    date: "2026-04-28",
-    companyName: "Shirin Zavodi",
-    contactPerson: "E'zoza Rahmonova",
-    phone: "+998 99 888 77 66",
-    activityType: "Oziq-ovqat",
-    productName: "Shirin Premium konfetlari",
-    productDesc: "Yangi turdagi shokoladli konfetlar, shakarsiz va tabiiy.",
-    reqPlatforms: ["Instagram", "YouTube"],
-    reqBloggerTypes: ["Food bloger", "Lifestyle bloger"],
-    targetAudience: "20-35 yosh, ayollar",
-    budget: "10,000,000",
-    duration: "1 oy",
-    location: "Toshkent sh.",
-    goal: "Brend taniqliligini oshirish",
-  },
-  {
-    id: "C-103",
-    userType: "business",
-    status: "Kutilmoqda",
-    date: "2026-04-26",
-    companyName: "Tech Market",
-    contactPerson: "Jasur Aliyev",
-    phone: "+998 90 999 00 11",
-    activityType: "Elektronika",
-    productName: "Smartfonlar",
-    productDesc: "Yangi model smartfonlar arzon narxda.",
-    reqPlatforms: ["YouTube", "Telegram"],
-    reqBloggerTypes: ["Texno bloger"],
-    targetAudience: "18-40 yosh",
-    budget: "20,000,000",
-    duration: "2 oy",
-    location: "Toshkent",
-    goal: "Sotuvni oshirish",
-  },
-  {
-    id: "C-104",
-    userType: "business",
-    status: "Faol",
-    date: "2026-04-24",
-    companyName: "FitLife",
-    contactPerson: "Dilnoza Karimova",
-    phone: "+998 97 222 33 44",
-    activityType: "Sport / Fitness",
-    productName: "Fitness abonement",
-    productDesc: "Ayollar uchun maxsus fitness dasturi.",
-    reqPlatforms: ["Instagram"],
-    reqBloggerTypes: ["Fitness bloger", "Lifestyle bloger"],
-    targetAudience: "18-35 yosh, ayollar",
-    budget: "8,000,000",
-    duration: "1 oy",
-    location: "Toshkent",
-    goal: "Yangi mijoz jalb qilish",
-  }
+/* ── Constants ─────────────────────────────────────────────────── */
+const STATUS_TABS = [
+  { value: "",          label: "Barchasi",     Icon: LuBookOpen,    color: "#374151" },
+  { value: "pending",   label: "Kutilmoqda",   Icon: LuClock3,      color: "#d97706" },
+  { value: "approved",  label: "Tasdiqlangan", Icon: LuCircleCheck, color: "#16a34a" },
+  { value: "active",    label: "Faol",         Icon: LuCircleCheck, color: "#2563eb" },
+  { value: "rejected",  label: "Rad etilgan",  Icon: LuCircleX,     color: "#dc2626" },
+  { value: "completed", label: "Yakunlangan",  Icon: LuCircleCheck, color: "#6b7280" },
 ];
 
-/* ─── YORDAMCHI KOMPONENTLAR ─── */
-const Badge = ({ text, color = "#475569", bg = "#F1F5F9" }) => (
-  <span style={{ padding: "4px 10px", background: bg, borderRadius: 8, fontSize: 11, fontWeight: 700, color: color, border: "1px solid rgba(0,0,0,0.05)", marginRight: 4, marginBottom: 4, display: "inline-block" }}>
-    {text}
-  </span>
-);
-
-const StatusBadge = ({ status }) => {
-  const styles = {
-    "Kutilmoqda": { bg: "#FFFBEB", text: "#D97706" },
-    "Faol": { bg: "#ECFDF5", text: "#059669" },
-    "Rad etilgan": { bg: "#FEF2F2", text: "#DC2626" }
-  };
-  const s = styles[status] || styles["Kutilmoqda"];
-  return <Badge text={status} color={s.text} bg={s.bg} />;
+const STATUS_META = {
+  pending:   { bg: "#fef9c3", c: "#854d0e", bd: "#fde68a", t: "Kutilmoqda",   icon: "⏳" },
+  approved:  { bg: "#dcfce7", c: "#166534", bd: "#86efac", t: "Tasdiqlangan", icon: "✅" },
+  active:    { bg: "#dbeafe", c: "#1e40af", bd: "#93c5fd", t: "Faol",         icon: "🔵" },
+  rejected:  { bg: "#fee2e2", c: "#991b1b", bd: "#fca5a5", t: "Rad etilgan",  icon: "❌" },
+  completed: { bg: "#f1f5f9", c: "#475569", bd: "#cbd5e1", t: "Yakunlangan",  icon: "🏁" },
 };
 
-const SectionTitle = ({ children }) => (
-  <div style={{ fontSize: 11, fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 24, marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
-    {children} <div style={{ flex: 1, height: "1px", background: "#F1F5F9" }}></div>
-  </div>
-);
+const PER_PAGE = 10;
 
-/* ─── BATAFSIL MODAL (Restored all fields) ─── */
-function DetailModal({ ad, onClose, onAction }) {
+/* ── Helpers ───────────────────────────────────────────────────── */
+function fmtDate(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("uz-UZ", { day: "numeric", month: "short", year: "numeric" });
+}
+function fmtMoney(n) {
+  if (!n) return "—";
+  return Number(n).toLocaleString("uz-UZ") + " so'm";
+}
+function getInitials(u) {
+  if (!u) return "?";
+  return `${u.firstName?.[0] || ""}${u.lastName?.[0] || ""}`.toUpperCase() || "?";
+}
+
+/* ── StatusBadge ────────────────────────────────────────────────── */
+function StatusBadge({ status }) {
+  const x = STATUS_META[status] || STATUS_META.pending;
+  return (
+    <span style={{
+      background: x.bg, color: x.c, border: `1px solid ${x.bd}`,
+      fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 6,
+      display: "inline-flex", alignItems: "center", gap: 4,
+    }}>
+      {x.icon} {x.t}
+    </span>
+  );
+}
+
+/* ── TypeBadge ──────────────────────────────────────────────────── */
+function TypeBadge({ type }) {
+  const isBlogger = type === "blogger";
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      padding: "3px 9px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+      background: isBlogger ? "#eef2ff" : "#fff7ed",
+      color: isBlogger ? "#4f46e5" : "#ea580c",
+    }}>
+      {isBlogger ? <LuUserRound size={11} /> : <LuBriefcase size={11} />}
+      {isBlogger ? "Blogger" : "Biznes"}
+    </span>
+  );
+}
+
+/* ── DetailModal ────────────────────────────────────────────────── */
+function DetailModal({ ad, onClose, onApprove, onReject }) {
   if (!ad) return null;
-  const isBlogger = ad.userType === "blogger";
+  const isBlogger = ad.type === "blogger";
+  const authorName = ad.user
+    ? `${ad.user.firstName || ""} ${ad.user.lastName || ""}`.trim()
+    : ad.companyName || "—";
+
+  const Row = ({ label, value }) => (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 13.5, color: "#0f172a", fontWeight: 600 }}>{value || "—"}</div>
+    </div>
+  );
 
   return (
-    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,23,42,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ background: "#fff", borderRadius: 28, width: "100%", maxWidth: 650, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", position: "relative" }}>
-        
+    <div
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+    >
+      <div style={{ background: "#fff", borderRadius: 22, width: "100%", maxWidth: 640, maxHeight: "90vh", overflow: "auto", boxShadow: "0 24px 64px rgba(0,0,0,.22)" }}>
         {/* Header */}
-        <div style={{ padding: "24px 32px", borderBottom: "1px solid #F1F5F9", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "rgba(255,255,255,0.9)", backdropFilter: "blur(10px)", zIndex: 10 }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span style={{ padding: "6px 14px", borderRadius: 10, background: isBlogger ? "#EEF2FF" : "#FFF7ED", color: isBlogger ? "#4F46E5" : "#EA580C", fontSize: 12, fontWeight: 800 }}>
-                {isBlogger ? "🤳 BLOGER" : "💼 BIZNES"}
-              </span>
-              <span style={{ fontSize: 14, color: "#94A3B8", fontWeight: 600 }}>ID: {ad.id}</span>
+        <div style={{ padding: "18px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, background: "#fff", zIndex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <TypeBadge type={ad.type} />
+            <StatusBadge status={ad.status} />
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {ad.status !== "approved" && ad.status !== "active" && (
+              <button onClick={() => onApprove(ad._id)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", background: "#16a34a", color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                <LuCheck size={13} /> Tasdiqlash
+              </button>
+            )}
+            {ad.status !== "rejected" && (
+              <button onClick={() => onReject(ad._id)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", background: "#dc2626", color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                <LuX size={13} /> Rad etish
+              </button>
+            )}
+            <button onClick={onClose} style={{ width: 32, height: 32, border: "1.5px solid #e2e8f0", borderRadius: 8, background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <LuX size={14} />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "22px 26px" }}>
+          {/* Author */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22, padding: "14px", background: "#f8fafc", borderRadius: 12 }}>
+            <div style={{ width: 42, height: 42, borderRadius: "50%", background: ad.user?.avatar ? `url(${ad.user.avatar}) center/cover` : "#dc2626", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+              {!ad.user?.avatar && getInitials(ad.user)}
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{authorName}</div>
+              <div style={{ fontSize: 12, color: "#94a3b8" }}>{ad.user?.email || ""} · {fmtDate(ad.createdAt)}</div>
             </div>
           </div>
-          <button onClick={onClose} style={{ border: "none", background: "#F1F5F9", width: 36, height: 36, borderRadius: "50%", cursor: "pointer", fontWeight: "bold", color: "#64748B" }}>✕</button>
-        </div>
 
-        <div style={{ padding: "0 32px 32px" }}>
-          {isBlogger ? (
-            <>
-              <SectionTitle>Shaxsiy ma'lumotlar</SectionTitle>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Ism-familiya</label><div style={{ fontWeight: 700, fontSize: 16 }}>{ad.name}</div></div>
-                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Telefon</label><div style={{ fontWeight: 700, fontSize: 16 }}>{ad.phone}</div></div>
-              </div>
-
-              <SectionTitle>Platformalar va Obunachilar</SectionTitle>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Platformalar</label>
-                  <div style={{ marginTop: 6 }}>{ad.platforms.map(p => <Badge key={p} text={p} bg="#F8FAFC" />)}</div>
-                </div>
-                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Obunachilar soni</label><div style={{ fontWeight: 700 }}>{ad.followers}</div></div>
-              </div>
-
-              <div style={{ marginTop: 15 }}>
-                <label style={{ fontSize: 12, color: "#94A3B8" }}>Nishalar (Yo'nalishlar)</label>
-                <div style={{ marginTop: 6 }}>{ad.niches.map(n => <Badge key={n} text={n} bg="#EEF2FF" color="#4F46E5" />)}</div>
-              </div>
-
-              <SectionTitle>Xizmatlar va Narxlar (so'm)</SectionTitle>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                {Object.entries(ad.prices).map(([key, val]) => (
-                  <div key={key} style={{ padding: 12, background: "#F8FAFC", borderRadius: 16, border: "1px solid #F1F5F9" }}>
-                    <div style={{ fontSize: 10, color: "#94A3B8", textTransform: "uppercase", fontWeight: 800 }}>{key}</div>
-                    <div style={{ fontWeight: 800, color: "#1E293B", fontSize: 15 }}>{val}</div>
-                  </div>
-                ))}
-              </div>
-
-              <SectionTitle>Qo'shimcha</SectionTitle>
-              <div style={{ marginBottom: 16 }}><label style={{ fontSize: 12, color: "#94A3B8" }}>Portfolio</label>
-                <div><a href={ad.portfolio} target="_blank" rel="noreferrer" style={{ color: "#4F46E5", fontWeight: 600, textDecoration: "none" }}>{ad.portfolio}</a></div>
-              </div>
-              <div><label style={{ fontSize: 12, color: "#94A3B8" }}>O'zi haqida</label>
-                <p style={{ fontSize: 14, lineHeight: 1.6, color: "#475569", marginTop: 6, background: "#F8FAFC", padding: 12, borderRadius: 12 }}>{ad.about}</p>
-              </div>
-            </>
-          ) : (
-            <>
-              <SectionTitle>Kompaniya va Aloqa</SectionTitle>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Brend nomi</label><div style={{ fontWeight: 700, fontSize: 16 }}>{ad.companyName}</div></div>
-                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Aloqa shaxsi</label><div style={{ fontWeight: 700 }}>{ad.contactPerson}</div></div>
-                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Telefon</label><div style={{ fontWeight: 700 }}>{ad.phone}</div></div>
-                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Faoliyat turi</label><div style={{ fontWeight: 700 }}>{ad.activityType}</div></div>
-              </div>
-
-              <SectionTitle>Mahsulot va Kampaniya</SectionTitle>
-              <div style={{ background: "#FFF7ED", padding: 16, borderRadius: 16, marginBottom: 16 }}>
-                <div style={{ fontWeight: 800, color: "#9A3412", fontSize: 16, marginBottom: 4 }}>{ad.productName}</div>
-                <p style={{ fontSize: 14, color: "#475569", lineHeight: 1.5, margin: 0 }}>{ad.productDesc}</p>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Platformalar</label>
-                  <div style={{ marginTop: 4 }}>{ad.reqPlatforms.map(p => <Badge key={p} text={p} bg="#fff" />)}</div>
-                </div>
-                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Bloger turi</label>
-                  <div style={{ marginTop: 4 }}>{ad.reqBloggerTypes.map(b => <Badge key={b} text={b} bg="#fff" />)}</div>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 16 }}>
-                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Budjet</label><div style={{ fontWeight: 800, color: "#059669", fontSize: 18 }}>{ad.budget} so'm</div></div>
-                <div><label style={{ fontSize: 12, color: "#94A3B8" }}>Joylashuv</label><div style={{ fontWeight: 700 }}>{ad.location}</div></div>
-              </div>
-
-              <div style={{ marginTop: 16 }}>
-                <label style={{ fontSize: 12, color: "#94A3B8" }}>Maqsadli auditoriya</label>
-                <div style={{ fontSize: 14, color: "#1E293B", fontWeight: 600, marginTop: 4 }}>{ad.targetAudience}</div>
-              </div>
-            </>
-          )}
-
-          {/* Action Buttons */}
-          <div style={{ display: "flex", gap: 12, marginTop: 40 }}>
-            {ad.status === "Kutilmoqda" ? (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
+            {isBlogger ? (
               <>
-                <button onClick={() => onAction(ad.id, "Faol")} style={{ flex: 1, padding: "16px", borderRadius: 16, border: "none", background: "#10B981", color: "#fff", fontWeight: 800, cursor: "pointer", boxShadow: "0 10px 15px -3px rgba(16,185,129,0.3)" }}>TASDIQLASH</button>
-                <button onClick={() => onAction(ad.id, "Rad etilgan")} style={{ flex: 1, padding: "16px", borderRadius: 16, border: "none", background: "#F43F5E", color: "#fff", fontWeight: 800, cursor: "pointer", boxShadow: "0 10px 15px -3px rgba(244,63,94,0.3)" }}>RAD ETISH</button>
+                <Row label="Sarlavha"       value={ad.title} />
+                <Row label="Platforma"      value={(ad.platforms || []).join(", ")} />
+                <Row label="Obunachilar"    value={ad.followersRange} />
+                <Row label="Xizmatlar"      value={(ad.services || []).join(", ")} />
+                <Row label="Post narxi"     value={fmtMoney(ad.pricing?.post)} />
+                <Row label="Story narxi"    value={fmtMoney(ad.pricing?.story)} />
+                <Row label="Video narxi"    value={fmtMoney(ad.pricing?.video || ad.pricing?.reel)} />
               </>
             ) : (
-              <button onClick={onClose} style={{ flex: 1, padding: "16px", borderRadius: 16, border: "1px solid #E2E8F0", background: "#fff", color: "#64748B", fontWeight: 800, cursor: "pointer" }}>YOPISH</button>
+              <>
+                <Row label="Kompaniya"      value={ad.companyName} />
+                <Row label="Mahsulot"       value={ad.productName} />
+                <Row label="Budjet"         value={fmtMoney(ad.budget)} />
+                <Row label="Muddat"         value={ad.duration} />
+                <Row label="Maqsadli"       value={ad.targetAudience} />
+                <Row label="Joylashuv"      value={ad.location} />
+              </>
             )}
           </div>
+
+          {ad.description && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", marginBottom: 5 }}>Tavsif</div>
+              <p style={{ fontSize: 13.5, color: "#374151", lineHeight: 1.65, background: "#f8fafc", padding: "12px 14px", borderRadius: 10, margin: 0 }}>{ad.description}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-/* ─── ASOSIY DASHBOARD ─── */
-export default function AdminDashboard() {
-  const [ads, setAds] = useState(INITIAL_ADS);
-  const [activeTab, setActiveTab] = useState("blogger");
-  const [selectedAd, setSelectedAd] = useState(null);
+/* ── DeleteConfirm ──────────────────────────────────────────────── */
+function DeleteConfirm({ onConfirm, onCancel }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div style={{ background: "#fff", borderRadius: 20, padding: 32, maxWidth: 380, width: "100%", textAlign: "center" }}>
+        <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+          <LuTriangleAlert size={26} style={{ color: "#dc2626" }} />
+        </div>
+        <h3 style={{ fontSize: 17, fontWeight: 800, color: "#0f172a", margin: "0 0 8px" }}>O'chirishni tasdiqlang</h3>
+        <p style={{ fontSize: 13.5, color: "#64748b", margin: "0 0 24px", lineHeight: 1.6 }}>
+          Bu e'lonni o'chirsangiz, qaytarib bo'lmaydi.
+        </p>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onCancel} style={{ flex: 1, padding: "10px", border: "1.5px solid #e2e8f0", borderRadius: 10, background: "#fff", fontSize: 13.5, fontWeight: 600, cursor: "pointer" }}>
+            Bekor
+          </button>
+          <button onClick={onConfirm} style={{ flex: 1, padding: "10px", background: "linear-gradient(135deg,#dc2626,#b91c1c)", color: "#fff", border: "none", borderRadius: 10, fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>
+            O'chirish
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  const stats = useMemo(() => ({
-    total: ads.length,
-    pending: ads.filter(a => a.status === "Kutilmoqda").length,
-    active: ads.filter(a => a.status === "Faol").length,
-  }), [ads]);
+/* ══════════════════════════════════════════════════════════════════ */
+export default function AdminAds() {
+  const [ads,        setAds]        = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [total,      setTotal]      = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [counts,     setCounts]     = useState({ all: 0, pending: 0, approved: 0, active: 0, rejected: 0, completed: 0 });
 
-  const list = useMemo(() => ads.filter(a => a.userType === activeTab), [ads, activeTab]);
+  const [statusTab,   setStatusTab]   = useState("");
+  const [typeFilter,  setTypeFilter]  = useState("");
+  const [search,      setSearch]      = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [page,        setPage]        = useState(1);
 
-  const handleAction = (id, newStatus) => {
-    setAds(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
-    setSelectedAd(null);
+  const [viewAd,   setViewAd]   = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
+  const [actionLoading, setActionLoading] = useState({});
+
+  const debRef = useRef(null);
+
+  /* ── Fetch ── */
+  const fetchAds = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = { page, limit: PER_PAGE, sort: "-createdAt" };
+      if (statusTab)  params.status = statusTab;
+      if (typeFilter) params.type   = typeFilter;
+      if (search)     params.search = search;
+
+      const res = await adminAdsService.getAll(params);
+      setAds(res.data || []);
+      setTotal(res.total || 0);
+      setTotalPages(Math.ceil((res.total || 0) / PER_PAGE) || 1);
+      if (res.counts) setCounts(res.counts);
+    } catch {
+      setAds([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, statusTab, typeFilter, search]);
+
+  useEffect(() => { fetchAds(); }, [fetchAds]);
+
+  /* ── Search debounce ── */
+  const handleSearchInput = (val) => {
+    setSearchInput(val);
+    clearTimeout(debRef.current);
+    debRef.current = setTimeout(() => { setSearch(val); setPage(1); }, 400);
   };
 
+  /* ── Change status ── */
+  const changeStatus = async (id, status) => {
+    setActionLoading(p => ({ ...p, [id]: true }));
+    try {
+      await adminAdsService.changeStatus(id, status);
+      setAds(prev => prev.map(a => a._id === id ? { ...a, status } : a));
+      setCounts(p => {
+        const old = ads.find(a => a._id === id)?.status || "pending";
+        return { ...p, [old]: Math.max(0, (p[old] || 0) - 1), [status]: (p[status] || 0) + 1 };
+      });
+      toast.success(status === "approved" ? "Tasdiqlandi ✅" : status === "active" ? "Faollashtirildi 🔵" : "Rad etildi ❌");
+      if (viewAd?._id === id) setViewAd(prev => ({ ...prev, status }));
+    } catch {
+      toast.error("Xatolik yuz berdi");
+    } finally {
+      setActionLoading(p => ({ ...p, [id]: false }));
+    }
+  };
+
+  /* ── Delete ── */
+  const handleDelete = async () => {
+    try {
+      await adminAdsService.remove(deleteId);
+      setAds(prev => prev.filter(a => a._id !== deleteId));
+      setTotal(p => p - 1);
+      toast.success("E'lon o'chirildi");
+    } catch {
+      toast.error("O'chirishda xatolik");
+    } finally {
+      setDeleteId(null);
+    }
+  };
+
+  const handlePage = (p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); };
+
+  /* ── Render ── */
   return (
-    <div style={{ padding: "40px 20px", background: "#F8FAFC", minHeight: "100vh", fontFamily: "'Inter', system-ui" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        
-        <header style={{ marginBottom: 40 }}>
-          <h1 style={{ fontSize: 32, fontWeight: 900, color: "#0F172A", margin: 0 }}>Admin Panel</h1>
-          <p style={{ color: "#64748B", marginTop: 8 }}>E'lonlarni boshqarish va sifat nazorati</p>
-        </header>
+    <div style={{ fontFamily: "'Inter',sans-serif", padding: "28px 32px", background: "#f8fafc", minHeight: "100vh" }}>
 
-        {/* Statistika Kartochkalari */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 32 }}>
-          <div style={statCardStyle}><div style={statLabelStyle}>Jami</div><div style={statValueStyle}>{stats.total}</div></div>
-          <div style={{ ...statCardStyle, borderLeft: "4px solid #D97706" }}><div style={statLabelStyle}>Kutilmoqda</div><div style={{ ...statValueStyle, color: "#D97706" }}>{stats.pending}</div></div>
-          <div style={{ ...statCardStyle, borderLeft: "4px solid #059669" }}><div style={statLabelStyle}>Faol</div><div style={{ ...statValueStyle, color: "#059669" }}>{stats.active}</div></div>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", margin: "0 0 4px" }}>E'lonlar boshqaruvi</h1>
+          <p style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>Barcha e'lonlar, tasdiqlash va boshqarish</p>
         </div>
-
-        {/* TABS */}
-        <div style={{ display: "flex", gap: 12, marginBottom: 24, background: "#E2E8F0", padding: 6, borderRadius: 16, width: "fit-content" }}>
-          <button onClick={() => setActiveTab("blogger")} style={tabStyle(activeTab === "blogger")}>🤳 Blogerlar</button>
-          <button onClick={() => setActiveTab("business")} style={tabStyle(activeTab === "business")}>💼 Biznes</button>
-        </div>
-
-        {/* JADVAL */}
-        <div style={{ background: "#fff", borderRadius: 24, overflow: "hidden", border: "1px solid #E2E8F0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-            <thead style={{ background: "#F8FAFC" }}>
-              <tr>
-                <th style={thStyle}>ID / Sana</th>
-                <th style={thStyle}>{activeTab === "blogger" ? "Bloger" : "Kompaniya"}</th>
-                <th style={thStyle}>Yo'nalish</th>
-                <th style={thStyle}>Narx / Budjet</th>
-                <th style={thStyle}>Holat</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Amal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map(ad => (
-                <tr key={ad.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
-                  <td style={tdStyle}>
-                    <div style={{ fontWeight: 800, color: "#1E293B" }}>{ad.id}</div>
-                    <div style={{ fontSize: 11, color: "#94A3B8" }}>{ad.date}</div>
-                  </td>
-                  <td style={tdStyle}>
-                    <div style={{ fontWeight: 700 }}>{activeTab === "blogger" ? ad.name : ad.companyName}</div>
-                    <div style={{ fontSize: 12, color: "#64748B" }}>{ad.phone}</div>
-                  </td>
-                  <td style={tdStyle}>
-                    <div style={{ fontSize: 13, color: "#475569" }}>{activeTab === "blogger" ? ad.niches[0] : ad.productName}</div>
-                  </td>
-                  <td style={tdStyle}>
-                    <div style={{ fontWeight: 800 }}>{activeTab === "blogger" ? ad.prices.post : ad.budget} <span style={{ fontSize: 10, color: "#94A3B8" }}>so'm</span></div>
-                  </td>
-                  <td style={tdStyle}><StatusBadge status={ad.status} /></td>
-                  <td style={{ ...tdStyle, textAlign: "right" }}>
-                    <button onClick={() => setSelectedAd(ad)} style={viewBtnStyle}>Ko'rish</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {list.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>E'lonlar mavjud emas</div>}
-        </div>
+        <button onClick={fetchAds} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", border: "1.5px solid #e2e8f0", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+          <LuRefreshCw size={14} /> Yangilash
+        </button>
       </div>
 
-      <DetailModal ad={selectedAd} onClose={() => setSelectedAd(null)} onAction={handleAction} />
+      {/* Status tabs */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+        {STATUS_TABS.map(t => (
+          <button key={t.value} onClick={() => { setStatusTab(t.value); setPage(1); }} style={{
+            display: "flex", alignItems: "center", gap: 6, padding: "8px 16px",
+            border: statusTab === t.value ? `1.5px solid ${t.color}` : "1.5px solid #e2e8f0",
+            borderRadius: 10, background: statusTab === t.value ? t.color + "12" : "#fff",
+            color: statusTab === t.value ? t.color : "#374151",
+            fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all .2s",
+          }}>
+            <t.Icon size={14} />
+            {t.label}
+            <span style={{
+              background: statusTab === t.value ? t.color + "20" : "#f1f5f9",
+              color: statusTab === t.value ? t.color : "#64748b",
+              padding: "1px 7px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+            }}>
+              {t.value === "" ? counts.all : counts[t.value] || 0}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div style={{ background: "#fff", borderRadius: 14, border: "1.5px solid #f1f5f9", padding: "14px 18px", marginBottom: 20, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
+          <LuSearch size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+          <input
+            type="text" value={searchInput}
+            onChange={e => handleSearchInput(e.target.value)}
+            placeholder="Qidirish..."
+            style={{ width: "100%", padding: "9px 12px 9px 34px", border: "1.5px solid #e2e8f0", borderRadius: 9, fontSize: 13, outline: "none", boxSizing: "border-box", color: "#374151" }}
+          />
+        </div>
+        <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}
+          style={{ padding: "9px 12px", border: "1.5px solid #e2e8f0", borderRadius: 9, fontSize: 13, color: "#374151", outline: "none", background: "#fff" }}>
+          <option value="">Barchasi</option>
+          <option value="blogger">Blogger</option>
+          <option value="business">Biznes</option>
+        </select>
+        <span style={{ fontSize: 12, color: "#94a3b8" }}>{total} ta natija</span>
+      </div>
+
+      {/* Table */}
+      <div style={{ background: "#fff", borderRadius: 16, border: "1.5px solid #f1f5f9", overflow: "hidden" }}>
+        {/* Table header */}
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1fr 110px", padding: "12px 18px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" }}>
+          {["E'lon", "Muallif", "Tur", "Sana", "Status", "Amallar"].map(h => (
+            <span key={h} style={{ fontSize: 11.5, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</span>
+          ))}
+        </div>
+
+        {loading ? (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "60px 20px" }}>
+            <LuLoader size={28} className="ads-spin" style={{ color: "#dc2626" }} />
+          </div>
+        ) : ads.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 20px" }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
+            <p style={{ color: "#94a3b8", fontSize: 14, margin: 0 }}>E'lon topilmadi</p>
+          </div>
+        ) : (
+          ads.map((ad, idx) => {
+            const authorName = ad.user
+              ? `${ad.user.firstName || ""} ${ad.user.lastName || ""}`.trim()
+              : ad.companyName || "—";
+            const isActing = actionLoading[ad._id];
+            const title = ad.title || ad.productName || ad.companyName || "—";
+
+            return (
+              <div key={ad._id}
+                style={{ display: "grid", gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1fr 110px", padding: "14px 18px", borderBottom: idx < ads.length - 1 ? "1px solid #f8fafc" : "none", alignItems: "center", transition: "background .15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#fafafa"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                {/* Title */}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0f172a", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" }}>
+                    {title}
+                  </div>
+                  {ad.budget && (
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>Budjet: {fmtMoney(ad.budget)}</div>
+                  )}
+                  {ad.pricing?.post && (
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>Post: {fmtMoney(ad.pricing.post)}</div>
+                  )}
+                </div>
+
+                {/* Author */}
+                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: "50%", flexShrink: 0, background: ad.user?.avatar ? `url(${ad.user.avatar}) center/cover` : "#dc2626", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff" }}>
+                    {!ad.user?.avatar && getInitials(ad.user)}
+                  </div>
+                  <span style={{ fontSize: 12.5, color: "#374151", fontWeight: 500, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+                    {authorName}
+                  </span>
+                </div>
+
+                {/* Type */}
+                <TypeBadge type={ad.type} />
+
+                {/* Date */}
+                <span style={{ fontSize: 12, color: "#94a3b8" }}>{fmtDate(ad.createdAt)}</span>
+
+                {/* Status */}
+                <StatusBadge status={ad.status || "pending"} />
+
+                {/* Actions */}
+                <div style={{ display: "flex", gap: 5 }}>
+                  {/* View */}
+                  <button onClick={() => setViewAd(ad)} title="Ko'rish"
+                    style={{ width: 30, height: 30, border: "1.5px solid #e2e8f0", borderRadius: 7, background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}>
+                    <LuEye size={13} />
+                  </button>
+                  {/* Approve */}
+                  {ad.status !== "approved" && ad.status !== "active" && (
+                    <button onClick={() => changeStatus(ad._id, "approved")} title="Tasdiqlash"
+                      disabled={isActing}
+                      style={{ width: 30, height: 30, border: "1.5px solid #bbf7d0", borderRadius: 7, background: "#f0fdf4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#16a34a" }}>
+                      {isActing ? <LuLoader size={11} className="ads-spin" /> : <LuCheck size={13} />}
+                    </button>
+                  )}
+                  {/* Reject */}
+                  {ad.status !== "rejected" && (
+                    <button onClick={() => changeStatus(ad._id, "rejected")} title="Rad etish"
+                      disabled={isActing}
+                      style={{ width: 30, height: 30, border: "1.5px solid #fecaca", borderRadius: 7, background: "#fef2f2", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#dc2626" }}>
+                      <LuX size={13} />
+                    </button>
+                  )}
+                  {/* Delete */}
+                  <button onClick={() => setDeleteId(ad._id)} title="O'chirish"
+                    style={{ width: 30, height: 30, border: "1.5px solid #fecaca", borderRadius: 7, background: "#fef2f2", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#dc2626" }}>
+                    <LuTrash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 24 }}>
+          <button onClick={() => handlePage(page - 1)} disabled={page === 1}
+            style={{ width: 34, height: 34, borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#fff", cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.4 : 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <LuChevronLeft size={14} />
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+            .reduce((acc, p, idx, arr) => { if (idx > 0 && p - arr[idx - 1] > 1) acc.push("..."); acc.push(p); return acc; }, [])
+            .map((p, i) => p === "..." ? (
+              <span key={`d${i}`} style={{ padding: "0 4px", color: "#94a3b8" }}>…</span>
+            ) : (
+              <button key={p} onClick={() => handlePage(p)} style={{
+                width: 34, height: 34, borderRadius: 8, fontSize: 13, fontWeight: 600,
+                border: page === p ? "1.5px solid #dc2626" : "1.5px solid #e2e8f0",
+                background: page === p ? "#dc2626" : "#fff",
+                color: page === p ? "#fff" : "#374151", cursor: "pointer",
+              }}>{p}</button>
+            ))}
+          <button onClick={() => handlePage(page + 1)} disabled={page === totalPages}
+            style={{ width: 34, height: 34, borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#fff", cursor: page === totalPages ? "not-allowed" : "pointer", opacity: page === totalPages ? 0.4 : 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <LuChevronRight size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Modals */}
+      {viewAd && (
+        <DetailModal
+          ad={viewAd}
+          onClose={() => setViewAd(null)}
+          onApprove={id => changeStatus(id, "approved")}
+          onReject={id => changeStatus(id, "rejected")}
+        />
+      )}
+      {deleteId && (
+        <DeleteConfirm
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteId(null)}
+        />
+      )}
+
+      <style>{`
+        @keyframes ads-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .ads-spin { animation: ads-spin 1s linear infinite; }
+      `}</style>
     </div>
   );
 }
-
-/* ─── STYLES ─── */
-const thStyle = { padding: "16px 24px", fontSize: 12, fontWeight: 800, color: "#64748B", textTransform: "uppercase" };
-const tdStyle = { padding: "18px 24px" };
-const statCardStyle = { background: "#fff", padding: "20px 24px", borderRadius: 20, border: "1px solid #E2E8F0" };
-const statLabelStyle = { fontSize: 13, color: "#64748B", fontWeight: 600, marginBottom: 4 };
-const statValueStyle = { fontSize: 28, fontWeight: 900, color: "#0F172A" };
-const viewBtnStyle = { padding: "8px 16px", borderRadius: 10, border: "1px solid #E2E8F0", background: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, transition: "0.2s" };
-const tabStyle = (active) => ({
-  padding: "10px 24px", borderRadius: 12, border: "none", fontWeight: 800, cursor: "pointer", fontSize: 14,
-  background: active ? "#fff" : "transparent", color: active ? "#0F172A" : "#64748B", boxShadow: active ? "0 4px 6px -1px rgba(0,0,0,0.1)" : "none"
-});
