@@ -26,8 +26,12 @@ exports.protect = catchAsync(async (req, res, next) => {
     return next(new AppError('Parol o\'zgartirilgan. Iltimos, qayta login qiling.', 401));
   }
 
-  if (!user.isActive) {
+  if (!user.isActive || user.isBlocked) {
     return next(new AppError('Akkauntingiz bloklangan. Murojaat qiling.', 403));
+  }
+
+  if (user.isFrozen) {
+    return next(new AppError('Akkauntingiz muzlatilgan. Murojaat qiling.', 403));
   }
 
   req.user = user;

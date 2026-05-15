@@ -84,18 +84,45 @@ exports.getMyAds = catchAsync(async (req, res) => {
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
 exports.adminGetAllAds = catchAsync(async (req, res) => {
+  const filter = {};
+  if (req.query.status) filter.status = req.query.status;
+  if (req.query.type)   filter.type   = req.query.type;
+
   const features = new APIFeatures(
-    Ad.find().populate('user', 'firstName lastName email'),
+    Ad.find(filter).populate('user', 'firstName lastName email avatar'),
     req.query
   )
-    .filter()
-    .search(['title', 'companyName'])
+    .search(['title', 'companyName', 'productName', 'description'])
     .sort()
     .paginate();
 
-  const [ads, total] = await Promise.all([features.query, Ad.countDocuments()]);
+  const [ads, total, counts] = await Promise.all([
+    features.query,
+    Ad.countDocuments(filter),
+    Ad.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]),
+  ]);
 
-  res.status(200).json({ success: true, results: ads.length, total, data: ads });
+  const countsMap = { all: 0, pending: 0, approved: 0, rejected: 0, active: 0, completed: 0 };
+  counts.forEach(c => { countsMap[c._id] = c.count; countsMap.all += c.count; });
+
+  res.status(200).json({
+    success: true,
+    results: ads.length,
+    total,
+    page: features.page,
+    limit: features.limit,
+    counts: countsMap,
+    data: ads,
+  });
+});
+
+// DELETE /api/v1/admin/ads/:id
+exports.adminDeleteAd = catchAsync(async (req, res, next) => {
+  const ad = await Ad.findByIdAndDelete(req.params.id);
+  if (!ad) return next(new AppError('E\'lon topilmadi.', 404));
+  res.status(204).json({ success: true, data: null });
 });
 
 // PATCH /api/v1/admin/ads/:id/status
