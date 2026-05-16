@@ -7,6 +7,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  optimizeDeps: {
+    include: ['socket.io-client'],
+  },
   build: {
     rollupOptions: {
       output: {

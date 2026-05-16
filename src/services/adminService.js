@@ -5,6 +5,13 @@ export const adminDashboardService = {
   getStats: () => api.get("/admin/dashboard").then((r) => r.data),
 };
 
+// ── Applications ───────────────────────────────────────────────────────────────
+export const adminApplicationsService = {
+  getAll: (params) => api.get("/admin/applications", { params }).then((r) => r.data),
+  approve: (id) => api.patch(`/admin/applications/${id}/approve`).then((r) => r.data),
+  reject: (id, reason) => api.patch(`/admin/applications/${id}/reject`, { reason }).then((r) => r.data),
+};
+
 // ── Users ──────────────────────────────────────────────────────────────────────
 export const adminUsersService = {
   getAll: (params) => api.get("/admin/users", { params }).then((r) => r.data),

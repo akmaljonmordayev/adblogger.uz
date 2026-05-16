@@ -36,6 +36,7 @@ import NotFound      from "../pages/NotFound";
 
 // Admin auth
 import AdminLogin    from "../auth/AdminLogin";
+import PendingApproval from "../auth/PendingApproval";
 
 // Admin
 import AdminLayout      from "../admin/layouts/AdminLayout";
@@ -48,7 +49,8 @@ import AdminCategories  from "../admin/pages/AdminCategories";
 import AdminCareer      from "../admin/pages/AdminCareer";
 import AdminContact     from "../admin/pages/AdminContact";
 import AdminFAQ         from "../admin/pages/AdminFAQ";
-import AdminSettings    from "../admin/pages/AdminSettings";
+import AdminSettings      from "../admin/pages/AdminSettings";
+import AdminApplications  from "../admin/pages/AdminApplications";
 
 export const router = createBrowserRouter([
   {
@@ -109,12 +111,18 @@ export const router = createBrowserRouter([
       { path: ROUTE_PATHS.ADMIN_CONTACT,                element: <AdminContact /> },
       { path: ROUTE_PATHS.ADMIN_FAQ,                    element: <AdminFAQ /> },
       { path: ROUTE_PATHS.ADMIN_SETTINGS,               element: <AdminSettings /> },
+      { path: ROUTE_PATHS.ADMIN_APPLICATIONS,           element: <AdminApplications /> },
     ],
   },
   // Admin login — standalone (no AdminLayout)
   {
     path: ROUTE_PATHS.ADMIN_LOGIN,
     element: <AdminLogin />,
+  },
+  // Pending approval page — standalone
+  {
+    path: "/pending-approval",
+    element: <PendingApproval />,
   },
   {
     path: "*",

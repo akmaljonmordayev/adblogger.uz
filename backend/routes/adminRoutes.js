@@ -57,6 +57,11 @@ router.use(protect, restrictTo('admin'));
  */
 router.get('/dashboard', adminController.getDashboardStats);
 
+// ── Applications (Registration Approvals) ──────────────────────────────────────
+router.get('/applications',              adminController.getPendingApplications);
+router.patch('/applications/:id/approve', adminController.approveApplication);
+router.patch('/applications/:id/reject',  adminController.rejectApplication);
+
 // ── Users ──────────────────────────────────────────────────────────────────────
 /**
  * @swagger
