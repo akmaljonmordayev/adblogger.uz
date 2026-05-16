@@ -152,6 +152,18 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   }
 });
 
+// GET /api/v1/auth/check-status/:userId — Public, for pending approval page
+exports.checkApplicationStatus = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.params.userId).select('applicationStatus rejectionReason firstName');
+  if (!user) return next(new AppError('Foydalanuvchi topilmadi.', 404));
+
+  res.status(200).json({
+    success: true,
+    applicationStatus: user.applicationStatus,
+    rejectionReason: user.rejectionReason || '',
+  });
+});
+
 // PATCH /api/v1/auth/reset-password/:token
 exports.resetPassword = catchAsync(async (req, res, next) => {
   const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
