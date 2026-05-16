@@ -61,14 +61,14 @@ export default function Register() {
                 role: roleMap[registerData.kategoriya] || 'user',
             });
             if (result?.status === 'pending') {
-                toast.success("Arizangiz qabul qilindi! Admin tasdiqlashini kuting.");
+                // Navigate — toast will show on PendingApproval page itself
                 navigate('/pending-approval');
             } else {
                 toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!");
                 navigate('/');
             }
-        } catch (err) {
-            toast.error(err?.response?.data?.message || "Ro'yxatdan o'tish xatosi");
+        } catch {
+            // api.js interceptor already shows the error toast — no duplicate needed
         } finally {
             setLoading(false);
         }
@@ -85,8 +85,8 @@ export default function Register() {
             const user = await loginFn({ email: loginData.email, password: loginData.parol });
             toast.success(`Xush kelibsiz, ${user.firstName}!`);
             navigate(user?.role === 'admin' ? '/admin' : '/');
-        } catch (err) {
-            toast.error(err?.response?.data?.message || "Kirish xatosi");
+        } catch {
+            // api.js interceptor already shows the error toast — no duplicate needed
         } finally {
             setLoading(false);
         }

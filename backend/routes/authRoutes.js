@@ -135,6 +135,9 @@ router.post('/forgot-password', authController.forgotPassword);
  */
 router.patch('/reset-password/:token', authController.resetPassword);
 
+// Public: check application status by userId (for pending approval page on remount)
+router.get('/check-status/:userId', authController.checkApplicationStatus);
+
 router.use(protect);
 
 /**
