@@ -4,11 +4,23 @@ import AdminSidebar from "../components/AdminSidebar";
 import AdminTopbar from "../components/AdminTopbar";
 import { useAuthStore } from "../../store/useAuthStore";
 import { ROUTE_PATHS } from "../../config/constants";
+import { useAdminSocket } from "../../hooks/useSocket";
+import { toast } from "../../components/ui/toast";
 
 const AdminLayout = () => {
   const { token, user } = useAuthStore();
   const [collapsed, setCollapsed]       = useState(false);
   const [mobileOpen, setMobileOpen]     = useState(false);
+
+  // Listen for new registration applications via socket
+  useAdminSocket({
+    new_application: (data) => {
+      toast.success(
+        `Yangi ariza: ${data.firstName} ${data.lastName} (${data.email})`,
+        { duration: 6000 }
+      );
+    },
+  });
 
   if (!token || user?.role !== "admin") {
     return <Navigate to={ROUTE_PATHS.ADMIN_LOGIN} replace />;

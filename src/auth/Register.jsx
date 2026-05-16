@@ -52,7 +52,7 @@ export default function Register() {
         }
         setLoading(true);
         try {
-            const user = await registerFn({
+            const result = await registerFn({
                 firstName: registerData.ism,
                 lastName: registerData.familiya,
                 email: registerData.email,
@@ -60,8 +60,13 @@ export default function Register() {
                 password: registerData.parol,
                 role: roleMap[registerData.kategoriya] || 'user',
             });
-            toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!");
-            navigate(user?.role === 'admin' ? '/admin' : '/');
+            if (result?.status === 'pending') {
+                toast.success("Arizangiz qabul qilindi! Admin tasdiqlashini kuting.");
+                navigate('/pending-approval');
+            } else {
+                toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!");
+                navigate('/');
+            }
         } catch (err) {
             toast.error(err?.response?.data?.message || "Ro'yxatdan o'tish xatosi");
         } finally {

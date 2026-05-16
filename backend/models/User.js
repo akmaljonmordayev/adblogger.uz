@@ -31,6 +31,12 @@ const userSchema = new mongoose.Schema(
     isActive:   { type: Boolean, default: true },
     isBlocked:  { type: Boolean, default: false },
     isFrozen:   { type: Boolean, default: false },
+    applicationStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+    },
+    rejectionReason: { type: String, default: '' },
     passwordResetToken: String,
     passwordResetExpires: Date,
     passwordChangedAt: Date,

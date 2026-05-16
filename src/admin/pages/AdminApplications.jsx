@@ -1,0 +1,423 @@
+import { useState, useEffect, useCallback } from "react";
+import api from "../../services/api";
+import { toast } from "../../components/ui/toast";
+import { useAdminSocket } from "../../hooks/useSocket";
+import {
+  LuRefreshCw, LuLoader, LuCheck, LuX, LuClock,
+  LuChevronLeft, LuChevronRight, LuSearch,
+} from "react-icons/lu";
+
+const STATUS_TABS = [
+  { key: "pending",  label: "Kutilayotgan", color: "#b45309", bg: "#fef3c7", border: "#fde68a" },
+  { key: "approved", label: "Tasdiqlangan", color: "#166534", bg: "#f0fdf4", border: "#bbf7d0" },
+  { key: "rejected", label: "Rad etilgan",  color: "#991b1b", bg: "#fef2f2", border: "#fecaca" },
+];
+
+const ROLE_LABELS = { user: "Foydalanuvchi", blogger: "Blogger", business: "Biznesmen" };
+const AVATAR_COLORS = ["#6366f1","#f43f5e","#f97316","#10b981","#8b5cf6","#0ea5e9","#ec4899","#14b8a6"];
+
+function avaColor(u) {
+  const code = (u?.email || "?").charCodeAt(0);
+  return AVATAR_COLORS[code % AVATAR_COLORS.length];
+}
+
+function Ava({ user, size = 36 }) {
+  const c = avaColor(user);
+  const initials = `${user?.firstName?.[0] || ""}${user?.lastName?.[0] || ""}`.toUpperCase() || "?";
+  if (user?.avatar) return (
+    <img src={user.avatar} alt="" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+  );
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      background: c + "22", border: `1.5px solid ${c}44`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: size * 0.35, fontWeight: 800, color: c,
+    }}>{initials}</div>
+  );
+}
+
+function RejectModal({ user, onConfirm, onClose }) {
+  const [reason, setReason] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    try {
+      await onConfirm(user._id, reason);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 440, overflow: "hidden" }}>
+        <div style={{ padding: "18px 22px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>Arizani rad etish</span>
+          <button onClick={onClose} style={{ fontSize: 22, color: "#6b7280", background: "none", border: "none", cursor: "pointer" }}>×</button>
+        </div>
+        <div style={{ padding: 22 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, padding: "12px 14px", background: "#fef2f2", borderRadius: 10, border: "1px solid #fecaca" }}>
+            <Ava user={user} size={40} />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{user.firstName} {user.lastName}</div>
+              <div style={{ fontSize: 12, color: "#6b7280" }}>{user.email}</div>
+            </div>
+          </div>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            Rad etish sababi (ixtiyoriy)
+          </label>
+          <textarea
+            value={reason}
+            onChange={e => setReason(e.target.value)}
+            placeholder="Masalan: Noto'g'ri ma'lumotlar kiritilgan, yoki shunchaki bo'sh qoldiring..."
+            rows={3}
+            style={{ width: "100%", padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: 10, fontSize: 13, fontFamily: "inherit", resize: "vertical", outline: "none", boxSizing: "border-box" }}
+          />
+          <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+            <button
+              onClick={onClose}
+              style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+            >
+              Bekor qilish
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={loading}
+              style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "none", background: "#ef4444", color: "#fff", fontWeight: 700, fontSize: 13, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1 }}
+            >
+              {loading ? "Rad etilmoqda…" : "Rad etish"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const PER = 15;
+
+export default function AdminApplications() {
+  const [activeTab, setActiveTab] = useState("pending");
+  const [applications, setApplications] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [pendingCount, setPendingCount] = useState(0);
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
+
+  const fetchApplications = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/admin/applications", {
+        params: { status: activeTab, page, limit: PER },
+      });
+      let data = res.data.data || [];
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        data = data.filter(u =>
+          `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q)
+        );
+      }
+      setApplications(data);
+      setTotal(res.data.pagination?.total || data.length);
+    } catch {
+      toast.error("Arizalarni yuklashda xatolik");
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab, page, search]);
+
+  const fetchPendingCount = useCallback(async () => {
+    try {
+      const res = await api.get("/admin/applications", { params: { status: "pending", limit: 1 } });
+      setPendingCount(res.data.pagination?.total || 0);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  useEffect(() => {
+    fetchPendingCount();
+  }, [fetchPendingCount]);
+
+  // Real-time: new applications arrive via socket
+  useAdminSocket({
+    new_application: (data) => {
+      setPendingCount(c => c + 1);
+      if (activeTab === "pending") {
+        setApplications(prev => [
+          {
+            _id: data.userId,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            role: data.role,
+            applicationStatus: "pending",
+            createdAt: data.createdAt || new Date().toISOString(),
+          },
+          ...prev,
+        ]);
+        setTotal(t => t + 1);
+      }
+    },
+  });
+
+  const handleApprove = async (userId) => {
+    setActionLoading(userId + "_approve");
+    try {
+      await api.patch(`/admin/applications/${userId}/approve`);
+      toast.success("Ariza tasdiqlandi! Foydalanuvchi tizimga kirdi.");
+      setApplications(prev => prev.filter(u => u._id !== userId));
+      setTotal(t => t - 1);
+      if (activeTab === "pending") setPendingCount(c => Math.max(0, c - 1));
+    } catch {
+      toast.error("Xatolik yuz berdi");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReject = async (userId, reason) => {
+    try {
+      await api.patch(`/admin/applications/${userId}/reject`, { reason });
+      toast.success("Ariza rad etildi.");
+      setApplications(prev => prev.filter(u => u._id !== userId));
+      setTotal(t => t - 1);
+      if (activeTab === "pending") setPendingCount(c => Math.max(0, c - 1));
+      setRejectTarget(null);
+    } catch {
+      toast.error("Xatolik yuz berdi");
+    }
+  };
+
+  const switchTab = (tab) => {
+    setActiveTab(tab);
+    setPage(1);
+    setSearch("");
+  };
+
+  const pages = Math.ceil(total / PER) || 1;
+
+  const BASE = { minHeight: "100vh", padding: "28px 32px", fontFamily: "'Plus Jakarta Sans',sans-serif", background: "#f4f6fb" };
+  const CARD = { background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14 };
+  const INP  = { background: "#fff", border: "1px solid #e5e7eb", borderRadius: 9, height: 36, padding: "0 12px", fontSize: 13, color: "#111827", fontFamily: "inherit", outline: "none" };
+  const TH   = { padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "1px solid #f3f4f6", whiteSpace: "nowrap" };
+  const TD   = { padding: "11px 14px", borderBottom: "1px solid #f9fafb", verticalAlign: "middle" };
+
+  return (
+    <div style={BASE}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#111827" }}>Ro'yxatdan o'tish arizalari</div>
+          <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 3 }}>Yangi foydalanuvchilar arizalarini ko'rib chiqing va tasdiqlang</div>
+        </div>
+
+        {/* Tab switcher */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 18, background: "#fff", borderRadius: 12, padding: 5, border: "1px solid #e5e7eb", width: "fit-content" }}>
+          {STATUS_TABS.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => switchTab(tab.key)}
+              style={{
+                padding: "7px 16px", borderRadius: 9, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700,
+                background: activeTab === tab.key ? tab.bg : "transparent",
+                color: activeTab === tab.key ? tab.color : "#9ca3af",
+                transition: "all .15s",
+                display: "flex", alignItems: "center", gap: 7,
+              }}
+            >
+              {tab.label}
+              {tab.key === "pending" && pendingCount > 0 && (
+                <span style={{
+                  background: "#ef4444", color: "#fff", borderRadius: 99,
+                  fontSize: 10, fontWeight: 800, padding: "1px 6px", minWidth: 18, textAlign: "center",
+                }}>
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
+          <div style={{ ...INP, display: "flex", alignItems: "center", gap: 8, width: 240, padding: "0 12px" }}>
+            <LuSearch style={{ color: "#9ca3af", fontSize: 15, flexShrink: 0 }} />
+            <input
+              placeholder="Ism, email bo'yicha..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              style={{ background: "none", border: "none", outline: "none", color: "#111827", fontSize: 13, fontFamily: "inherit", width: "100%" }}
+            />
+          </div>
+          <button
+            onClick={fetchApplications}
+            disabled={loading}
+            style={{ width: 36, height: 36, border: "1px solid #e5e7eb", borderRadius: 9, background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+          >
+            <LuRefreshCw style={{ fontSize: 15, color: "#6b7280", animation: loading ? "spin 1s linear infinite" : "none" }} />
+          </button>
+          <span style={{ marginLeft: "auto", fontSize: 12, color: "#9ca3af" }}>{total} ta ariza</span>
+        </div>
+
+        {/* Table */}
+        <div style={CARD}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr>
+                  {["Foydalanuvchi", "Email", "Telefon", "Rol", "Ariza sanasi",
+                    ...(activeTab === "rejected" ? ["Sabab"] : []),
+                    ...(activeTab === "pending" ? ["Amallar"] : [])
+                  ].map(h => (
+                    <th key={h} style={TH}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={7} style={{ textAlign: "center", padding: 48, color: "#6b7280" }}>
+                    <LuLoader style={{ fontSize: 28, animation: "spin 1s linear infinite", display: "block", margin: "0 auto 10px" }} />
+                    Yuklanmoqda…
+                  </td></tr>
+                ) : applications.length === 0 ? (
+                  <tr><td colSpan={7} style={{ textAlign: "center", padding: 56, color: "#9ca3af" }}>
+                    <div style={{ fontSize: 40, marginBottom: 10 }}>
+                      {activeTab === "pending" ? "⏳" : activeTab === "approved" ? "✅" : "❌"}
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: "#374151", marginBottom: 4 }}>
+                      {activeTab === "pending" ? "Kutilayotgan ariza yo'q" : activeTab === "approved" ? "Tasdiqlangan ariza yo'q" : "Rad etilgan ariza yo'q"}
+                    </div>
+                    <div style={{ fontSize: 13 }}>
+                      {activeTab === "pending" ? "Yangi arizalar kelganda bu yerda ko'rinadi" : ""}
+                    </div>
+                  </td></tr>
+                ) : applications.map(u => (
+                  <tr
+                    key={u._id}
+                    onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                  >
+                    <td style={TD}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Ava user={u} size={34} />
+                        <span style={{ fontWeight: 700, color: "#111827" }}>{u.firstName} {u.lastName}</span>
+                      </div>
+                    </td>
+                    <td style={{ ...TD, color: "#6b7280", fontSize: 12 }}>{u.email}</td>
+                    <td style={{ ...TD, color: "#6b7280", fontSize: 12 }}>{u.phone || "—"}</td>
+                    <td style={TD}>
+                      <span style={{
+                        padding: "3px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700,
+                        background: "#eff6ff", color: "#1e40af", border: "1px solid #bfdbfe",
+                      }}>
+                        {ROLE_LABELS[u.role] || u.role}
+                      </span>
+                    </td>
+                    <td style={{ ...TD, fontSize: 12, color: "#9ca3af" }}>
+                      {new Date(u.createdAt).toLocaleDateString("uz-UZ")}
+                      <div style={{ fontSize: 11, color: "#c4c4c4" }}>
+                        {new Date(u.createdAt).toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                    </td>
+
+                    {/* Rejection reason column */}
+                    {activeTab === "rejected" && (
+                      <td style={{ ...TD, fontSize: 12, color: "#6b7280", maxWidth: 220 }}>
+                        {u.rejectionReason || <span style={{ color: "#d1d5db", fontStyle: "italic" }}>Ko'rsatilmagan</span>}
+                      </td>
+                    )}
+
+                    {/* Actions for pending */}
+                    {activeTab === "pending" && (
+                      <td style={TD}>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          {/* Approve */}
+                          <button
+                            onClick={() => handleApprove(u._id)}
+                            disabled={actionLoading === u._id + "_approve"}
+                            title="Tasdiqlash"
+                            style={{
+                              display: "flex", alignItems: "center", gap: 5,
+                              padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                              background: "#dcfce7", color: "#166534", fontWeight: 700, fontSize: 12,
+                              opacity: actionLoading === u._id + "_approve" ? 0.6 : 1,
+                            }}
+                          >
+                            {actionLoading === u._id + "_approve" ? (
+                              <LuLoader style={{ fontSize: 13, animation: "spin 1s linear infinite" }} />
+                            ) : (
+                              <LuCheck style={{ fontSize: 13 }} />
+                            )}
+                            Tasdiqlash
+                          </button>
+
+                          {/* Reject */}
+                          <button
+                            onClick={() => setRejectTarget(u)}
+                            title="Rad etish"
+                            style={{
+                              display: "flex", alignItems: "center", gap: 5,
+                              padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                              background: "#fee2e2", color: "#991b1b", fontWeight: 700, fontSize: 12,
+                            }}
+                          >
+                            <LuX style={{ fontSize: 13 }} />
+                            Rad etish
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {pages > 1 && (
+            <div style={{ padding: "12px 16px", borderTop: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 12, color: "#9ca3af" }}>{(page - 1) * PER + 1}–{Math.min(page * PER, total)} / {total}</span>
+              <div style={{ display: "flex", gap: 4 }}>
+                <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
+                  style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid #e5e7eb", background: page <= 1 ? "#f9fafb" : "#fff", cursor: page <= 1 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <LuChevronLeft style={{ fontSize: 14, color: page <= 1 ? "#d1d5db" : "#374151" }} />
+                </button>
+                <span style={{ padding: "0 10px", height: 30, display: "flex", alignItems: "center", fontSize: 13, fontWeight: 700, color: "#374151" }}>{page} / {pages}</span>
+                <button disabled={page >= pages} onClick={() => setPage(p => p + 1)}
+                  style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid #e5e7eb", background: page >= pages ? "#f9fafb" : "#fff", cursor: page >= pages ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <LuChevronRight style={{ fontSize: 14, color: page >= pages ? "#d1d5db" : "#374151" }} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Reject Modal */}
+      {rejectTarget && (
+        <RejectModal
+          user={rejectTarget}
+          onConfirm={handleReject}
+          onClose={() => setRejectTarget(null)}
+        />
+      )}
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
+    </div>
+  );
+}

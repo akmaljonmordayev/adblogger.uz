@@ -53,4 +53,5 @@ export const ROUTE_PATHS = {
   ADMIN_CONTACT:        "/admin/contact",
   ADMIN_FAQ:            "/admin/faq",
   ADMIN_SETTINGS:       "/admin/settings",
+  ADMIN_APPLICATIONS:   "/admin/applications",
 };

@@ -7,12 +7,21 @@ export const useAuthStore = create(
     (set, get) => ({
       user: null,
       token: null,
+      // Pending state — stored so user can reconnect to pending screen
+      pendingUserId: null,
+      pendingEmail: null,
 
       // ── Setters ──────────────────────────────────────────────────────────
       setUser: (user) => set({ user }),
       setToken: (token) => {
         localStorage.setItem("token", token);
         set({ token });
+      },
+
+      // Called when socket emits 'application_approved' with token+user
+      loginFromApproval: ({ token, user }) => {
+        localStorage.setItem("token", token);
+        set({ token, user, pendingUserId: null, pendingEmail: null });
       },
 
       // ── Register ─────────────────────────────────────────────────────────
@@ -25,10 +34,12 @@ export const useAuthStore = create(
           password,
           role,
         });
-        const { token, user } = res.data;
-        localStorage.setItem("token", token);
-        set({ token, user });
-        return user;
+        // Register now returns {status: 'pending', userId, message}
+        const { status, userId } = res.data;
+        if (status === "pending") {
+          set({ pendingUserId: userId, pendingEmail: email });
+        }
+        return res.data;
       },
 
       // ── Login ─────────────────────────────────────────────────────────────
@@ -36,7 +47,7 @@ export const useAuthStore = create(
         const res = await api.post("/auth/login", { email, password });
         const { token, user } = res.data;
         localStorage.setItem("token", token);
-        set({ token, user });
+        set({ token, user, pendingUserId: null, pendingEmail: null });
         return user;
       },
 
@@ -52,7 +63,11 @@ export const useAuthStore = create(
       // ── Logout ────────────────────────────────────────────────────────────
       logout: () => {
         localStorage.removeItem("token");
-        set({ user: null, token: null });
+        set({ user: null, token: null, pendingUserId: null, pendingEmail: null });
+      },
+
+      clearPending: () => {
+        set({ pendingUserId: null, pendingEmail: null });
       },
 
       // ── Fetch current user ────────────────────────────────────────────────
@@ -68,10 +83,16 @@ export const useAuthStore = create(
       // ── Helpers ───────────────────────────────────────────────────────────
       isLoggedIn: () => !!get().token,
       isAdmin: () => get().user?.role === "admin",
+      isPending: () => !!get().pendingUserId,
     }),
     {
       name: "auth-storage",
-      partialize: (state) => ({ token: state.token, user: state.user }),
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+        pendingUserId: state.pendingUserId,
+        pendingEmail: state.pendingEmail,
+      }),
     }
   )
 );

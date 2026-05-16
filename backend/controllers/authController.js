@@ -3,7 +3,7 @@ const User = require('../models/User');
 const Blogger = require('../models/Blogger');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
-const { sendTokenResponse } = require('../utils/generateToken');
+const { sendTokenResponse, generateToken } = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
 
 // POST /api/v1/auth/register
@@ -13,14 +13,40 @@ exports.register = catchAsync(async (req, res, next) => {
   const allowedRoles = ['user', 'blogger', 'business'];
   const userRole = allowedRoles.includes(role) ? role : 'user';
 
-  const user = await User.create({ firstName, lastName, email, phone, password, role: userRole });
+  const user = await User.create({
+    firstName,
+    lastName,
+    email,
+    phone,
+    password,
+    role: userRole,
+    applicationStatus: 'pending',
+  });
 
   // If registering as blogger, create empty blogger profile
   if (userRole === 'blogger') {
     await Blogger.create({ user: user._id });
   }
 
-  sendTokenResponse(user, 201, res);
+  // Notify admin via socket that a new application arrived
+  const io = req.app.get('io');
+  if (io) {
+    io.to('admin_room').emit('new_application', {
+      userId: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+    });
+  }
+
+  res.status(201).json({
+    success: true,
+    status: 'pending',
+    userId: user._id,
+    message: "Arizangiz qabul qilindi. Admin ko'rib chiqgandan so'ng hisobingiz faollashtiriladi.",
+  });
 });
 
 // POST /api/v1/auth/login
@@ -33,7 +59,23 @@ exports.login = catchAsync(async (req, res, next) => {
 
   const user = await User.findOne({ email }).select('+password');
   if (!user || !(await user.correctPassword(password, user.password))) {
-    return next(new AppError('Email yoki parol noto\'g\'ri.', 401));
+    return next(new AppError("Email yoki parol noto'g'ri.", 401));
+  }
+
+  // Check application status
+  if (user.applicationStatus === 'pending') {
+    return next(new AppError('Arizangiz hali ko\'rib chiqilmagan. Iltimos, kuting.', 403));
+  }
+
+  if (user.applicationStatus === 'rejected') {
+    return next(
+      new AppError(
+        user.rejectionReason
+          ? `Arizangiz rad etildi: ${user.rejectionReason}`
+          : "Arizangiz rad etildi. Murojaat uchun biz bilan bog'laning.",
+        403
+      )
+    );
   }
 
   if (!user.isActive) {
@@ -53,7 +95,7 @@ exports.adminLogin = catchAsync(async (req, res, next) => {
 
   const user = await User.findOne({ email, role: 'admin' }).select('+password');
   if (!user || !(await user.correctPassword(password, user.password))) {
-    return next(new AppError('Admin email yoki parol noto\'g\'ri.', 401));
+    return next(new AppError("Admin email yoki parol noto'g'ri.", 401));
   }
 
   sendTokenResponse(user, 200, res);
@@ -71,7 +113,7 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 
   const user = await User.findById(req.user._id).select('+password');
   if (!(await user.correctPassword(currentPassword, user.password))) {
-    return next(new AppError('Joriy parol noto\'g\'ri.', 401));
+    return next(new AppError("Joriy parol noto'g'ri.", 401));
   }
 
   user.password = newPassword;
@@ -106,7 +148,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
     await user.save({ validateBeforeSave: false });
-    return next(new AppError('Email yuborishda xatolik. Keyinroq urinib ko\'ring.', 500));
+    return next(new AppError("Email yuborishda xatolik. Keyinroq urinib ko'ring.", 500));
   }
 });
 
@@ -120,7 +162,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   });
 
   if (!user) {
-    return next(new AppError('Token noto\'g\'ri yoki muddati tugagan.', 400));
+    return next(new AppError("Token noto'g'ri yoki muddati tugagan.", 400));
   }
 
   user.password = req.body.password;
