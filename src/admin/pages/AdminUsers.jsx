@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "../../components/ui/toast";
 import { adminUsersService } from "../../services/adminService";
-import { LuSearch, LuRefreshCw, LuEye, LuLoader, LuChevronLeft, LuChevronRight } from "react-icons/lu";
+import { LuSearch, LuRefreshCw, LuEye, LuLoader, LuChevronLeft, LuChevronRight, LuTrash2 } from "react-icons/lu";
 
 const ROLE_LABELS = { user: "Foydalanuvchi", blogger: "Blogger", business: "Biznesmen", admin: "Admin" };
 const ROLE_COLORS = {
@@ -132,6 +132,8 @@ export default function AdminUsers() {
   const [role, setRole] = useState("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -158,6 +160,21 @@ export default function AdminUsers() {
   }, [page, role, search]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await adminUsersService.remove(deleteTarget._id);
+      toast.success(`${deleteTarget.firstName} ${deleteTarget.lastName} o'chirildi`);
+      setDeleteTarget(null);
+      fetchUsers();
+    } catch {
+      toast.error("O'chirishda xatolik yuz berdi");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const pages = Math.ceil(total / PER) || 1;
 
@@ -252,12 +269,22 @@ export default function AdminUsers() {
                     <td style={TD}><StatusDot active={u.isActive} /></td>
                     <td style={{ ...TD, fontSize: 12, color: "#9ca3af" }}>{new Date(u.createdAt).toLocaleDateString("uz-UZ")}</td>
                     <td style={TD}>
-                      <button
-                        onClick={() => setSelected(u)}
-                        style={{ width: 30, height: 30, borderRadius: 8, background: "#eff6ff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                      >
-                        <LuEye style={{ fontSize: 14, color: "#3b82f6" }} />
-                      </button>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          onClick={() => setSelected(u)}
+                          title="Ko'rish"
+                          style={{ width: 30, height: 30, borderRadius: 8, background: "#eff6ff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        >
+                          <LuEye style={{ fontSize: 14, color: "#3b82f6" }} />
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(u)}
+                          title="O'chirish"
+                          style={{ width: 30, height: 30, borderRadius: 8, background: "#fef2f2", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        >
+                          <LuTrash2 style={{ fontSize: 14, color: "#ef4444" }} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -285,6 +312,48 @@ export default function AdminUsers() {
 
       {selected && (
         <ViewModal user={selected} onClose={() => setSelected(null)} onToggle={fetchUsers} />
+      )}
+
+      {/* Delete confirm modal */}
+      {deleteTarget && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+          onClick={e => { if (e.target === e.currentTarget) setDeleteTarget(null); }}
+        >
+          <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 420, overflow: "hidden" }}>
+            <div style={{ padding: "18px 22px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>Foydalanuvchini o'chirish</span>
+              <button onClick={() => setDeleteTarget(null)} style={{ fontSize: 22, color: "#6b7280", background: "none", border: "none", cursor: "pointer" }}>×</button>
+            </div>
+            <div style={{ padding: 22 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, padding: "12px 14px", background: "#fef2f2", borderRadius: 10, border: "1px solid #fecaca" }}>
+                <Ava user={deleteTarget} size={40} />
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{deleteTarget.firstName} {deleteTarget.lastName}</div>
+                  <div style={{ fontSize: 12, color: "#6b7280" }}>{deleteTarget.email}</div>
+                </div>
+              </div>
+              <p style={{ fontSize: 13, color: "#374151", marginBottom: 20, lineHeight: 1.6 }}>
+                Ushbu foydalanuvchi <b>butunlay o'chiriladi</b>. Bu amalni ortga qaytarib bo'lmaydi.
+              </p>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "none", background: "#ef4444", color: "#fff", fontWeight: 700, fontSize: 13, cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? 0.7 : 1 }}
+                >
+                  {deleting ? "O'chirilmoqda…" : "O'chirish"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

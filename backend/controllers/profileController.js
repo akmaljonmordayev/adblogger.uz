@@ -82,7 +82,10 @@ exports.adminUpdateUser = catchAsync(async (req, res, next) => {
 });
 
 exports.adminDeleteUser = catchAsync(async (req, res, next) => {
-  const user = await User.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
+  const user = await User.findById(req.params.id);
   if (!user) return next(new AppError('Foydalanuvchi topilmadi.', 404));
-  res.status(200).json({ success: true, message: 'Foydalanuvchi bloklandi.' });
+  if (user.role === 'admin') return next(new AppError('Admin hisobini o\'chirish mumkin emas.', 403));
+
+  await User.findByIdAndDelete(req.params.id);
+  res.status(200).json({ success: true, message: 'Foydalanuvchi o\'chirildi.' });
 });

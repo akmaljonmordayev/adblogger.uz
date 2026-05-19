@@ -38,10 +38,12 @@ api.interceptors.response.use(
       window.location.href = "/login";
     }
 
-    if (error.response?.status >= 500) {
-      toast.error("Serverda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.");
-    } else {
-      toast.error(message);
+    if (!error.config?._skipToast) {
+      if (error.response?.status >= 500) {
+        toast.error("Serverda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.");
+      } else {
+        toast.error(message);
+      }
     }
 
     return Promise.reject(error);

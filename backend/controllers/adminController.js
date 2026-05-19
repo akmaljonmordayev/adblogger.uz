@@ -22,6 +22,9 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
     pendingApplications,
     recentUsers,
     recentAds,
+    topBloggers,
+    categoryBreakdown,
+    recentBusinesses,
   ] = await Promise.all([
     User.countDocuments({ role: { $ne: 'admin' }, applicationStatus: 'approved' }),
     Blogger.countDocuments({ isActive: true }),
@@ -33,7 +36,23 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
     Campaign.countDocuments({ status: 'completed' }),
     User.countDocuments({ applicationStatus: 'pending' }),
     User.find({ role: { $ne: 'admin' }, applicationStatus: 'approved' }).sort('-createdAt').limit(5).select('firstName lastName email role createdAt'),
-    Ad.find().sort('-createdAt').limit(5).populate('user', 'firstName lastName').select('type title companyName status createdAt'),
+    Ad.find().sort('-createdAt').limit(5).populate('user', 'firstName lastName').select('type title companyName platforms targetPlatforms status createdAt'),
+    Blogger.find({ isActive: true })
+      .sort({ followers: -1, rating: -1 })
+      .limit(5)
+      .populate('user', 'firstName lastName avatar')
+      .select('user handle platforms followers engagementRate categories rating stats'),
+    Blogger.aggregate([
+      { $match: { isActive: true } },
+      { $unwind: { path: '$categories', preserveNullAndEmpty: false } },
+      { $group: { _id: '$categories', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 6 },
+    ]),
+    User.find({ role: 'business', applicationStatus: 'approved' })
+      .sort('-createdAt')
+      .limit(5)
+      .select('firstName lastName email createdAt'),
   ]);
 
   // Monthly registrations for current year
@@ -62,6 +81,9 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
       recentUsers,
       recentAds,
       monthlyRegistrations,
+      topBloggers,
+      categoryBreakdown,
+      recentBusinesses,
     },
   });
 });
