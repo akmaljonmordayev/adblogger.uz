@@ -44,7 +44,7 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
       .select('user handle platforms followers engagementRate categories rating stats'),
     Blogger.aggregate([
       { $match: { isActive: true } },
-      { $unwind: { path: '$categories', preserveNullAndEmpty: false } },
+      { $unwind: '$categories' },
       { $group: { _id: '$categories', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 6 },
