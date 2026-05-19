@@ -1,1948 +1,713 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { adminDashboardService } from "../../services/adminService";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  FiUsers,
-  FiTrendingUp,
-  FiDollarSign,
-  FiCalendar,
-  FiStar,
-  FiActivity,
-  FiBell,
-  FiSearch,
-  FiArrowUpRight,
-  FiArrowDownRight,
-  FiAlertCircle,
-  FiRefreshCw,
-  FiTarget,
-  FiMapPin,
-  FiMessageSquare,
-  FiUserPlus,
-  FiAward,
-  FiChevronRight,
-  FiCheckCircle,
-  FiZap,
-  FiHeart,
-  FiYoutube,
-  FiInstagram,
-  FiLayers,
+  FiUsers, FiCalendar, FiStar, FiActivity,
+  FiArrowUpRight, FiArrowDownRight,
+  FiAlertCircle, FiRefreshCw, FiMessageSquare, FiUserPlus,
+  FiAward, FiChevronRight, FiCheckCircle, FiInstagram,
+  FiYoutube, FiLayers, FiClock,
 } from "react-icons/fi";
-import { BsStarFill, BsStarHalf, BsStar, BsTiktok } from "react-icons/bs";
+import { BsTiktok } from "react-icons/bs";
 import { HiOutlineSparkles } from "react-icons/hi2";
 
-const C = {
-  crimson: "#D32F2F", 
-  crimsonMid: "#E53935", 
-  crimsonBr: "#F44336", 
-  rose: "#FFEBEE", 
-  bg: "#F3F4F6", 
-  surface: "#FFFFFF", 
-  surfaceUp: "#F9FAFB", 
-  border: "#E5E7EB", 
-  borderUp: "#D1D5DB", 
-  text: "#111827", 
-  textMuted: "#4B5563", 
-  textDim: "#9CA3AF", 
+// ─── Design tokens ──────────────────────────────────────────────────────────
+const T = {
+  red:       "#C62828",
+  redMid:    "#D32F2F",
+  redBr:     "#E53935",
+  redLight:  "#FFEBEE",
+  redGlow:   "#E5393540",
+  bg:        "#F1F5F9",
+  surface:   "#FFFFFF",
+  surfaceUp: "#F8FAFC",
+  border:    "#E2E8F0",
+  borderUp:  "#CBD5E1",
+  text:      "#0F172A",
+  textMuted: "#475569",
+  textDim:   "#94A3B8",
+  success:   "#16A34A",
+  successBg: "#F0FDF4",
+  successBd: "#BBF7D0",
+  warn:      "#D97706",
+  warnBg:    "#FFFBEB",
+  warnBd:    "#FDE68A",
+  sky:       "#0284C7",
+  skyBg:     "#F0F9FF",
+  skyBd:     "#BAE6FD",
 };
 
-const SALES_DATA = {
-  week: [
-    { day: "Mon", revenue: 12400, bookings: 8 },
-    { day: "Tue", revenue: 18900, bookings: 14 },
-    { day: "Wed", revenue: 9800, bookings: 6 },
-    { day: "Thu", revenue: 24600, bookings: 19 },
-    { day: "Fri", revenue: 31200, bookings: 27 },
-    { day: "Sat", revenue: 28700, bookings: 23 },
-    { day: "Sun", revenue: 16500, bookings: 12 },
-  ],
-  month: [
-    { day: "W1", revenue: 98000, bookings: 78 },
-    { day: "W2", revenue: 124000, bookings: 99 },
-    { day: "W3", revenue: 107000, bookings: 88 },
-    { day: "W4", revenue: 156000, bookings: 131 },
-  ],
-  year: [
-    { day: "Jan", revenue: 340000, bookings: 280 },
-    { day: "Feb", revenue: 290000, bookings: 230 },
-    { day: "Mar", revenue: 420000, bookings: 345 },
-    { day: "Apr", revenue: 510000, bookings: 418 },
-    { day: "May", revenue: 380000, bookings: 310 },
-    { day: "Jun", revenue: 620000, bookings: 508 },
-    { day: "Jul", revenue: 710000, bookings: 582 },
-    { day: "Aug", revenue: 580000, bookings: 476 },
-    { day: "Sep", revenue: 790000, bookings: 647 },
-    { day: "Oct", revenue: 640000, bookings: 524 },
-    { day: "Nov", revenue: 870000, bookings: 712 },
-    { day: "Dec", revenue: 950000, bookings: 778 },
-  ],
-};
-
-const BOOKINGS = [
-  {
-    id: "#BK-4821",
-    brand: "Nike Global",
-    blogger: "Alex Rivers",
-    platform: "instagram",
-    reach: "2.4M",
-    amount: 4800,
-    status: "active",
-    date: "Apr 18",
-  },
-  {
-    id: "#BK-4820",
-    brand: "Tesla Motors",
-    blogger: "Emma Chen",
-    platform: "youtube",
-    reach: "8.1M",
-    amount: 12400,
-    status: "pending",
-    date: "Apr 18",
-  },
-  {
-    id: "#BK-4819",
-    brand: "Spotify",
-    blogger: "Jay Monroe",
-    platform: "tiktok",
-    reach: "5.6M",
-    amount: 3200,
-    status: "completed",
-    date: "Apr 17",
-  },
-  {
-    id: "#BK-4818",
-    brand: "Gucci Beauty",
-    blogger: "Sofia Lara",
-    platform: "instagram",
-    reach: "1.9M",
-    amount: 6700,
-    status: "active",
-    date: "Apr 17",
-  },
-  {
-    id: "#BK-4817",
-    brand: "Red Bull",
-    blogger: "Mike Dash",
-    platform: "youtube",
-    reach: "12.3M",
-    amount: 18900,
-    status: "completed",
-    date: "Apr 16",
-  },
-  {
-    id: "#BK-4816",
-    brand: "Zara Digital",
-    blogger: "Luna Voss",
-    platform: "tiktok",
-    reach: "3.8M",
-    amount: 2900,
-    status: "cancelled",
-    date: "Apr 16",
-  },
-];
-
-const TOP_BLOGGERS = [
-  {
-    name: "Alex Rivers",
-    handle: "@alexrivers",
-    platform: "instagram",
-    followers: "2.4M",
-    er: "8.2%",
-    booked: 34,
-    revenue: 142000,
-    rating: 4.9,
-    avatar: "AR",
-    cat: "Lifestyle",
-  },
-  {
-    name: "Emma Chen",
-    handle: "@emmachen",
-    platform: "youtube",
-    followers: "8.1M",
-    er: "6.8%",
-    booked: 28,
-    revenue: 318000,
-    rating: 4.8,
-    avatar: "EC",
-    cat: "Tech",
-  },
-  {
-    name: "Jay Monroe",
-    handle: "@jaymonroe",
-    platform: "tiktok",
-    followers: "5.6M",
-    er: "12.4%",
-    booked: 51,
-    revenue: 98000,
-    rating: 4.9,
-    avatar: "JM",
-    cat: "Music",
-  },
-  {
-    name: "Sofia Lara",
-    handle: "@sofialara",
-    platform: "instagram",
-    followers: "1.9M",
-    er: "9.1%",
-    booked: 22,
-    revenue: 87000,
-    rating: 4.7,
-    avatar: "SL",
-    cat: "Beauty",
-  },
-  {
-    name: "Mike Dash",
-    handle: "@mikedash",
-    platform: "youtube",
-    followers: "12.3M",
-    er: "5.4%",
-    booked: 18,
-    revenue: 412000,
-    rating: 4.8,
-    avatar: "MD",
-    cat: "Sport",
-  },
-];
-
-const TEAM = [
-  {
-    id: 1,
-    name: "James Carter",
-    role: "Sales Manager",
-    dept: "Sales",
-    status: "online",
-    deals: 48,
-    rating: 4.9,
-    avatar: "JC",
-    tasks: 12,
-  },
-  {
-    id: 2,
-    name: "Sarah Mitchell",
-    role: "Account Manager",
-    dept: "Accounts",
-    status: "online",
-    deals: 31,
-    rating: 4.8,
-    avatar: "SM",
-    tasks: 8,
-  },
-  {
-    id: 3,
-    name: "Daniel Park",
-    role: "Analytics Lead",
-    dept: "Analytics",
-    status: "away",
-    deals: 0,
-    rating: 4.7,
-    avatar: "DP",
-    tasks: 5,
-  },
-  {
-    id: 4,
-    name: "Olivia Stone",
-    role: "Sales Rep",
-    dept: "Sales",
-    status: "online",
-    deals: 27,
-    rating: 4.6,
-    avatar: "OS",
-    tasks: 9,
-  },
-  {
-    id: 5,
-    name: "Chris Nguyen",
-    role: "Logistics",
-    dept: "Ops",
-    status: "offline",
-    deals: 0,
-    rating: 4.5,
-    avatar: "CN",
-    tasks: 3,
-  },
-];
-
-const CATEGORIES = [
-  { name: "Lifestyle", share: 28, color: "#A82020" },
-  { name: "Tech", share: 20, color: "#8B1515" },
-  { name: "Beauty", share: 18, color: "#7B0000" },
-  { name: "Sport", share: 15, color: "#6A0000" },
-  { name: "Music", share: 10, color: "#5A0000" },
-  { name: "Other", share: 9, color: "#4A0000" },
-];
-
-const FUNNEL = [
-  { label: "Website Visits", value: 48320, pct: 100 },
-  { label: "Viewed Bloggers", value: 21840, pct: 45.2 },
-  { label: "Started Booking", value: 6930, pct: 14.3 },
-  { label: "Completed Booking", value: 2840, pct: 5.9 },
-];
-
-const ACTIVITY = [
-  {
-    icon: FiCalendar,
-    text: "New booking #BK-4821 from Nike Global · $4,800",
-    time: "2m",
-  },
-  {
-    icon: FiUserPlus,
-    text: "Alex Rivers joined as verified blogger",
-    time: "8m",
-  },
-  {
-    icon: FiMessageSquare,
-    text: "Support ticket from Gucci Beauty campaign",
-    time: "15m",
-  },
-  {
-    icon: FiCheckCircle,
-    text: "Campaign #BK-4819 completed successfully",
-    time: "31m",
-  },
-  { icon: FiStar, text: "New ★★★★★ review for Jay Monroe", time: "1h" },
-  {
-    icon: FiAlertCircle,
-    text: "Emma Chen's analytics report is ready",
-    time: "2h",
-  },
-  { icon: FiZap, text: "Red Bull campaign hit 12M impressions", time: "3h" },
-];
-
-const GOALS = [
-  { label: "Monthly Revenue", current: 142000, target: 250000, unit: "$" },
-  { label: "New Brands", current: 38, target: 60, unit: "" },
-  { label: "Active Campaigns", current: 89, target: 120, unit: "" },
-  { label: "Blogger NPS Score", current: 87, target: 95, unit: "" },
-];
-
-const NEW_BRANDS = [
-  {
-    name: "Adidas Digital",
-    industry: "Fashion",
-    budget: "$8,500/mo",
-    avatar: "AD",
-    joined: "Today, 14:32",
-  },
-  {
-    name: "Notion HQ",
-    industry: "SaaS",
-    budget: "$3,200/mo",
-    avatar: "NH",
-    joined: "Today, 11:05",
-  },
-  {
-    name: "Dyson Beauty",
-    industry: "Beauty",
-    budget: "$6,100/mo",
-    avatar: "DB",
-    joined: "Yesterday",
-  },
-  {
-    name: "Rivian Motors",
-    industry: "Automotive",
-    budget: "$14,000/mo",
-    avatar: "RM",
-    joined: "Yesterday",
-  },
-];
-
-const REGIONS = [
-  { city: "United States", bookings: 842, share: 34 },
-  { city: "United Kingdom", bookings: 421, share: 17 },
-  { city: "Germany", bookings: 318, share: 13 },
-  { city: "France", bookings: 247, share: 10 },
-  { city: "UAE", bookings: 198, share: 8 },
-  { city: "Other", bookings: 445, share: 18 },
-];
-
-const CALENDAR_TASKS = [
-  { time: "09:00", title: "Weekly Sales Standup", participants: 9 },
-  { time: "11:30", title: "Nike Global Campaign Review", participants: 4 },
-  { time: "14:00", title: "Blogger Partnership Call", participants: 6 },
-  { time: "16:30", title: "Q2 KPI Analysis & Reporting", participants: 14 },
-];
-
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt = (n) =>
-  n >= 1_000_000
-    ? (n / 1_000_000).toFixed(1) + "M"
-    : n >= 1_000
-      ? (n / 1_000).toFixed(1) + "K"
-      : n;
+  n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + "M"
+  : n >= 1_000   ? (n / 1_000).toFixed(1) + "K"
+  : String(n ?? 0);
 
-const fmtUSD = (n) => "$" + new Intl.NumberFormat("en-US").format(n);
-
-const PLATFORM_CFG = {
-  instagram: { icon: FiInstagram, color: "#E1306C", bg: "#1A0812" },
-  youtube: { icon: FiYoutube, color: "#FF4444", bg: "#1A0808" },
-  tiktok: { icon: BsTiktok, color: "#69C9D0", bg: "#08181A" },
+const timeSince = (d) => {
+  if (!d) return "-";
+  const m = Math.floor((Date.now() - new Date(d)) / 60000);
+  if (m < 1)    return "hozir";
+  if (m < 60)   return `${m}d oldin`;
+  if (m < 1440) return `${Math.floor(m / 60)}s oldin`;
+  return `${Math.floor(m / 1440)}k oldin`;
 };
 
-const ORDER_STATUS = {
-  active: {
-    label: "Active",
-    cls: "text-emerald-400 bg-emerald-950 border-emerald-900",
-  },
-  pending: {
-    label: "Pending",
-    cls: "text-amber-400  bg-amber-950  border-amber-900",
-  },
-  completed: {
-    label: "Done",
-    cls: "text-sky-400    bg-sky-950    border-sky-900",
-  },
-  cancelled: {
-    label: "Cancelled",
-    cls: "text-red-400    bg-red-950    border-red-900",
-  },
+const MONTHS = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
+const PLATFORM = {
+  instagram: { icon: FiInstagram, color: "#E1306C", bg: "#FDF2F8" },
+  youtube:   { icon: FiYoutube,   color: "#FF0000", bg: "#FEF2F2" },
+  tiktok:    { icon: BsTiktok,    color: "#010101", bg: "#F8FAFC" },
+  telegram:  { icon: FiMessageSquare, color: "#0088CC", bg: "#F0F9FF" },
+};
+const getPlatform = (key) => PLATFORM[key] ?? PLATFORM.instagram;
+
+const AD_STATUS = {
+  pending:   { label: "Kutilmoqda", cls: "text-amber-700 bg-amber-50 border-amber-200" },
+  approved:  { label: "Tasdiqlangan", cls: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+  active:    { label: "Faol", cls: "text-blue-700 bg-blue-50 border-blue-200" },
+  rejected:  { label: "Rad etilgan", cls: "text-red-700 bg-red-50 border-red-200" },
+  completed: { label: "Yakunlangan", cls: "text-slate-600 bg-slate-50 border-slate-200" },
 };
 
-const TEAM_STATUS = {
-  online: { dot: "bg-emerald-500", label: "Online" },
-  away: { dot: "bg-amber-500", label: "Away" },
-  offline: { dot: "bg-neutral-600", label: "Offline" },
-};
-
-const AVA = [
-  ["#7B0000", "#A82020"],
-  ["#8B1515", "#B83030"],
-  ["#6A0000", "#921212"],
-  ["#921212", "#C03030"],
-  ["#5A0000", "#7B0000"],
-  ["#A82020", "#CC4040"],
-];
-const getAva = (i) => AVA[i % AVA.length];
-
-function Ava({ text, idx, size = "w-9 h-9", fs = "text-xs" }) {
-  const [a, b] = getAva(idx);
+// ─── Sub-components ──────────────────────────────────────────────────────────
+function Avatar({ name = "?", size = 36, idx = 0 }) {
+  const GRADS = [
+    ["#C62828","#E53935"], ["#1565C0","#1976D2"], ["#2E7D32","#388E3C"],
+    ["#6A1B9A","#8E24AA"], ["#E65100","#F57C00"], ["#00695C","#00897B"],
+  ];
+  const [a, b] = GRADS[idx % GRADS.length];
+  const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   return (
     <div
-      className={`${size} ${fs} rounded-full flex items-center justify-center font-black text-white shrink-0`}
       style={{
+        width: size, height: size, borderRadius: size / 3,
         background: `linear-gradient(135deg,${a},${b})`,
-        boxShadow: `0 2px 10px ${a}60`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: size * 0.32, fontWeight: 800, color: "#fff",
+        flexShrink: 0, boxShadow: `0 2px 8px ${a}44`,
       }}
     >
-      {text}
+      {initials}
     </div>
   );
 }
 
-function Stars({ rating }) {
+function Badge({ status }) {
+  const cfg = AD_STATUS[status] ?? AD_STATUS.pending;
   return (
-    <span className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) =>
-        i <= Math.floor(rating) ? (
-          <BsStarFill key={i} className="text-amber-500 text-[9px]" />
-        ) : i - 0.5 === rating ? (
-          <BsStarHalf key={i} className="text-amber-500 text-[9px]" />
-        ) : (
-          <BsStar key={i} className="text-[9px]" style={{ color: C.textDim }} />
-        ),
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${cfg.cls}`}>
+      {cfg.label}
+    </span>
+  );
+}
+
+function Skeleton({ className = "" }) {
+  return (
+    <div className={`animate-pulse bg-slate-200 rounded-lg ${className}`} />
+  );
+}
+
+// ─── Chart ───────────────────────────────────────────────────────────────────
+function RegistrationChart({ data, loading }) {
+  const [hovered, setHovered] = useState(null);
+  if (loading) return <div className="flex items-end gap-1.5 h-36 pt-4">{Array(12).fill(0).map((_, i) => <Skeleton key={i} className="flex-1 h-full" />)}</div>;
+  if (!data?.length) return (
+    <div className="flex items-center justify-center h-36 text-sm" style={{ color: T.textDim }}>
+      Ma'lumot mavjud emas
+    </div>
+  );
+
+  const maxVal = Math.max(...data.map(d => d.count), 1);
+  const total  = data.reduce((s, d) => s + d.count, 0);
+  const H = 140;
+
+  return (
+    <div className="relative">
+      {hovered !== null && (
+        <div
+          className="absolute z-10 px-2.5 py-1.5 rounded-lg text-xs font-semibold pointer-events-none shadow-lg"
+          style={{
+            background: T.text, color: "#fff",
+            top: 0, left: `${(hovered / data.length) * 100}%`,
+            transform: "translateX(-50%)",
+          }}
+        >
+          {MONTHS[data[hovered]._id - 1]}: {data[hovered].count} ta
+        </div>
       )}
-    </span>
-  );
-}
-
-function PlatBadge({ platform }) {
-  const cfg = PLATFORM_CFG[platform];
-  const Icon = cfg.icon;
-  return (
-    <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
-      style={{
-        background: cfg.bg,
-        color: cfg.color,
-        border: `1px solid ${cfg.color}33`,
-      }}
-    >
-      <Icon className="text-[9px]" />
-      {platform}
-    </span>
-  );
-}
-
-function BarChart({ data }) {
-  const max = Math.max(...data.map((d) => d.revenue));
-  const H = 120,
-    bw = 22,
-    gap = 5;
-  const W = data.length * (bw + gap);
-  return (
-    <div className="w-full overflow-hidden">
-      <svg
-        width="100%"
-        height={H + 22}
-        viewBox={`0 0 ${W} ${H + 22}`}
-        preserveAspectRatio="none"
-      >
+      <svg width="100%" height={H} viewBox={`0 0 ${data.length * 36} ${H}`} preserveAspectRatio="none">
         <defs>
-          <linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={C.crimsonBr} />
-            <stop offset="100%" stopColor={C.crimson} stopOpacity="0.4" />
+          <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={T.redBr} />
+            <stop offset="100%" stopColor={T.red} stopOpacity="0.5" />
           </linearGradient>
-          <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#C84040" />
-            <stop offset="100%" stopColor={C.crimsonBr} />
+          <linearGradient id="barHov" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#FF6B6B" />
+            <stop offset="100%" stopColor={T.redBr} />
           </linearGradient>
-          <filter id="glow2">
-            <feGaussianBlur stdDeviation="2.5" result="b" />
-            <feMerge>
-              <feMergeNode in="b" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
         {data.map((d, i) => {
-          const bh = Math.max(5, (d.revenue / max) * (H - 10));
-          const isLast = i === data.length - 1;
-          const x = i * (bw + gap);
+          const bh = Math.max(4, (d.count / maxVal) * (H - 28));
+          const x  = i * 36 + 4;
+          const y  = H - bh - 18;
           return (
-            <g key={i}>
+            <g key={i} onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)} style={{ cursor: "pointer" }}>
+              <rect x={x} y={0} width={28} height={H - 18} rx={4} fill="transparent" />
               <motion.rect
-                x={x}
-                y={H - bh}
-                width={bw}
-                height={bh}
-                rx={3}
-                fill={isLast ? "url(#bg2)" : "url(#bg1)"}
-                opacity={isLast ? 1 : 0.4 + (i / data.length) * 0.45}
-                filter={isLast ? "url(#glow2)" : undefined}
-                initial={{ scaleY: 0, originY: 1 }}
-                animate={{ scaleY: 1 }}
-                transition={{
-                  delay: i * 0.04,
-                  duration: 0.55,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
+                x={x} width={28} rx={4}
+                fill={hovered === i ? "url(#barHov)" : "url(#barGrad)"}
+                opacity={hovered === null ? 0.85 : hovered === i ? 1 : 0.4}
+                initial={{ y: H - 18, height: 0 }}
+                animate={{ y, height: bh }}
+                transition={{ delay: i * 0.04, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               />
-              <text
-                x={x + bw / 2}
-                y={H + 16}
-                textAnchor="middle"
-                fontSize="8"
-                fill={C.textDim}
-                fontFamily="system-ui"
-                fontWeight="700"
-              >
-                {d.day}
+              <text x={x + 14} y={H - 4} textAnchor="middle" fontSize="8" fontWeight="700"
+                fill={hovered === i ? T.redBr : T.textDim} fontFamily="system-ui">
+                {MONTHS[d._id - 1]}
               </text>
+              {d.count > 0 && (
+                <text x={x + 14} y={y - 3} textAnchor="middle" fontSize="8" fontWeight="800"
+                  fill={T.redBr} fontFamily="system-ui">
+                  {d.count}
+                </text>
+              )}
             </g>
           );
         })}
       </svg>
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-[10px]" style={{ color: T.textDim }}>Jami: <b style={{ color: T.text }}>{total} ta</b> foydalanuvchi</span>
+        <span className="text-[10px]" style={{ color: T.textDim }}>{new Date().getFullYear()} yil</span>
+      </div>
     </div>
   );
 }
 
-function StatCard({ icon: Icon, label, value, sub, up, delay, spark }) {
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+function StatCard({ icon: Icon, label, value, sub, trend, trendUp, color, loading, delay = 0 }) {
+  const colors = {
+    red:  { icon: T.redBr,  iconBg: T.redLight,  trend: trendUp ? T.success : T.redBr },
+    blue: { icon: "#2563EB", iconBg: "#EFF6FF",   trend: trendUp ? T.success : "#DC2626" },
+    green:{ icon: "#16A34A", iconBg: "#F0FDF4",   trend: trendUp ? T.success : "#DC2626" },
+    amber:{ icon: "#D97706", iconBg: "#FFFBEB",   trend: trendUp ? T.success : "#DC2626" },
+    sky:  { icon: "#0284C7", iconBg: "#F0F9FF",   trend: trendUp ? T.success : "#DC2626" },
+    violet:{icon: "#7C3AED", iconBg: "#F5F3FF",   trend: trendUp ? T.success : "#DC2626" },
+  };
+  const c = colors[color] ?? colors.red;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      className="relative overflow-hidden rounded-2xl p-5 flex flex-col gap-4"
-      style={{ background: C.surface, border: `1px solid ${C.border}` }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = `${C.crimsonBr}55`;
-        e.currentTarget.style.transform = "translateY(-2px)";
-        e.currentTarget.style.transition = "all .2s";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = C.border;
-        e.currentTarget.style.transform = "translateY(0)";
-      }}
+      transition={{ delay, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="rounded-2xl p-5 flex flex-col gap-3 cursor-default"
+      style={{ background: T.surface, border: `1px solid ${T.border}`, transition: "box-shadow .2s, transform .2s" }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 24px #00000012"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; }}
     >
-      <div
-        className="absolute -top-8 -right-8 w-28 h-28 rounded-full opacity-15 blur-3xl pointer-events-none"
-        style={{
-          background: `radial-gradient(circle,${C.crimsonBr},transparent)`,
-        }}
-      />
       <div className="flex items-start justify-between">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{
-            background: `linear-gradient(135deg,${C.crimson},${C.crimsonBr})`,
-            boxShadow: `0 4px 16px ${C.crimson}66`,
-          }}
-        >
-          <Icon className="text-white text-base" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: c.iconBg }}>
+          <Icon style={{ color: c.icon, fontSize: 18 }} />
         </div>
-        <span
-          className={`flex items-center gap-0.5 text-[10px] font-bold px-2 py-1 rounded-full border ${
-            up
-              ? "text-emerald-400 bg-emerald-950 border-emerald-900"
-              : "text-red-400 bg-red-950 border-red-900"
-          }`}
-        >
-          {up ? (
-            <FiArrowUpRight className="text-[9px]" />
-          ) : (
-            <FiArrowDownRight className="text-[9px]" />
-          )}
-          {sub}
-        </span>
+        {trend && (
+          <span className="flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+            style={{ color: c.trend, background: trendUp ? T.successBg : "#FEF2F2" }}>
+            {trendUp ? <FiArrowUpRight /> : <FiArrowDownRight />}
+            {trend}
+          </span>
+        )}
       </div>
       <div>
-        <p
-          className="text-[26px] font-black leading-none tracking-tight"
-          style={{ color: C.text }}
-        >
-          {value}
-        </p>
-        <p
-          className="text-[10px] font-bold uppercase tracking-widest mt-1"
-          style={{ color: C.textMuted }}
-        >
-          {label}
-        </p>
+        {loading
+          ? <><Skeleton className="h-7 w-20 mb-1" /><Skeleton className="h-3 w-16" /></>
+          : <>
+              <p className="text-2xl font-black leading-none tabular-nums" style={{ color: T.text }}>{fmt(value)}</p>
+              <p className="text-[11px] font-semibold mt-1.5 uppercase tracking-wider" style={{ color: T.textMuted }}>{label}</p>
+              {sub && <p className="text-[10px] mt-0.5" style={{ color: T.textDim }}>{sub}</p>}
+            </>
+        }
       </div>
-      {spark && (
-        <div className="flex items-end gap-[2px] h-7">
-          {spark.map((v, i) => (
-            <motion.div
-              key={i}
-              initial={{ scaleY: 0 }}
-              animate={{ scaleY: 1 }}
-              transition={{ delay: delay + i * 0.04, duration: 0.35 }}
-              className="flex-1 rounded-[2px]"
-              style={{
-                height: `${v}%`,
-                background: `linear-gradient(to top,${C.crimson},${C.crimsonBr})`,
-                opacity: 0.2 + i * 0.1,
-                transformOrigin: "bottom",
-              }}
-            />
-          ))}
-        </div>
-      )}
     </motion.div>
   );
 }
 
-function SectionHead({ label }) {
-  return (
-    <div className="flex items-center gap-3 mb-4">
-      <div
-        className="h-px flex-1"
-        style={{
-          background: `linear-gradient(to right,${C.crimsonBr},${C.crimson}44,transparent)`,
-        }}
-      />
-      <span
-        className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.22em] shrink-0"
-        style={{ color: C.crimsonBr }}
-      >
-        <HiOutlineSparkles className="text-xs" />
-        {label}
-        <HiOutlineSparkles className="text-xs" />
-      </span>
-      <div
-        className="h-px flex-1"
-        style={{
-          background: `linear-gradient(to left,${C.crimsonBr},${C.crimson}44,transparent)`,
-        }}
-      />
-    </div>
-  );
-}
-
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const [period, setPeriod] = useState("week");
-  const [notif, setNotif] = useState(false);
-  const [clock, setClock] = useState(new Date());
   const [apiStats, setApiStats] = useState(null);
-  const [apiLoading, setApiLoading] = useState(true);
-  const nRef = useRef(null);
+  const [loading,  setLoading]  = useState(true);
+  const [clock,    setClock]    = useState(new Date());
 
   const fetchStats = useCallback(async () => {
-    setApiLoading(true);
+    setLoading(true);
     try {
       const res = await adminDashboardService.getStats();
       setApiStats(res.data);
     } catch {
-      // silently fall through; UI will show placeholders
+      // silently ignore
     } finally {
-      setApiLoading(false);
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
+  useEffect(() => { const t = setInterval(() => setClock(new Date()), 1000); return () => clearInterval(t); }, []);
 
-  useEffect(() => {
-    const t = setInterval(() => setClock(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  useEffect(() => {
-    const h = (e) => {
-      if (nRef.current && !nRef.current.contains(e.target)) setNotif(false);
-    };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
+  const s = apiStats?.stats ?? {};
 
-  const chartData = SALES_DATA[period];
-  const totalRev = chartData.reduce((s, d) => s + d.revenue, 0);
-  const totalBook = chartData.reduce((s, d) => s + d.bookings, 0);
+  // ── Derived data ──────────────────────────────────────────────────────────
+  const regData = (() => {
+    const regs = apiStats?.monthlyRegistrations;
+    if (!regs?.length) return [];
+    const map = {};
+    regs.forEach(m => { map[m._id] = m.count; });
+    return Array.from({ length: 12 }, (_, i) => ({ _id: i + 1, count: map[i + 1] ?? 0 }));
+  })();
 
-  const card = { background: C.surface, border: `1px solid ${C.border}` };
-  const card2 = { background: C.surfaceUp, border: `1px solid ${C.borderUp}` };
+  const liveActivity = (() => {
+    if (!apiStats) return [];
+    return [
+      ...(apiStats.recentUsers ?? []).map(u => ({
+        icon: FiUserPlus, color: T.success, bg: T.successBg,
+        text: `${u.firstName} ${u.lastName}`,
+        sub:  `${u.role} sifatida ro'yxatdan o'tdi`,
+        time: timeSince(u.createdAt),
+        _ts:  new Date(u.createdAt).getTime(),
+      })),
+      ...(apiStats.recentAds ?? []).map(a => ({
+        icon: FiLayers, color: T.sky, bg: T.skyBg,
+        text: a.companyName || a.title || "E'lon",
+        sub:  `Yangi ${a.type === "business" ? "biznes" : "blogger"} e'loni — ${AD_STATUS[a.status]?.label ?? ""}`,
+        time: timeSince(a.createdAt),
+        _ts:  new Date(a.createdAt).getTime(),
+      })),
+    ].sort((a, b) => b._ts - a._ts).slice(0, 8);
+  })();
 
-  const s = apiStats?.stats || {};
-  const STATS = [
-    {
-      icon: FiUsers,
-      label: "Foydalanuvchilar",
-      value: apiLoading ? "…" : (s.totalUsers ?? 0),
-      sub: "jami",
-      up: true,
-      spark: [52, 56, 58, 60, 63, 66, 70],
-    },
-    {
-      icon: FiActivity,
-      label: "Bloggerlar",
-      value: apiLoading ? "…" : (s.totalBloggers ?? 0),
-      sub: "faol",
-      up: true,
-      spark: [38, 52, 40, 68, 55, 82, 65],
-    },
-    {
-      icon: FiLayers,
-      label: "E'lonlar",
-      value: apiLoading ? "…" : (s.totalAds ?? 0),
-      sub: "jami",
-      up: true,
-      spark: [18, 32, 28, 52, 42, 68, 52],
-    },
-    {
-      icon: FiCalendar,
-      label: "Kampaniyalar",
-      value: apiLoading ? "…" : (s.totalCampaigns ?? 0),
-      sub: "jami",
-      up: true,
-      spark: [28, 42, 33, 62, 48, 78, 58],
-    },
-    {
-      icon: FiStar,
-      label: "Blog postlar",
-      value: apiLoading ? "…" : (s.totalBlogs ?? 0),
-      sub: "nashr",
-      up: true,
-      spark: [68, 70, 69, 72, 71, 74, 76],
-    },
-    {
-      icon: FiAlertCircle,
-      label: "Kutilmoqda",
-      value: apiLoading ? "…" : (s.pendingAds ?? 0),
-      sub: "e'lon",
-      up: false,
-      spark: [52, 58, 42, 68, 48, 38, 36],
-    },
-    {
-      icon: FiMessageSquare,
-      label: "Yangi xabar",
-      value: apiLoading ? "…" : (s.newContacts ?? 0),
-      sub: "contact",
-      up: false,
-      spark: [36, 38, 39, 42, 41, 45, 48],
-    },
-    {
-      icon: FiCheckCircle,
-      label: "Yakunlangan",
-      value: apiLoading ? "…" : (s.completedCampaigns ?? 0),
-      sub: "kampaniya",
-      up: true,
-      spark: [32, 48, 40, 68, 55, 78, 72],
-    },
+  const recentAdsRows = (apiStats?.recentAds ?? []).map((a, i) => ({
+    id:       `#${(a._id ?? "").toString().slice(-5).toUpperCase()}`,
+    brand:    a.companyName || a.title || "-",
+    user:     a.user ? `${a.user.firstName} ${a.user.lastName}` : "-",
+    platform: a.platforms?.[0] ?? a.targetPlatforms?.[0] ?? "instagram",
+    type:     a.type === "business" ? "Biznes" : "Blogger",
+    status:   a.status ?? "pending",
+    date:     new Date(a.createdAt).toLocaleDateString("uz-UZ", { day: "2-digit", month: "2-digit" }),
+  }));
+
+  const topBloggersRows = (apiStats?.topBloggers ?? []).map((b) => ({
+    name:      b.user ? `${b.user.firstName} ${b.user.lastName}` : "-",
+    handle:    `@${b.handle ?? "blogger"}`,
+    platform:  b.platforms?.[0] ?? "instagram",
+    followers: fmt(b.followers ?? 0),
+    er:        `${(b.engagementRate ?? 0).toFixed(1)}%`,
+    campaigns: b.stats?.totalCampaigns ?? 0,
+    rating:    b.rating ?? 0,
+    cat:       b.categories?.[0] ?? "Other",
+  }));
+
+  const nicheTotalCount = (apiStats?.categoryBreakdown ?? []).reduce((sum, c) => sum + c.count, 0);
+  const nicheRows = (apiStats?.categoryBreakdown ?? []).map((c, i) => ({
+    name:  c._id,
+    count: c.count,
+    pct:   nicheTotalCount ? Math.round((c.count / nicheTotalCount) * 100) : 0,
+    color: ["#C62828","#1565C0","#2E7D32","#6A1B9A","#E65100","#00695C"][i] ?? T.red,
+  }));
+
+  const newBusinessRows = (apiStats?.recentBusinesses ?? []).map((b) => ({
+    name:    `${b.firstName} ${b.lastName}`,
+    email:   b.email,
+    joined:  timeSince(b.createdAt),
+  }));
+
+  const hour = clock.getHours();
+  const greeting = hour < 12 ? "Xayrli tong" : hour < 18 ? "Xayrli kun" : "Xayrli kech";
+
+  const STATS_CFG = [
+    { icon: FiUsers,      label: "Foydalanuvchilar", value: s.totalUsers,           sub: `${s.pendingApplications ?? 0} ta kutilmoqda`,  color: "red",    trend: null,    trendUp: true  },
+    { icon: FiActivity,   label: "Bloggerlar",        value: s.totalBloggers,        sub: "Faol blogerlar",                               color: "blue",   trend: null,    trendUp: true  },
+    { icon: FiLayers,     label: "E'lonlar",           value: s.totalAds,             sub: `${s.pendingAds ?? 0} ta ko'rib chiqilmoqda`,   color: "sky",    trend: null,    trendUp: true  },
+    { icon: FiCalendar,   label: "Kampaniyalar",       value: s.totalCampaigns,       sub: `${s.completedCampaigns ?? 0} ta yakunlangan`,  color: "green",  trend: null,    trendUp: true  },
+    { icon: FiStar,       label: "Blog postlar",       value: s.totalBlogs,           sub: "Nashr etilgan",                                color: "violet", trend: null,    trendUp: true  },
+    { icon: FiAlertCircle,label: "Kutilayotgan e'lon", value: s.pendingAds,           sub: "Ko'rib chiqish kerak",                          color: "amber",  trend: null,    trendUp: false },
+    { icon: FiMessageSquare,label: "Yangi xabarlar",  value: s.newContacts,          sub: "Javob berilmagan",                             color: "sky",    trend: null,    trendUp: false },
+    { icon: FiCheckCircle,label: "Yakunlangan",        value: s.completedCampaigns,   sub: "Muvaffaqiyatli kampaniyalar",                  color: "green",  trend: null,    trendUp: true  },
   ];
 
-  const greeting =
-    clock.getHours() < 12
-      ? "Morning"
-      : clock.getHours() < 18
-        ? "Afternoon"
-        : "Evening";
+  // Completion rate
+  const completionRate = s.totalCampaigns
+    ? Math.round(((s.completedCampaigns ?? 0) / s.totalCampaigns) * 100)
+    : 0;
+  const approvalRate = (s.totalUsers ?? 0) + (s.pendingApplications ?? 0) > 0
+    ? Math.round(((s.totalUsers ?? 0) / ((s.totalUsers ?? 0) + (s.pendingApplications ?? 0))) * 100)
+    : 0;
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: C.bg, fontFamily: "'DM Sans',system-ui,sans-serif" }}
-    >
-      <header
-        className="sticky top-0 z-30 backdrop-blur-xl border-b"
-        style={{ background: `${C.surface}DD`, borderColor: C.border }}
-      >
-        <div className="max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 shrink-0">
-            <div
-              className="w-9 h-9 rounded-2xl flex items-center justify-center"
-              style={{
-                background: `linear-gradient(135deg,${C.crimson},${C.crimsonBr})`,
-                boxShadow: `0 4px 20px ${C.crimson}77`,
-              }}
-            >
-              <FiZap className="text-white text-base" />
-            </div>
-            <div>
-              <h1
-                className="text-[15px] font-black tracking-tight leading-none"
-                style={{ color: C.text }}
-              >
-                Ad<span style={{ color: C.crimsonBr }}>Bloger</span>
-              </h1>
-              <p
-                className="text-[10px] font-semibold mt-0.5"
-                style={{ color: C.textMuted }}
-              >
-                Admin Panel
-              </p>
-            </div>
+    <div className="min-h-screen" style={{ background: T.bg, fontFamily: "'Inter',system-ui,sans-serif" }}>
+
+      {/* ── Content ─────────────────────────────────────────────────────── */}
+      <div className="max-w-[1400px] mx-auto px-6 py-6 space-y-6">
+
+        {/* Greeting Banner */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+          className="rounded-2xl px-6 py-5 flex items-center justify-between"
+          style={{ background: `linear-gradient(135deg,${T.red}18,${T.surface})`, border: `1px solid ${T.redBr}22` }}>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: T.redBr }}>
+              {clock.toLocaleDateString("uz-UZ", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+            </p>
+            <h2 className="text-xl font-black" style={{ color: T.text }}>{greeting}, Admin 👋</h2>
+            <p className="text-sm mt-0.5" style={{ color: T.textMuted }}>
+              Platformada{" "}
+              <span className="font-bold" style={{ color: T.redBr }}>{s.totalUsers ?? "..."}</span> foydalanuvchi,{" "}
+              <span className="font-bold" style={{ color: T.redBr }}>{s.pendingAds ?? "..."}</span> e'lon ko'rib chiqilmoqda
+            </p>
           </div>
-
-          <div className="hidden md:flex flex-1 max-w-sm mx-6">
-            <div className="relative w-full">
-              <FiSearch
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none"
-                style={{ color: C.textDim }}
-              />
-              <input
-                type="text"
-                placeholder="Search bloggers, brands, campaigns..."
-                className="w-full pl-9 pr-4 py-2 text-sm rounded-xl outline-none transition-all"
-                style={{
-                  background: C.bg,
-                  border: `1px solid ${C.border}`,
-                  color: C.text,
-                }}
-                onFocus={(e) => (e.target.style.borderColor = C.crimsonBr)}
-                onBlur={(e) => (e.target.style.borderColor = C.border)}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <motion.span
-              animate={{ opacity: [1, 0.5, 1] }}
-              transition={{ repeat: Infinity, duration: 2.4 }}
-              className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full"
-              style={{
-                color: "#4ade80",
-                background: "#03160a",
-                border: "1px solid #14532d",
-              }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Systems Normal
-            </motion.span>
-
-            <button
-              className="p-2.5 rounded-xl transition-all"
-              style={{
-                border: `1px solid ${C.border}`,
-                background: C.surfaceUp,
-                color: C.textMuted,
-              }}
-            >
-              <FiRefreshCw className="text-sm" />
-            </button>
-
-            <div className="relative" ref={nRef}>
-              <button
-                onClick={() => setNotif((p) => !p)}
-                className="relative p-2.5 rounded-xl transition-all"
-                style={{
-                  border: `1px solid ${C.border}`,
-                  background: C.surfaceUp,
-                  color: C.textMuted,
-                }}
-              >
-                <FiBell className="text-sm" />
-                <span
-                  className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-2"
-                  style={{ background: C.crimsonBr, borderColor: C.surface }}
-                />
-              </button>
-              <AnimatePresence>
-                {notif && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 4, scale: 0.97 }}
-                    transition={{ duration: 0.18 }}
-                    className="absolute right-0 top-full mt-2 w-80 rounded-2xl z-50 overflow-hidden"
-                    style={{
-                      background: C.surface,
-                      border: `1px solid ${C.borderUp}`,
-                      boxShadow: "0 20px 60px #00000090",
-                    }}
-                  >
-                    <div
-                      className="px-4 py-3 border-b flex items-center justify-between"
-                      style={{ borderColor: C.border }}
-                    >
-                      <span
-                        className="text-sm font-black"
-                        style={{ color: C.text }}
-                      >
-                        Notifications
-                      </span>
-                      <span
-                        className="text-[10px] font-black px-2 py-0.5 rounded-full"
-                        style={{
-                          color: C.crimsonBr,
-                          background: `${C.crimson}25`,
-                          border: `1px solid ${C.crimson}44`,
-                        }}
-                      >
-                        7 new
-                      </span>
-                    </div>
-                    <div className="max-h-72 overflow-y-auto">
-                      {ACTIVITY.slice(0, 5).map((a, i) => {
-                        const Icon = a.icon;
-                        return (
-                          <div
-                            key={i}
-                            className="flex items-start gap-3 px-4 py-3 border-b last:border-0 cursor-pointer"
-                            style={{ borderColor: C.border }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.background = C.surfaceUp)
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.background = "transparent")
-                            }
-                          >
-                            <div
-                              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                              style={{
-                                background: `${C.crimson}25`,
-                                border: `1px solid ${C.crimson}40`,
-                              }}
-                            >
-                              <Icon
-                                style={{ color: C.crimsonBr }}
-                                className="text-sm"
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p
-                                className="text-xs font-semibold leading-snug"
-                                style={{ color: C.text }}
-                              >
-                                {a.text}
-                              </p>
-                              <p
-                                className="text-[10px] mt-0.5"
-                                style={{ color: C.textDim }}
-                              >
-                                {a.time} ago
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div
-                      className="px-4 py-3 border-t text-center"
-                      style={{ borderColor: C.border }}
-                    >
-                      <button
-                        className="text-xs font-bold"
-                        style={{ color: C.crimsonBr }}
-                      >
-                        View all →
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <Ava text="AD" idx={0} />
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-[1600px] mx-auto px-6 py-7 space-y-7">
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="relative overflow-hidden rounded-2xl p-6"
-          style={{
-            background: `linear-gradient(135deg,${C.crimson}25,${C.surface})`,
-            border: `1px solid ${C.crimsonBr}30`,
-          }}
-        >
-          <div className="absolute inset-0 pointer-events-none">
-            <div
-              className="absolute top-0 right-0 w-80 h-full opacity-8"
-              style={{
-                background: `radial-gradient(ellipse at top right,${C.crimsonBr},transparent)`,
-              }}
-            />
-            <div
-              className="absolute bottom-0 left-40 w-40 h-full opacity-5"
-              style={{
-                background: `radial-gradient(ellipse at bottom,${C.crimsonBr},transparent)`,
-              }}
-            />
-          </div>
-          <div className="flex items-center justify-between relative">
-            <div>
-              <p
-                className="text-[10px] font-black uppercase tracking-[.2em] mb-1.5"
-                style={{ color: C.crimsonBr }}
-              >
-                {clock.toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </p>
-              <h2
-                className="text-2xl font-black tracking-tight"
-                style={{ color: C.text }}
-              >
-                Good {greeting}, Admin 👋
-              </h2>
-              <p
-                className="text-sm mt-1 font-medium"
-                style={{ color: C.textMuted }}
-              >
-                AdBloger platform ·{" "}
-                <span style={{ color: C.crimsonBr }}>{totalBook}</span> new
-                bookings this period
-              </p>
-            </div>
-            <div className="hidden sm:block text-right">
-              <p
-                className="text-5xl font-black tabular-nums leading-none"
-                style={{ color: C.text }}
-              >
-                {clock.toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-              <p
-                className="text-xs font-semibold mt-1"
-                style={{ color: C.textDim }}
-              >
-                live clock
-              </p>
-            </div>
+          <div className="hidden sm:block text-right">
+            <p className="text-4xl font-black tabular-nums" style={{ color: T.text }}>
+              {clock.toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+            <p className="text-xs mt-1" style={{ color: T.textDim }}>Jonli soat</p>
           </div>
         </motion.div>
 
-        <section>
-          <SectionHead label="Key Metrics" />
-          <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3">
-            {STATS.map((s, i) => (
-              <StatCard key={s.label} {...s} delay={i * 0.06} spark={s.spark} />
-            ))}
-          </div>
-        </section>
+        {/* ── 8 Stat Cards ───────────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3">
+          {STATS_CFG.map((cfg, i) => (
+            <StatCard key={cfg.label} {...cfg} loading={loading} delay={i * 0.05} />
+          ))}
+        </div>
 
+        {/* ── Chart + Quick Stats Row ─────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 rounded-2xl p-6" style={card}>
-            <div className="flex items-center justify-between mb-5">
+
+          {/* Registration Chart */}
+          <div className="lg:col-span-2 rounded-2xl p-6" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+            <div className="flex items-start justify-between mb-5">
               <div>
-                <h2
-                  className="text-base font-black tracking-tight"
-                  style={{ color: C.text }}
-                >
-                  Revenue Overview
-                </h2>
-                <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
-                  Booking revenue & campaign volume
-                </p>
+                <h3 className="text-base font-bold" style={{ color: T.text }}>Ro'yxatga olish statistikasi</h3>
+                <p className="text-xs mt-0.5" style={{ color: T.textMuted }}>Oylik yangi foydalanuvchilar ({new Date().getFullYear()})</p>
               </div>
-              <div
-                className="flex items-center gap-1 p-1 rounded-xl"
-                style={{ background: C.bg, border: `1px solid ${C.border}` }}
-              >
-                {[
-                  ["week", "7D"],
-                  ["month", "30D"],
-                  ["year", "1Y"],
-                ].map(([p, l]) => (
-                  <button
-                    key={p}
-                    onClick={() => setPeriod(p)}
-                    className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all"
-                    style={{
-                      background: period === p ? C.crimson : "transparent",
-                      color: period === p ? "#fff" : C.textMuted,
-                      boxShadow:
-                        period === p ? `0 2px 12px ${C.crimson}55` : "none",
-                    }}
-                  >
-                    {l}
-                  </button>
-                ))}
+              <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl"
+                style={{ background: T.redLight, color: T.redBr }}>
+                <HiOutlineSparkles />
+                Real ma'lumot
               </div>
             </div>
-            <div className="flex items-center gap-8 mb-5">
-              <div>
-                <p
-                  className="text-[9px] font-black uppercase tracking-widest"
-                  style={{ color: C.textDim }}
-                >
-                  Revenue
-                </p>
-                <p
-                  className="text-2xl font-black leading-none mt-1"
-                  style={{ color: C.text }}
-                >
-                  {fmtUSD(totalRev)}
-                </p>
-              </div>
-              <div className="w-px h-10" style={{ background: C.border }} />
-              <div>
-                <p
-                  className="text-[9px] font-black uppercase tracking-widest"
-                  style={{ color: C.textDim }}
-                >
-                  Bookings
-                </p>
-                <p
-                  className="text-2xl font-black leading-none mt-1"
-                  style={{ color: C.text }}
-                >
-                  {totalBook}
-                </p>
-              </div>
-              <div
-                className="ml-auto flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full"
-                style={{
-                  color: "#4ade80",
-                  background: "#03160a",
-                  border: "1px solid #14532d",
-                }}
-              >
-                <FiArrowUpRight className="text-xs" />
-                +18% vs last period
-              </div>
-            </div>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={period}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <BarChart data={chartData} />
-              </motion.div>
-            </AnimatePresence>
+            <RegistrationChart data={regData} loading={loading} />
           </div>
 
-          <div className="rounded-2xl p-5 flex flex-col" style={card}>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-base font-black" style={{ color: C.text }}>
-                  Live Activity
-                </h2>
-                <p
-                  className="text-xs font-medium mt-0.5"
-                  style={{ color: C.textMuted }}
-                >
-                  Real-time platform feed
-                </p>
+          {/* Quick Numbers */}
+          <div className="rounded-2xl p-5 flex flex-col gap-4" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+            <h3 className="text-base font-bold" style={{ color: T.text }}>Tezkor ko'rsatkichlar</h3>
+
+            {[
+              {
+                label: "Tasdiqlash darajasi",
+                value: loading ? null : `${approvalRate}%`,
+                sub: `${s.totalUsers ?? 0} / ${(s.totalUsers ?? 0) + (s.pendingApplications ?? 0)} ariza`,
+                pct: approvalRate,
+                color: T.success,
+              },
+              {
+                label: "Kampaniya yakunlash",
+                value: loading ? null : `${completionRate}%`,
+                sub: `${s.completedCampaigns ?? 0} / ${s.totalCampaigns ?? 0} kampaniya`,
+                pct: completionRate,
+                color: T.sky,
+              },
+              {
+                label: "Kutilayotgan arizalar",
+                value: loading ? null : String(s.pendingApplications ?? 0),
+                sub: "Ko'rib chiqilishi kerak",
+                pct: null,
+                color: T.warn,
+                urgent: (s.pendingApplications ?? 0) > 0,
+              },
+              {
+                label: "Javob berilmagan xabarlar",
+                value: loading ? null : String(s.newContacts ?? 0),
+                sub: "Yangi murojaat",
+                pct: null,
+                color: T.redBr,
+                urgent: (s.newContacts ?? 0) > 0,
+              },
+            ].map((item, i) => (
+              <div key={i} className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold" style={{ color: T.textMuted }}>{item.label}</span>
+                  {loading
+                    ? <Skeleton className="h-4 w-10" />
+                    : <span className="text-sm font-black" style={{ color: item.urgent ? item.color : T.text }}>
+                        {item.value}
+                      </span>
+                  }
+                </div>
+                {item.pct !== null && (
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: T.bg }}>
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${item.pct}%` }}
+                      transition={{ delay: 0.5 + i * 0.1, duration: 0.7, ease: "easeOut" }}
+                      className="h-full rounded-full" style={{ background: item.color }} />
+                  </div>
+                )}
+                <p className="text-[10px]" style={{ color: T.textDim }}>{item.sub}</p>
               </div>
-              <motion.span
-                animate={{ opacity: [1, 0.3, 1] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-                className="w-2 h-2 rounded-full"
-                style={{ background: C.crimsonBr }}
-              />
-            </div>
-            <div className="flex-1 space-y-1 overflow-y-auto max-h-64 pr-1">
-              {ACTIVITY.map((a, i) => {
-                const Icon = a.icon;
-                return (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.07 }}
-                    className="flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer transition-colors"
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = C.surfaceUp)
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "transparent")
-                    }
-                  >
-                    <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                      style={{
-                        background: `${C.crimson}22`,
-                        border: `1px solid ${C.crimson}35`,
-                      }}
-                    >
-                      <Icon
-                        style={{ color: C.crimsonBr }}
-                        className="text-xs"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className="text-[11px] font-semibold leading-snug"
-                        style={{ color: C.text }}
-                      >
-                        {a.text}
-                      </p>
-                      <p
-                        className="text-[10px] mt-0.5"
-                        style={{ color: C.textDim }}
-                      >
-                        {a.time} ago
-                      </p>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+            ))}
           </div>
         </div>
 
+        {/* ── Recent Ads + Activity Feed ──────────────────────────────────── */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <div
-            className="xl:col-span-2 rounded-2xl overflow-hidden"
-            style={card}
-          >
-            <div
-              className="px-6 py-4 border-b flex items-center justify-between"
-              style={{ borderColor: C.border }}
-            >
+
+          {/* Recent Ads Table */}
+          <div className="xl:col-span-2 rounded-2xl overflow-hidden" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+            <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: T.border }}>
               <div>
-                <h2 className="text-base font-black" style={{ color: C.text }}>
-                  Recent Bookings
-                </h2>
-                <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
-                  Latest influencer campaigns
-                </p>
+                <h3 className="text-base font-bold" style={{ color: T.text }}>So'nggi E'lonlar</h3>
+                <p className="text-xs mt-0.5" style={{ color: T.textMuted }}>Oxirgi qo'shilgan e'lonlar</p>
               </div>
-              <button
-                className="flex items-center gap-1 text-xs font-bold"
-                style={{ color: C.crimsonBr }}
-              >
-                View All <FiChevronRight className="text-xs" />
+              <button className="flex items-center gap-1 text-xs font-semibold" style={{ color: T.redBr }}>
+                Barchasi <FiChevronRight />
               </button>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr
-                    style={{
-                      borderBottom: `1px solid ${C.border}`,
-                      background: C.bg,
-                    }}
-                  >
-                    {[
-                      "ID",
-                      "Brand",
-                      "Blogger",
-                      "Platform",
-                      "Reach",
-                      "Amount",
-                      "Status",
-                      "Date",
-                    ].map((h) => (
-                      <th
-                        key={h}
-                        className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest"
-                        style={{ color: C.textDim }}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {BOOKINGS.map((b, i) => {
-                    const st = ORDER_STATUS[b.status];
-                    return (
-                      <motion.tr
-                        key={b.id}
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.06 }}
-                        className="border-b cursor-pointer"
-                        style={{ borderColor: C.border }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.background = C.surfaceUp)
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.background = "transparent")
-                        }
-                      >
-                        <td
-                          className="px-4 py-3 text-xs font-black"
-                          style={{ color: C.crimsonBr }}
-                        >
-                          {b.id}
-                        </td>
-                        <td
-                          className="px-4 py-3 text-xs font-bold"
-                          style={{ color: C.text }}
-                        >
-                          {b.brand}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <Ava
-                              text={b.blogger
-                                .split(" ")
-                                .map((w) => w[0])
-                                .join("")}
-                              idx={i}
-                              size="w-6 h-6"
-                              fs="text-[9px]"
-                            />
-                            <span
-                              className="text-xs font-semibold"
-                              style={{ color: C.text }}
-                            >
-                              {b.blogger}
+
+            {loading ? (
+              <div className="p-4 space-y-3">
+                {Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+              </div>
+            ) : recentAdsRows.length === 0 ? (
+              <div className="py-16 text-center text-sm" style={{ color: T.textDim }}>E'lonlar mavjud emas</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ background: T.bg, borderBottom: `1px solid ${T.border}` }}>
+                      {["ID","Kompaniya / Sarlavha","Foydalanuvchi","Platforma","Tur","Status","Sana"].map(h => (
+                        <th key={h} className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest whitespace-nowrap"
+                          style={{ color: T.textDim }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentAdsRows.map((row, i) => {
+                      const plt = getPlatform(row.platform);
+                      const PIcon = plt.icon;
+                      return (
+                        <motion.tr key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
+                          className="border-b cursor-pointer" style={{ borderColor: T.border }}
+                          onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                          <td className="px-4 py-3 text-xs font-black" style={{ color: T.redBr }}>{row.id}</td>
+                          <td className="px-4 py-3 text-xs font-semibold max-w-[140px] truncate" style={{ color: T.text }}>{row.brand}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <Avatar name={row.user} size={26} idx={i} />
+                              <span className="text-xs font-medium truncate max-w-[90px]" style={{ color: T.textMuted }}>{row.user}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                              style={{ background: plt.bg, color: plt.color }}>
+                              <PIcon className="text-[9px]" />
+                              {row.platform}
                             </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <PlatBadge platform={b.platform} />
-                        </td>
-                        <td
-                          className="px-4 py-3 text-xs font-bold"
-                          style={{ color: C.textMuted }}
-                        >
-                          {b.reach}
-                        </td>
-                        <td
-                          className="px-4 py-3 text-xs font-black"
-                          style={{ color: C.text }}
-                        >
-                          {fmtUSD(b.amount)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${st.cls}`}
-                          >
-                            {st.label}
-                          </span>
-                        </td>
-                        <td
-                          className="px-4 py-3 text-[10px]"
-                          style={{ color: C.textDim }}
-                        >
-                          {b.date}
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs" style={{ color: T.textMuted }}>{row.type}</td>
+                          <td className="px-4 py-3"><Badge status={row.status} /></td>
+                          <td className="px-4 py-3 text-xs" style={{ color: T.textDim }}>{row.date}</td>
+                        </motion.tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
-          <div className="rounded-2xl p-5" style={card}>
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="text-base font-black" style={{ color: C.text }}>
-                  Monthly Goals
-                </h2>
-                <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
-                  Progress tracking
-                </p>
-              </div>
-              <FiTarget style={{ color: C.crimsonBr }} className="text-lg" />
-            </div>
-            <div className="space-y-5">
-              {GOALS.map((g, i) => {
-                const pct = Math.round((g.current / g.target) * 100);
-                const d = (v) =>
-                  g.unit === "$" ? fmtUSD(v) : v.toLocaleString();
-                return (
-                  <motion.div
-                    key={g.label}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.09 }}
-                  >
-                    <div className="flex justify-between mb-1.5">
-                      <span
-                        className="text-[11px] font-bold"
-                        style={{ color: C.text }}
-                      >
-                        {g.label}
-                      </span>
-                      <span
-                        className="text-[11px] font-black"
-                        style={{ color: C.crimsonBr }}
-                      >
-                        {pct}%
-                      </span>
-                    </div>
-                    <div
-                      className="h-1.5 rounded-full overflow-hidden"
-                      style={{ background: C.bg }}
-                    >
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${pct}%` }}
-                        transition={{
-                          delay: 0.3 + i * 0.1,
-                          duration: 0.8,
-                          ease: "easeOut",
-                        }}
-                        className="h-full rounded-full"
-                        style={{
-                          background: `linear-gradient(to right,${C.crimson},${C.crimsonBr})`,
-                          boxShadow: `0 0 8px ${C.crimson}60`,
-                        }}
-                      />
-                    </div>
-                    <div className="flex justify-between mt-1">
-                      <span className="text-[9px]" style={{ color: C.textDim }}>
-                        {d(g.current)}
-                      </span>
-                      <span className="text-[9px]" style={{ color: C.textDim }}>
-                        of {d(g.target)}
-                      </span>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
-          <div
-            className="xl:col-span-3 rounded-2xl overflow-hidden"
-            style={card}
-          >
-            <div
-              className="px-6 py-4 border-b flex items-center justify-between"
-              style={{ borderColor: C.border }}
-            >
-              <div>
-                <h2 className="text-base font-black" style={{ color: C.text }}>
-                  Top Bloggers
-                </h2>
-                <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
-                  Highest-performing influencers
-                </p>
-              </div>
-              <FiAward style={{ color: C.crimsonBr }} className="text-lg" />
-            </div>
-            <div>
-              {TOP_BLOGGERS.map((b, i) => (
-                <motion.div
-                  key={b.name}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.07 }}
-                  className="flex items-center gap-4 px-6 py-4 border-b cursor-pointer"
-                  style={{ borderColor: C.border }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = C.surfaceUp)
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
-                >
-                  <div
-                    className="text-sm font-black w-6 text-center shrink-0"
-                    style={{ color: C.textDim }}
-                  >
-                    {i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}
-                  </div>
-                  <Ava text={b.avatar} idx={i} size="w-10 h-10" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p
-                        className="text-sm font-black"
-                        style={{ color: C.text }}
-                      >
-                        {b.name}
-                      </p>
-                      <PlatBadge platform={b.platform} />
-                      <span
-                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{
-                          color: C.crimsonBr,
-                          background: `${C.crimson}22`,
-                        }}
-                      >
-                        {b.cat}
-                      </span>
-                    </div>
-                    <p
-                      className="text-[10px] mt-0.5"
-                      style={{ color: C.textMuted }}
-                    >
-                      {b.handle}
-                    </p>
-                  </div>
-                  <div className="text-center shrink-0">
-                    <p
-                      className="text-[9px] font-semibold"
-                      style={{ color: C.textDim }}
-                    >
-                      Followers
-                    </p>
-                    <p className="text-sm font-black" style={{ color: C.text }}>
-                      {b.followers}
-                    </p>
-                  </div>
-                  <div className="text-center shrink-0">
-                    <p
-                      className="text-[9px] font-semibold"
-                      style={{ color: C.textDim }}
-                    >
-                      ER
-                    </p>
-                    <p
-                      className="text-sm font-black"
-                      style={{ color: "#4ade80" }}
-                    >
-                      {b.er}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p
-                      className="text-[9px] font-semibold"
-                      style={{ color: C.textDim }}
-                    >
-                      Revenue
-                    </p>
-                    <p className="text-sm font-black" style={{ color: C.text }}>
-                      {fmt(b.revenue)}
-                    </p>
-                    <Stars rating={b.rating} />
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          <div
-            className="xl:col-span-2 rounded-2xl overflow-hidden"
-            style={card}
-          >
-            <div
-              className="px-5 py-4 border-b flex items-center justify-between"
-              style={{ borderColor: C.border }}
-            >
-              <div>
-                <h2 className="text-base font-black" style={{ color: C.text }}>
-                  Team Members
-                </h2>
-                <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
-                  {TEAM.filter((e) => e.status === "online").length} online of{" "}
-                  {TEAM.length}
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span
-                  className="text-[10px] font-bold"
-                  style={{ color: C.textMuted }}
-                >
-                  {TEAM.filter((e) => e.status === "online").length}/
-                  {TEAM.length}
-                </span>
-              </div>
-            </div>
-            <div>
-              {TEAM.map((e, i) => {
-                const st = TEAM_STATUS[e.status];
-                return (
-                  <motion.div
-                    key={e.id}
-                    initial={{ opacity: 0, x: 8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.07 }}
-                    className="flex items-center gap-3 px-5 py-3.5 border-b cursor-pointer"
-                    style={{ borderColor: C.border }}
-                    onMouseEnter={(ev) =>
-                      (ev.currentTarget.style.background = C.surfaceUp)
-                    }
-                    onMouseLeave={(ev) =>
-                      (ev.currentTarget.style.background = "transparent")
-                    }
-                  >
-                    <div className="relative shrink-0">
-                      <Ava
-                        text={e.avatar}
-                        idx={e.id}
-                        size="w-9 h-9"
-                        fs="text-xs"
-                      />
-                      <span
-                        className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 ${st.dot}`}
-                        style={{ borderColor: C.surface }}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className="text-sm font-bold truncate"
-                        style={{ color: C.text }}
-                      >
-                        {e.name}
-                      </p>
-                      <p
-                        className="text-[10px] truncate"
-                        style={{ color: C.textMuted }}
-                      >
-                        {e.role} · {e.dept}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <Stars rating={e.rating} />
-                      <p
-                        className="text-[9px] mt-0.5"
-                        style={{ color: C.textDim }}
-                      >
-                        {e.tasks} tasks
-                      </p>
-                    </div>
-                    <span
-                      className={`text-[9px] font-black px-2 py-1 rounded-full border ${
-                        e.status === "online"
-                          ? "text-emerald-400 bg-emerald-950 border-emerald-900"
-                          : e.status === "away"
-                            ? "text-amber-400  bg-amber-950  border-amber-900"
-                            : "text-neutral-500 bg-neutral-900 border-neutral-800"
-                      }`}
-                    >
-                      {st.label}
-                    </span>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          <div className="rounded-2xl p-5" style={card}>
+          {/* Live Activity Feed */}
+          <div className="rounded-2xl p-5 flex flex-col" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-sm font-black" style={{ color: C.text }}>
-                  Booking Funnel
-                </h2>
-                <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
-                  Conversion stages
-                </p>
+                <h3 className="text-base font-bold" style={{ color: T.text }}>Jonli faoliyat</h3>
+                <p className="text-xs mt-0.5" style={{ color: T.textMuted }}>Real vaqt yangilanishlari</p>
               </div>
-              <FiTrendingUp style={{ color: C.crimsonBr }} />
+              <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}
+                className="w-2 h-2 rounded-full" style={{ background: T.success }} />
             </div>
-            <div className="space-y-3.5">
-              {FUNNEL.map((f, i) => (
-                <motion.div
-                  key={f.label}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                >
-                  <div className="flex justify-between mb-1.5">
-                    <span
-                      className="text-[10px] font-semibold"
-                      style={{ color: C.textMuted }}
-                    >
-                      {f.label}
-                    </span>
-                    <span
-                      className="text-[10px] font-black"
-                      style={{ color: C.text }}
-                    >
-                      {fmt(f.value)}
-                    </span>
-                  </div>
-                  <div
-                    className="h-2 rounded-full overflow-hidden"
-                    style={{ background: C.bg }}
-                  >
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${f.pct}%` }}
-                      transition={{ delay: 0.4 + i * 0.1, duration: 0.7 }}
-                      className="h-full rounded-full"
-                      style={{
-                        background: `linear-gradient(to right,${C.crimson},${C.crimsonBr})`,
-                        opacity: 1 - i * 0.15,
-                      }}
-                    />
-                  </div>
-                  <p
-                    className="text-[9px] text-right mt-0.5"
-                    style={{ color: C.textDim }}
-                  >
-                    {f.pct}%
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
 
-          <div className="rounded-2xl p-5" style={card}>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-sm font-black" style={{ color: C.text }}>
-                  Top Regions
-                </h2>
-                <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
-                  Booking distribution
-                </p>
+            {loading ? (
+              <div className="space-y-3">{Array(6).fill(0).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            ) : liveActivity.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-sm" style={{ color: T.textDim }}>
+                Faoliyat yo'q
               </div>
-              <FiMapPin style={{ color: C.crimsonBr }} />
-            </div>
-            <div className="space-y-3">
-              {REGIONS.map((r, i) => (
-                <motion.div
-                  key={r.city}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.07 }}
-                  className="flex items-center gap-2"
-                >
-                  <span
-                    className="w-4 text-[9px] font-black text-center shrink-0"
-                    style={{ color: C.textDim }}
-                  >
-                    {i + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between mb-1">
-                      <span
-                        className="text-[11px] font-bold"
-                        style={{ color: C.text }}
-                      >
-                        {r.city}
-                      </span>
-                      <span
-                        className="text-[10px] font-black ml-1 shrink-0"
-                        style={{ color: C.crimsonBr }}
-                      >
-                        {r.share}%
-                      </span>
-                    </div>
-                    <div
-                      className="h-1.5 rounded-full overflow-hidden"
-                      style={{ background: C.bg }}
-                    >
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${r.share}%` }}
-                        transition={{ delay: 0.4 + i * 0.08, duration: 0.6 }}
-                        className="h-full rounded-full"
-                        style={{
-                          background: `linear-gradient(to right,${C.crimson},${C.crimsonBr})`,
-                          opacity: 1 - i * 0.08,
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <span
-                    className="text-[9px] shrink-0"
-                    style={{ color: C.textDim }}
-                  >
-                    {fmt(r.bookings)}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-2xl p-5" style={card}>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-sm font-black" style={{ color: C.text }}>
-                  Niche Breakdown
-                </h2>
-                <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
-                  By blogger category
-                </p>
-              </div>
-              <FiLayers style={{ color: C.crimsonBr }} />
-            </div>
-            <div className="space-y-3">
-              {CATEGORIES.map((cat, i) => (
-                <motion.div
-                  key={cat.name}
-                  initial={{ opacity: 0, x: 8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.07 }}
-                  className="flex items-center gap-3"
-                >
-                  <div
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ background: cat.color }}
-                  />
-                  <span
-                    className="text-[11px] font-semibold flex-1"
-                    style={{ color: C.text }}
-                  >
-                    {cat.name}
-                  </span>
-                  <div className="flex-1 max-w-[80px]">
-                    <div
-                      className="h-1.5 rounded-full overflow-hidden"
-                      style={{ background: C.bg }}
-                    >
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${cat.share}%` }}
-                        transition={{ delay: 0.3 + i * 0.08, duration: 0.6 }}
-                        className="h-full rounded-full"
-                        style={{ background: cat.color }}
-                      />
-                    </div>
-                  </div>
-                  <span
-                    className="text-[10px] font-black shrink-0"
-                    style={{ color: C.textMuted }}
-                  >
-                    {cat.share}%
-                  </span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-2xl p-5" style={card}>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-sm font-black" style={{ color: C.text }}>
-                  New Brands
-                </h2>
-                <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
-                  Recently joined clients
-                </p>
-              </div>
-              <FiUserPlus style={{ color: C.crimsonBr }} />
-            </div>
-            <div className="space-y-2.5">
-              {NEW_BRANDS.map((b, i) => (
-                <motion.div
-                  key={b.name}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                  className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer"
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = C.surfaceUp)
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
-                >
-                  <Ava
-                    text={b.avatar}
-                    idx={i + 2}
-                    size="w-9 h-9"
-                    fs="text-xs"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className="text-xs font-bold truncate"
-                      style={{ color: C.text }}
-                    >
-                      {b.name}
-                    </p>
-                    <p className="text-[9px]" style={{ color: C.textMuted }}>
-                      {b.industry}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p
-                      className="text-[10px] font-black"
-                      style={{ color: C.crimsonBr }}
-                    >
-                      {b.budget}
-                    </p>
-                    <p className="text-[9px]" style={{ color: C.textDim }}>
-                      {b.joined}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl p-5" style={card}>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-base font-black" style={{ color: C.text }}>
-                Today's Schedule
-              </h2>
-              <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
-                {clock.toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
+            ) : (
+              <div className="flex-1 space-y-1 overflow-y-auto max-h-80">
+                {liveActivity.map((a, i) => {
+                  const Icon = a.icon;
+                  return (
+                    <motion.div key={i} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.06 }}
+                      className="flex items-start gap-3 p-2.5 rounded-xl cursor-pointer"
+                      onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                        style={{ background: a.bg }}>
+                        <Icon style={{ color: a.color }} className="text-sm" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold truncate" style={{ color: T.text }}>{a.text}</p>
+                        <p className="text-[10px] mt-0.5 truncate" style={{ color: T.textMuted }}>{a.sub}</p>
+                        <p className="text-[9px] mt-0.5 flex items-center gap-1" style={{ color: T.textDim }}>
+                          <FiClock className="text-[8px]" /> {a.time}
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
                 })}
-              </p>
-            </div>
-            <FiCalendar style={{ color: C.crimsonBr }} className="text-lg" />
+              </div>
+            )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {CALENDAR_TASKS.map((task, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className="flex items-start gap-3 p-4 rounded-xl cursor-pointer"
-                style={{ background: C.bg, border: `1px solid ${C.border}` }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = `${C.crimsonBr}55`;
-                  e.currentTarget.style.background = C.surfaceUp;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = C.border;
-                  e.currentTarget.style.background = C.bg;
-                }}
-              >
-                <div className="shrink-0">
-                  <p
-                    className="text-xs font-black"
-                    style={{ color: C.crimsonBr }}
-                  >
-                    {task.time}
-                  </p>
-                  <div
-                    className="w-px h-8 mx-auto mt-1.5 rounded-full"
-                    style={{
-                      background: `linear-gradient(to bottom,${C.crimson}88,transparent)`,
-                    }}
-                  />
-                </div>
+        </div>
+
+        {/* ── Bottom Row: Top Bloggers + Niche + New Businesses ──────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {/* Top Bloggers */}
+          <div className="rounded-2xl overflow-hidden" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+            <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: T.border }}>
+              <h3 className="text-sm font-bold" style={{ color: T.text }}>Top Bloggerlar</h3>
+              <FiAward style={{ color: T.redBr }} />
+            </div>
+            {loading ? (
+              <div className="p-4 space-y-3">{Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
+            ) : topBloggersRows.length === 0 ? (
+              <div className="py-12 text-center text-xs" style={{ color: T.textDim }}>Ma'lumot yuklanmoqda...</div>
+            ) : (
+              <div className="divide-y" style={{ borderColor: T.border }}>
+                {topBloggersRows.map((b, i) => {
+                  const plt = getPlatform(b.platform);
+                  const PIcon = plt.icon;
+                  return (
+                    <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.06 }}
+                      className="flex items-center gap-3 px-5 py-3.5 cursor-pointer"
+                      onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                      <span className="text-sm font-black w-5 text-center shrink-0" style={{ color: T.textDim }}>
+                        {["🥇","🥈","🥉"][i] ?? i + 1}
+                      </span>
+                      <Avatar name={b.name} size={34} idx={i + 1} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold truncate" style={{ color: T.text }}>{b.name}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[9px]" style={{ color: T.textDim }}>{b.handle}</span>
+                          <span className="inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full"
+                            style={{ background: plt.bg, color: plt.color }}>
+                            <PIcon className="text-[7px]" /> {b.platform}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-black" style={{ color: T.text }}>{b.followers}</p>
+                        <p className="text-[9px] mt-0.5" style={{ color: "#16A34A" }}>{b.er} ER</p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Niche Breakdown */}
+          <div className="rounded-2xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-bold" style={{ color: T.text }}>Kategoriya taqsimoti</h3>
+                <p className="text-xs mt-0.5" style={{ color: T.textMuted }}>Blogger niches</p>
+              </div>
+              <FiLayers style={{ color: T.redBr }} />
+            </div>
+            {loading ? (
+              <div className="space-y-4">{Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+            ) : nicheRows.length === 0 ? (
+              <div className="py-12 text-center text-xs" style={{ color: T.textDim }}>Ma'lumot yuklanmoqda...</div>
+            ) : (
+              <div className="space-y-4">
+                {nicheRows.map((cat, i) => (
+                  <motion.div key={cat.name} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.07 }}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cat.color }} />
+                        <span className="text-xs font-semibold" style={{ color: T.text }}>{cat.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px]" style={{ color: T.textDim }}>{cat.count} ta</span>
+                        <span className="text-xs font-black" style={{ color: cat.color }}>{cat.pct}%</span>
+                      </div>
+                    </div>
+                    <div className="h-2 rounded-full overflow-hidden" style={{ background: T.bg }}>
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${cat.pct}%` }}
+                        transition={{ delay: 0.3 + i * 0.08, duration: 0.6, ease: "easeOut" }}
+                        className="h-full rounded-full" style={{ background: cat.color, opacity: 0.85 }} />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* New Businesses */}
+          <div className="rounded-2xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-bold" style={{ color: T.text }}>Yangi Bizneslar</h3>
+                <p className="text-xs mt-0.5" style={{ color: T.textMuted }}>So'nggi qo'shilganlar</p>
+              </div>
+              <FiUserPlus style={{ color: T.redBr }} />
+            </div>
+            {loading ? (
+              <div className="space-y-3">{Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
+            ) : newBusinessRows.length === 0 ? (
+              <div className="py-12 text-center text-xs" style={{ color: T.textDim }}>Ma'lumot yuklanmoqda...</div>
+            ) : (
+              <div className="space-y-2">
+                {newBusinessRows.map((b, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.08 }}
+                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
+                    onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <Avatar name={b.name} size={36} idx={i + 2} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold truncate" style={{ color: T.text }}>{b.name}</p>
+                      <p className="text-[10px] truncate" style={{ color: T.textDim }}>{b.email}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-[9px] shrink-0" style={{ color: T.textDim }}>
+                      <FiClock className="text-[8px]" />
+                      {b.joined}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* Pending Applications Alert */}
+            {!loading && (s.pendingApplications ?? 0) > 0 && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+                className="mt-4 flex items-center gap-3 p-3 rounded-xl"
+                style={{ background: T.warnBg, border: `1px solid ${T.warnBd}` }}>
+                <FiAlertCircle style={{ color: T.warn, flexShrink: 0 }} />
                 <div>
-                  <p
-                    className="text-xs font-bold leading-snug"
-                    style={{ color: C.text }}
-                  >
-                    {task.title}
+                  <p className="text-xs font-bold" style={{ color: T.warn }}>
+                    {s.pendingApplications} ta ariza kutmoqda
                   </p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <FiUsers
-                      className="text-[9px]"
-                      style={{ color: C.textDim }}
-                    />
-                    <span className="text-[9px]" style={{ color: C.textDim }}>
-                      {task.participants} participants
-                    </span>
-                  </div>
+                  <p className="text-[10px]" style={{ color: T.textMuted }}>Ko'rib chiqish talab etiladi</p>
                 </div>
               </motion.div>
-            ))}
+            )}
           </div>
         </div>
+
       </div>
     </div>
   );

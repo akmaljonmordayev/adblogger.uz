@@ -10,8 +10,11 @@ const sendEmail = require('../utils/sendEmail');
 exports.register = catchAsync(async (req, res, next) => {
   const { firstName, lastName, email, phone, password, role } = req.body;
 
-  const allowedRoles = ['user', 'blogger', 'business'];
-  const userRole = allowedRoles.includes(role) ? role : 'user';
+  const allowedRoles = ['blogger', 'business'];
+  if (!allowedRoles.includes(role)) {
+    return next(new AppError("Iltimos, 'blogger' yoki 'business' rolini tanlang.", 400));
+  }
+  const userRole = role;
 
   const user = await User.create({
     firstName,

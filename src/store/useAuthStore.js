@@ -25,16 +25,10 @@ export const useAuthStore = create(
       },
 
       // ── Register ─────────────────────────────────────────────────────────
-      register: async ({ firstName, lastName, email, phone, password, role }) => {
+      register: async ({ firstName, lastName, email, phone, password, role }, axiosConfig = {}) => {
         const res = await api.post("/auth/register", {
-          firstName,
-          lastName,
-          email,
-          phone,
-          password,
-          role,
-        });
-        // Register now returns {status: 'pending', userId, message}
+          firstName, lastName, email, phone, password, role,
+        }, axiosConfig);
         const { status, userId } = res.data;
         if (status === "pending") {
           set({ pendingUserId: userId, pendingEmail: email });
@@ -43,8 +37,8 @@ export const useAuthStore = create(
       },
 
       // ── Login ─────────────────────────────────────────────────────────────
-      login: async ({ email, password }) => {
-        const res = await api.post("/auth/login", { email, password });
+      login: async ({ email, password }, axiosConfig = {}) => {
+        const res = await api.post("/auth/login", { email, password }, axiosConfig);
         const { token, user } = res.data;
         localStorage.setItem("token", token);
         set({ token, user, pendingUserId: null, pendingEmail: null });
