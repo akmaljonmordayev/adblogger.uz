@@ -60,6 +60,7 @@ export const adminCategoriesService = {
   create: (data) => api.post("/admin/categories", data).then((r) => r.data),
   update: (id, data) => api.patch(`/admin/categories/${id}`, data).then((r) => r.data),
   remove: (id) => api.delete(`/admin/categories/${id}`).then((r) => r.data),
+  syncCounts: () => api.post("/admin/categories/sync-counts").then((r) => r.data),
 };
 
 // ── FAQs ───────────────────────────────────────────────────────────────────────
@@ -76,6 +77,12 @@ export const adminCareersService = {
   create: (data) => api.post("/admin/careers", data).then((r) => r.data),
   update: (id, data) => api.patch(`/admin/careers/${id}`, data).then((r) => r.data),
   remove: (id) => api.delete(`/admin/careers/${id}`).then((r) => r.data),
+  // applications
+  getApplications: (careerId) => api.get(`/admin/careers/${careerId}/applications`).then((r) => r.data),
+  getAllApplications: (params) => api.get("/admin/career-applications", { params }).then((r) => r.data),
+  updateAppStatus: (appId, status) =>
+    api.patch(`/admin/career-applications/${appId}/status`, { status }).then((r) => r.data),
+  removeApp: (appId) => api.delete(`/admin/career-applications/${appId}`).then((r) => r.data),
 };
 
 // ── Contacts ───────────────────────────────────────────────────────────────────

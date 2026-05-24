@@ -60,4 +60,35 @@ const bloggerSchema = new mongoose.Schema(
 bloggerSchema.index({ categories: 1, followers: -1 });
 bloggerSchema.index({ platforms: 1, followers: -1 });
 
+/* ── Category count sync ─────────────────────────────────────────
+   Whenever a blogger is saved or removed, update the bloggerCount
+   field on every affected Category document.
+──────────────────────────────────────────────────────────────── */
+async function syncCategoryCounts(categoryNames) {
+  if (!categoryNames || categoryNames.length === 0) return;
+  const Category = mongoose.model('Category');
+  await Promise.all(
+    categoryNames.map(async (name) => {
+      const count = await mongoose.model('Blogger').countDocuments({ categories: name });
+      await Category.findOneAndUpdate({ name }, { bloggerCount: count });
+    })
+  );
+}
+
+// After save — sync categories that were added or removed
+bloggerSchema.post('save', async function () {
+  await syncCategoryCounts(this.categories || []);
+});
+
+// After findOneAndUpdate (upsert profile update)
+bloggerSchema.post('findOneAndUpdate', async function () {
+  const doc = await this.model.findOne(this.getQuery()).select('categories');
+  if (doc) await syncCategoryCounts(doc.categories || []);
+});
+
+// After delete — sync all category counts
+bloggerSchema.post('findOneAndDelete', async function (doc) {
+  if (doc) await syncCategoryCounts(doc.categories || []);
+});
+
 module.exports = mongoose.model('Blogger', bloggerSchema);
