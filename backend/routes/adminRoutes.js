@@ -253,10 +253,11 @@ router.patch('/blogs/:id', uploadBlogImage.single('coverImage'), blogController.
 router.delete('/blogs/:id', blogController.deleteBlog);
 
 // ── Categories ─────────────────────────────────────────────────────────────────
-router.get('/categories',       categoryController.getAllCategories);
-router.post('/categories',      categoryController.createCategory);
-router.patch('/categories/:id', categoryController.updateCategory);
-router.delete('/categories/:id',categoryController.deleteCategory);
+router.get('/categories',              categoryController.getAllCategories);
+router.post('/categories',             categoryController.createCategory);
+router.patch('/categories/:id',        categoryController.updateCategory);
+router.delete('/categories/:id',       categoryController.deleteCategory);
+router.post('/categories/sync-counts', categoryController.syncAllBloggerCounts);
 
 // ── FAQs ───────────────────────────────────────────────────────────────────────
 router.get('/faqs',        faqController.adminGetAllFAQs);
@@ -265,10 +266,14 @@ router.patch('/faqs/:id',  faqController.updateFAQ);
 router.delete('/faqs/:id', faqController.deleteFAQ);
 
 // ── Careers ────────────────────────────────────────────────────────────────────
-router.get('/careers',         careerController.adminGetAllCareers);
-router.post('/careers',        careerController.createCareer);
-router.patch('/careers/:id',   careerController.updateCareer);
-router.delete('/careers/:id',  careerController.deleteCareer);
+router.get('/careers',                                  careerController.adminGetAllCareers);
+router.post('/careers',                                 careerController.createCareer);
+router.patch('/careers/:id',                            careerController.updateCareer);
+router.delete('/careers/:id',                           careerController.deleteCareer);
+router.get('/careers/:id/applications',                 careerController.getApplications);
+router.get('/career-applications',                      careerController.getAllApplications);
+router.patch('/career-applications/:appId/status',      careerController.updateApplicationStatus);
+router.delete('/career-applications/:appId',            careerController.deleteApplication);
 
 // ── Contacts ───────────────────────────────────────────────────────────────────
 /**
