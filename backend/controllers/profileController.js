@@ -64,9 +64,38 @@ exports.adminGetAllUsers = catchAsync(async (req, res) => {
   const filter = {};
   if (req.query.role) filter.role = req.query.role;
   if (req.query.isActive !== undefined) filter.isActive = req.query.isActive === 'true';
+  if (req.query.search) {
+    const q = req.query.search.trim();
+    filter.$or = [
+      { firstName: { $regex: q, $options: 'i' } },
+      { lastName:  { $regex: q, $options: 'i' } },
+      { email:     { $regex: q, $options: 'i' } },
+    ];
+  }
 
-  const users = await User.find(filter).sort('-createdAt');
-  res.status(200).json({ success: true, results: users.length, data: users });
+  const page  = Math.max(1, parseInt(req.query.page)  || 1);
+  const limit = Math.max(1, parseInt(req.query.limit) || 10);
+  const skip  = (page - 1) * limit;
+
+  // Global stats — always based on all users, no filter
+  const [users, total, totalActive, totalBlocked, totalBloggers, totalBusinesses] = await Promise.all([
+    User.find(filter).sort('-createdAt').skip(skip).limit(limit),
+    User.countDocuments(filter),
+    User.countDocuments({ isActive: true }),
+    User.countDocuments({ isActive: false }),
+    User.countDocuments({ role: 'blogger' }),
+    User.countDocuments({ role: 'business' }),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    results: total,
+    totalActive,
+    totalBlocked,
+    totalBloggers,
+    totalBusinesses,
+    data: users,
+  });
 });
 
 exports.adminGetUser = catchAsync(async (req, res, next) => {

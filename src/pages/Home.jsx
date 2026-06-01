@@ -213,6 +213,7 @@ export default function Home() {
   const [bloggers, setBloggers]         = useState([]);
   const [blogs, setBlogs]               = useState([]);
   const [allBloggers, setAllBloggers]   = useState([]);
+  const [totalBloggers, setTotalBloggers] = useState(0);
   const [platformMap, setPlatformMap]   = useState({});
   const [bloggersLoading, setBloggersLoading] = useState(true);
   const [blogsLoading, setBlogsLoading]       = useState(true);
@@ -227,9 +228,11 @@ export default function Home() {
   /* fetch all bloggers for platform grouping */
   const fetchAll = useCallback(async () => {
     try {
-      const res = await api.get("/bloggers", { params: { limit: 50 } });
-      const data = res.data.data || [];
+      const res = await api.get("/bloggers", { params: { limit: 500 } });
+      const data  = res.data.data  || [];
+      const total = res.data.total ?? data.length;
       setAllBloggers(data);
+      setTotalBloggers(total);
       const map = {};
       data.forEach(b => {
         (b.platforms || []).forEach(p => {
@@ -409,7 +412,7 @@ export default function Home() {
               onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,0.13)"; e.currentTarget.style.color="#fff"; }}
               onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.07)"; e.currentTarget.style.color="rgba(255,255,255,0.75)"; }}
             >
-              Barcha {allBloggers.length || 26} ta blogerlarni ko'rish <LuArrowRight size={15} />
+              Barcha {totalBloggers || allBloggers.length || "..."} ta blogerlarni ko'rish <LuArrowRight size={15} />
             </Link>
           </div>
         </div>

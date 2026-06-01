@@ -125,8 +125,7 @@ function ViewModal({ user, onClose, onToggle }) {
 }
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState([]);
-  const [total, setTotal] = useState(0);
+  const [allUsers, setAllUsers] = useState([]); // barcha userlar (stats uchun)
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("");
@@ -138,28 +137,17 @@ export default function AdminUsers() {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { page, limit: PER };
-      if (role) params.role = role;
-      const res = await adminUsersService.getAll(params);
-      // filter by search client-side (backend doesn't have search for users)
-      let data = res.data || [];
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        data = data.filter(u =>
-          `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
-          u.email?.toLowerCase().includes(q)
-        );
-      }
-      setUsers(data);
-      setTotal(res.results || data.length);
+      const res = await adminUsersService.getAll({ role: role || undefined });
+      setAllUsers(res.data || []);
     } catch {
       toast.error("Foydalanuvchilarni yuklashda xatolik");
     } finally {
       setLoading(false);
     }
-  }, [page, role, search]);
+  }, [role]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => { setPage(1); }, [search, role]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -176,13 +164,24 @@ export default function AdminUsers() {
     }
   };
 
+  // Client-side search + pagination
+  const filtered = allUsers.filter(u => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
+           u.email?.toLowerCase().includes(q);
+  });
+
+  const total = filtered.length;
   const pages = Math.ceil(total / PER) || 1;
+  const users = filtered.slice((page - 1) * PER, page * PER);
 
   const stats = [
-    { l: "Jami", v: total, c: "#111827" },
-    { l: "Faol", v: users.filter(u => u.isActive).length, c: "#166534" },
-    { l: "Blogger", v: users.filter(u => u.role === "blogger").length, c: "#1e40af" },
-    { l: "Biznesmen", v: users.filter(u => u.role === "business").length, c: "#854d0e" },
+    { l: "Jami",          v: allUsers.length,                              c: "#111827" },
+    { l: "Faol",          v: allUsers.filter(u => u.isActive).length,      c: "#166534" },
+    { l: "Blok qilingan", v: allUsers.filter(u => !u.isActive).length,     c: "#991b1b" },
+    { l: "Blogger",       v: allUsers.filter(u => u.role === "blogger").length,  c: "#1e40af" },
+    { l: "Biznesmen",     v: allUsers.filter(u => u.role === "business").length, c: "#854d0e" },
   ];
 
   const BASE = { minHeight: "100vh", padding: "28px 32px", fontFamily: "'Plus Jakarta Sans',sans-serif", background: "#f4f6fb" };
@@ -202,7 +201,7 @@ export default function AdminUsers() {
         </div>
 
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 18 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 18 }}>
           {stats.map(s => (
             <div key={s.l} style={{ ...CARD, padding: "16px 18px" }}>
               <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 7 }}>{s.l}</div>
@@ -218,11 +217,11 @@ export default function AdminUsers() {
             <input
               placeholder="Ism, email bo'yicha qidirish…"
               value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              onChange={e => setSearch(e.target.value)}
               style={{ background: "none", border: "none", outline: "none", color: "#111827", fontSize: 13, fontFamily: "inherit", width: "100%" }}
             />
           </div>
-          <select value={role} onChange={e => { setRole(e.target.value); setPage(1); }} style={INP}>
+          <select value={role} onChange={e => setRole(e.target.value)} style={INP}>
             <option value="">Barcha rollar</option>
             <option value="user">Foydalanuvchi</option>
             <option value="blogger">Blogger</option>
@@ -293,14 +292,21 @@ export default function AdminUsers() {
           </div>
 
           {/* Pagination */}
-          {pages > 1 && (
+          {total > 0 && (
             <div style={{ padding: "12px 16px", borderTop: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 12, color: "#9ca3af" }}>{(page - 1) * PER + 1}–{Math.min(page * PER, total)} / {total}</span>
-              <div style={{ display: "flex", gap: 4 }}>
+              <span style={{ fontSize: 12, color: "#9ca3af" }}>
+                {total === 0 ? "0" : `${(page - 1) * PER + 1}–${Math.min(page * PER, total)}`} / {total} ta
+              </span>
+              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                 <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid #e5e7eb", background: page <= 1 ? "#f9fafb" : "#fff", cursor: page <= 1 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <LuChevronLeft style={{ fontSize: 14, color: page <= 1 ? "#d1d5db" : "#374151" }} />
                 </button>
-                <span style={{ padding: "0 10px", height: 30, display: "flex", alignItems: "center", fontSize: 13, fontWeight: 700, color: "#374151" }}>{page} / {pages}</span>
+                {Array.from({ length: pages }, (_, i) => i + 1).map(p => (
+                  <button key={p} onClick={() => setPage(p)}
+                    style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid #e5e7eb", background: p === page ? "#111827" : "#fff", color: p === page ? "#fff" : "#374151", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {p}
+                  </button>
+                ))}
                 <button disabled={page >= pages} onClick={() => setPage(p => p + 1)} style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid #e5e7eb", background: page >= pages ? "#f9fafb" : "#fff", cursor: page >= pages ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <LuChevronRight style={{ fontSize: 14, color: page >= pages ? "#d1d5db" : "#374151" }} />
                 </button>

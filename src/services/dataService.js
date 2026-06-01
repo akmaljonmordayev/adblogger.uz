@@ -1,5 +1,12 @@
 import api from "./api";
 
+export const faqService = {
+  getAll: async (params) => {
+    const response = await api.get("/faqs", { params });
+    return response.data;
+  },
+};
+
 export const adsService = {
   getAll: async (params) => {
     const response = await api.get("/ads", { params });
