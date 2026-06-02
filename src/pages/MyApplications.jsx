@@ -1,111 +1,141 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  LuArrowLeft, LuSend, LuLoader, LuInbox, LuSendHorizontal,
-  LuMessageCircle, LuUser, LuCheck, LuCheckCheck, LuX,
-  LuBuilding2, LuUsers, LuChevronLeft, LuRefreshCw,
-  LuBell, LuClock,
+  LuSend, LuLoader, LuInbox, LuSendHorizontal,
+  LuMessageCircle, LuCheck, LuCheckCheck, LuX,
+  LuChevronLeft, LuRefreshCw, LuSmile, LuPencil,
+  LuTrash2, LuBan,
 } from "react-icons/lu";
 import { useAuthStore } from "../store/useAuthStore";
 import { toast } from "../components/ui/toast";
 import applicationService from "../services/applicationService";
 import { getSocket, connectSocket } from "../utils/socket";
 
+/* ─── Design tokens ───────────────────────────────────────────── */
+const C = {
+  red:      "#E53935",
+  redDark:  "#B71C1C",
+  redLight: "#FFEBEE",
+  redBd:    "#FFCDD2",
+  bg:       "#F0F2F5",
+  surface:  "#FFFFFF",
+  border:   "#E4E6EB",
+  text:     "#050505",
+  muted:    "#65676B",
+  dim:      "#BCC0C4",
+  mine:     "#E53935",
+  mineTxt:  "#FFFFFF",
+  their:    "#F0F2F5",
+  theirTxt: "#050505",
+  green:    "#31A24C",
+  blue:     "#1877F2",
+};
+
+/* ─── Stickers ────────────────────────────────────────────────── */
+const STICKER_ROWS = [
+  ["😊","😄","😂","🤣","😍","🥰","😎","🤩","🥳","😜"],
+  ["👍","👎","❤️","🔥","✅","❌","⭐","💯","🙏","👏"],
+  ["💪","🤝","💰","🎉","🚀","💎","⚡","✨","🎯","💬"],
+  ["😢","😡","😱","🤔","😴","🤗","🫡","💀","👻","🤖"],
+];
+
 /* ─── helpers ─────────────────────────────────────────────────── */
-function timeAgo(date) {
-  if (!date) return "";
-  const diff = (Date.now() - new Date(date)) / 1000;
-  if (diff < 60)     return "hozir";
-  if (diff < 3600)   return `${Math.floor(diff / 60)} daq`;
-  if (diff < 86400)  return `${Math.floor(diff / 3600)} soat`;
-  return new Date(date).toLocaleDateString("uz-UZ", { day: "2-digit", month: "short" });
+function timeAgo(d) {
+  if (!d) return "";
+  const s = (Date.now() - new Date(d)) / 1000;
+  if (s < 60)     return "hozir";
+  if (s < 3600)   return `${Math.floor(s/60)} daq`;
+  if (s < 86400)  return `${Math.floor(s/3600)} soat`;
+  return new Date(d).toLocaleDateString("uz-UZ", { day:"2-digit", month:"short" });
 }
-function fmtTime(date) {
-  if (!date) return "";
-  return new Date(date).toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" });
+function fmtTime(d) {
+  if (!d) return "";
+  return new Date(d).toLocaleTimeString("uz-UZ", { hour:"2-digit", minute:"2-digit" });
 }
 function initials(u) {
   if (!u) return "?";
-  return ((u.firstName?.[0] || "") + (u.lastName?.[0] || "")).toUpperCase() || "?";
+  return ((u.firstName?.[0]||"")+(u.lastName?.[0]||"")).toUpperCase()||"?";
 }
-function adTitle(app, mode) {
-  const ad = app.ad;
-  if (!ad) return "E'lon";
-  return ad.title || ad.companyName || ad.productName || "E'lon";
+function adTitle(app) {
+  const a = app.ad;
+  return a?.title || a?.companyName || a?.productName || "E'lon";
 }
 function otherUser(app, myId) {
-  if (String(app.adOwner?._id || app.adOwner) === myId) return app.applicant;
-  return app.adOwner;
+  return String(app.adOwner?._id||app.adOwner) === myId ? app.applicant : app.adOwner;
 }
 
-const STATUS_LABELS = {
-  pending:  { label: "Yangi",         color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
-  read:     { label: "Ko'rilgan",     color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb" },
-  accepted: { label: "Qabul qilindi", color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
-  rejected: { label: "Rad etildi",    color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
+const ST = {
+  pending:  { label:"Yangi",          bg:"#E8F4FD", color:"#1877F2" },
+  read:     { label:"Ko'rilgan",      bg:"#F0F2F5", color:"#65676B" },
+  accepted: { label:"✓ Qabul",        bg:"#E6F4EA", color:"#31A24C" },
+  rejected: { label:"✗ Rad etildi",   bg:"#FFEBEE", color:"#E53935" },
 };
 
-/* ─── Avatar ────────────────────────────────────────────────────── */
-function Avatar({ user, size = 40 }) {
+/* ─── Avatar ──────────────────────────────────────────────────── */
+function Av({ user, size=40, online=false }) {
   return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%", flexShrink: 0,
-      background: "#fef2f2", border: "2px solid #fecaca",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.36, fontWeight: 700, color: "#dc2626", overflow: "hidden",
-    }}>
-      {user?.avatar
-        ? <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        : initials(user)
-      }
+    <div style={{ position:"relative", flexShrink:0, width:size, height:size }}>
+      <div style={{
+        width:size, height:size, borderRadius:"50%",
+        background:`linear-gradient(135deg,${C.red},${C.redDark})`,
+        display:"flex", alignItems:"center", justifyContent:"center",
+        fontSize:size*0.38, fontWeight:700, color:"#fff", overflow:"hidden",
+      }}>
+        {user?.avatar
+          ? <img src={user.avatar} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+          : initials(user)}
+      </div>
+      {online && (
+        <span style={{
+          position:"absolute", bottom:1, right:1,
+          width:size*0.28, height:size*0.28, borderRadius:"50%",
+          background:C.green, border:`2px solid ${C.surface}`,
+        }}/>
+      )}
     </div>
   );
 }
 
-/* ─── ApplicationRow ────────────────────────────────────────────── */
-function ApplicationRow({ app, myId, isActive, onClick }) {
-  const other    = otherUser(app, myId);
-  const isOwner  = String(app.adOwner?._id || app.adOwner) === myId;
-  const unread   = isOwner ? (app.ownerUnread || 0) : (app.applicantUnread || 0);
-  const st       = STATUS_LABELS[app.status] || STATUS_LABELS.read;
+/* ─── AppRow ──────────────────────────────────────────────────── */
+function AppRow({ app, myId, isActive, onClick }) {
+  const other   = otherUser(app, myId);
+  const isOwner = String(app.adOwner?._id||app.adOwner) === myId;
+  const unread  = isOwner ? (app.ownerUnread||0) : (app.applicantUnread||0);
+  const st      = ST[app.status] || ST.read;
 
   return (
-    <div
-      onClick={onClick}
-      style={{
-        display: "flex", alignItems: "center", gap: 12,
-        padding: "13px 16px", cursor: "pointer",
-        background: isActive ? "#fef2f2" : "transparent",
-        borderLeft: isActive ? "3px solid #dc2626" : "3px solid transparent",
-        transition: "background 0.15s",
-      }}
-      onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "#f9fafb"; }}
-      onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+    <div onClick={onClick} style={{
+      display:"flex", alignItems:"center", gap:11,
+      padding:"11px 16px", cursor:"pointer",
+      background: isActive ? "#FFF0F0" : "transparent",
+      borderLeft: `3px solid ${isActive ? C.red : "transparent"}`,
+      transition:"background .12s",
+    }}
+      onMouseEnter={e=>{ if(!isActive) e.currentTarget.style.background="#F9FAFB"; }}
+      onMouseLeave={e=>{ if(!isActive) e.currentTarget.style.background="transparent"; }}
     >
-      <Avatar user={other} size={44} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
-          <span style={{ fontSize: 13.5, fontWeight: 700, color: "#111827", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+      <Av user={other} size={46}/>
+      <div style={{flex:1, minWidth:0}}>
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:1}}>
+          <span style={{fontSize:13.5, fontWeight:700, color:C.text, overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis", maxWidth:140}}>
             {other?.firstName} {other?.lastName}
           </span>
-          <span style={{ fontSize: 11, color: "#9ca3af", flexShrink: 0, marginLeft: 6 }}>
-            {timeAgo(app.lastMessageAt || app.updatedAt)}
-          </span>
+          <span style={{fontSize:11, color:C.dim, flexShrink:0}}>{timeAgo(app.lastMessageAt||app.updatedAt)}</span>
         </div>
-        <div style={{ fontSize: 12, color: "#6b7280", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", marginBottom: 3 }}>
-          {adTitle(app)} · {isOwner ? "Kelgan" : "Yuborgan"}
+        <div style={{fontSize:11.5, color:C.muted, overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis", marginBottom:3}}>
+          {adTitle(app)}
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 12, color: "#9ca3af", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", flex: 1 }}>
-            {app.lastMessage || app.message || "Xabar yo'q"}
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", gap:4}}>
+          <span style={{fontSize:12, color:C.dim, overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis", flex:1}}>
+            {app.lastMessage || "Xabar yo'q"}
           </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, marginLeft: 6 }}>
-            {unread > 0 && (
-              <span style={{ minWidth: 18, height: 18, borderRadius: 99, background: "#dc2626", color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
-                {unread > 9 ? "9+" : unread}
+          <div style={{display:"flex", gap:4, alignItems:"center", flexShrink:0}}>
+            {unread>0 && (
+              <span style={{minWidth:18, height:18, borderRadius:99, background:C.red, color:"#fff", fontSize:10, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center", padding:"0 4px"}}>
+                {unread>9?"9+":unread}
               </span>
             )}
-            <span style={{ fontSize: 10, fontWeight: 700, color: st.color, background: st.bg, border: `1px solid ${st.border}`, padding: "2px 6px", borderRadius: 6, whiteSpace: "nowrap" }}>
+            <span style={{fontSize:10, fontWeight:700, color:st.color, background:st.bg, padding:"2px 6px", borderRadius:6}}>
               {st.label}
             </span>
           </div>
@@ -115,207 +145,407 @@ function ApplicationRow({ app, myId, isActive, onClick }) {
   );
 }
 
-/* ─── ChatPanel ─────────────────────────────────────────────────── */
-function ChatPanel({ app, myId, onStatusChange, onBack }) {
-  const [messages, setMessages]   = useState([]);
-  const [text, setText]           = useState("");
-  const [loading, setLoading]     = useState(true);
-  const [sending, setSending]     = useState(false);
-  const bottomRef = useRef(null);
-  const inputRef  = useRef(null);
-  const isOwner   = String(app.adOwner?._id || app.adOwner) === myId;
-  const other     = otherUser(app, myId);
-  const st        = STATUS_LABELS[app.status] || STATUS_LABELS.read;
+/* ─── MessageBubble ───────────────────────────────────────────── */
+function Bubble({ msg, myId, appId, onEdited, onDeleted }) {
+  const isMine   = String(msg.sender?._id||msg.sender) === myId;
+  const [hover,  setHover]  = useState(false);
+  const [editing,setEditing]= useState(false);
+  const [editTxt,setEditTxt]= useState(msg.text);
+  const [saving, setSaving] = useState(false);
+  const editRef = useRef(null);
 
-  /* Fetch messages */
+  useEffect(()=>{ if(editing) editRef.current?.focus(); },[editing]);
+
+  const saveEdit = async () => {
+    if(!editTxt.trim()||editTxt.trim()===msg.text){ setEditing(false); return; }
+    setSaving(true);
+    try {
+      await applicationService.editMsg(appId, msg._id, editTxt.trim());
+      onEdited(msg._id, editTxt.trim());
+      setEditing(false);
+    } catch { toast.error("Tahrirda xatolik"); }
+    finally { setSaving(false); }
+  };
+
+  const doDelete = async () => {
+    try {
+      await applicationService.deleteMsg(appId, msg._id);
+      onDeleted(msg._id);
+    } catch { toast.error("O'chirishda xatolik"); }
+  };
+
+  if (msg.deleted) {
+    return (
+      <div style={{display:"flex", justifyContent:isMine?"flex-end":"flex-start", padding:"1px 0"}}>
+        <span style={{
+          fontSize:12.5, color:C.dim, fontStyle:"italic",
+          padding:"7px 14px", borderRadius:18,
+          background:"#F0F2F5", border:"1px dashed #DDD",
+          display:"flex", alignItems:"center", gap:6,
+        }}>
+          <LuBan size={12}/> Xabar o'chirildi
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{display:"flex", justifyContent:isMine?"flex-end":"flex-start", padding:"2px 0", gap:8}}
+      onMouseEnter={()=>setHover(true)}
+      onMouseLeave={()=>setHover(false)}
+    >
+      {!isMine && <Av user={msg.sender} size={30}/>}
+
+      <div style={{maxWidth:"68%", position:"relative"}}>
+        {/* Action buttons — hover da ko'rinadi */}
+        {isMine && hover && !editing && !msg._pending && (
+          <div style={{
+            position:"absolute", top:-28,
+            right:0, display:"flex", gap:4, zIndex:10,
+            background:"#fff", borderRadius:10, padding:"3px 6px",
+            boxShadow:"0 2px 12px rgba(0,0,0,.14)", border:`1px solid ${C.border}`,
+          }}>
+            <button onClick={()=>{ setEditing(true); setEditTxt(msg.text); }}
+              title="Tahrirlash"
+              style={{width:26,height:26,border:"none",background:"none",cursor:"pointer",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,transition:"all .12s"}}
+              onMouseEnter={e=>{e.currentTarget.style.background="#F0F2F5";e.currentTarget.style.color=C.blue;}}
+              onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color=C.muted;}}
+            ><LuPencil size={13}/></button>
+            <button onClick={doDelete}
+              title="O'chirish"
+              style={{width:26,height:26,border:"none",background:"none",cursor:"pointer",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,transition:"all .12s"}}
+              onMouseEnter={e=>{e.currentTarget.style.background:"#FFEBEE";e.currentTarget.style.color=C.red;}}
+              onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color=C.muted;}}
+            ><LuTrash2 size={13}/></button>
+          </div>
+        )}
+
+        {editing ? (
+          <div style={{background:"#fff",border:`2px solid ${C.red}`,borderRadius:14,overflow:"hidden",minWidth:200}}>
+            <textarea
+              ref={editRef}
+              value={editTxt}
+              onChange={e=>setEditTxt(e.target.value)}
+              onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();saveEdit();} if(e.key==="Escape") setEditing(false); }}
+              rows={2}
+              style={{width:"100%",padding:"10px 12px",border:"none",outline:"none",resize:"none",fontSize:13.5,fontFamily:"inherit",boxSizing:"border-box"}}
+            />
+            <div style={{display:"flex",gap:6,padding:"6px 10px",borderTop:`1px solid ${C.border}`,background:"#FAFAFA"}}>
+              <button onClick={saveEdit} disabled={saving}
+                style={{flex:1,padding:"5px",borderRadius:8,border:"none",background:C.red,color:"#fff",fontSize:12,fontWeight:700,cursor:saving?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+                {saving?<LuLoader size={11} style={{animation:"spin .8s linear infinite"}}/>:<LuCheck size={11}/>} Saqlash
+              </button>
+              <button onClick={()=>setEditing(false)}
+                style={{flex:1,padding:"5px",borderRadius:8,border:`1px solid ${C.border}`,background:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",color:C.muted}}>
+                Bekor
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            padding:"9px 13px",
+            borderRadius: isMine?"18px 18px 4px 18px":"18px 18px 18px 4px",
+            background: isMine ? `linear-gradient(135deg,${C.red},${C.redDark})` : C.their,
+            color: isMine ? C.mineTxt : C.theirTxt,
+            fontSize:13.5, lineHeight:1.55, wordBreak:"break-word",
+            boxShadow: isMine ? "0 1px 4px rgba(229,57,53,.3)" : "0 1px 2px rgba(0,0,0,.06)",
+            opacity: msg._pending ? 0.6 : 1,
+          }}>
+            {/* sticker — big */}
+            {/^[\u{1F300}-\u{1FAFF}]{1,3}$/u.test(msg.text.trim()) ? (
+              <span style={{fontSize:36, lineHeight:1}}>{msg.text}</span>
+            ) : (
+              <span style={{whiteSpace:"pre-wrap"}}>{msg.text}</span>
+            )}
+            <div style={{fontSize:10, marginTop:4, textAlign:"right", opacity:0.72, display:"flex", alignItems:"center", justifyContent:"flex-end", gap:3}}>
+              {msg.edited && <span style={{fontStyle:"italic"}}>tahrirlangan</span>}
+              {fmtTime(msg.createdAt)}
+              {isMine && !msg._pending && (msg.isRead ? <LuCheckCheck size={11}/> : <LuCheck size={11}/>)}
+              {msg._pending && <LuLoader size={10} style={{animation:"spin .8s linear infinite"}}/>}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── ChatPanel ───────────────────────────────────────────────── */
+function ChatPanel({ app, myId, onStatusChange, onBack }) {
+  const { user } = useAuthStore();
+  const [messages,  setMessages]  = useState([]);
+  const [text,      setText]      = useState("");
+  const [loading,   setLoading]   = useState(true);
+  const [sending,   setSending]   = useState(false);
+  const [showStk,   setShowStk]   = useState(false);
+  const msgsRef  = useRef(null);
+  const inputRef = useRef(null);
+  const isOwner  = String(app.adOwner?._id||app.adOwner) === myId;
+  const other    = otherUser(app, myId);
+  const st       = ST[app.status] || ST.read;
+
+  /* scroll to bottom — only within the messages container */
+  const scrollDown = useCallback((instant=false) => {
+    if(!msgsRef.current) return;
+    msgsRef.current.scrollTop = msgsRef.current.scrollHeight;
+  },[]);
+
+  /* fetch */
   const fetchMessages = useCallback(async () => {
     try {
       const res = await applicationService.messages(app._id);
-      setMessages(res.data || []);
-    } catch {
-      toast.error("Xabarlarni yuklashda xatolik");
-    } finally {
-      setLoading(false);
-    }
-  }, [app._id]);
+      setMessages(res.data||[]);
+    } catch { toast.error("Xabarlarni yuklashda xatolik"); }
+    finally { setLoading(false); }
+  },[app._id]);
 
-  useEffect(() => {
-    setLoading(true);
-    fetchMessages();
-  }, [fetchMessages]);
+  useEffect(()=>{ setLoading(true); fetchMessages(); },[fetchMessages]);
+  useEffect(()=>{ if(!loading) scrollDown(); },[loading, scrollDown]);
 
-  /* Socket.io real-time */
-  useEffect(() => {
-    const socket = getSocket();
-    socket.emit('join_chat_room', app._id);
+  /* socket */
+  useEffect(()=>{
+    const s = getSocket();
+    s.emit('join_chat_room', app._id);
 
-    const handler = ({ applicationId, message }) => {
-      if (String(applicationId) !== String(app._id)) return;
-      setMessages(prev => {
-        const exists = prev.some(m => m._id === message._id);
-        return exists ? prev : [...prev, message];
-      });
+    s.on('new_chat_message', ({applicationId, message})=>{
+      if(String(applicationId)!==String(app._id)) return;
+      setMessages(p=>{ if(p.some(m=>m._id===message._id)) return p; return [...p, message]; });
+      setTimeout(scrollDown, 60);
+    });
+    s.on('message_edited', ({applicationId, messageId, text})=>{
+      if(String(applicationId)!==String(app._id)) return;
+      setMessages(p=>p.map(m=>m._id===messageId?{...m,text,edited:true}:m));
+    });
+    s.on('message_deleted', ({applicationId, messageId})=>{
+      if(String(applicationId)!==String(app._id)) return;
+      setMessages(p=>p.map(m=>m._id===messageId?{...m,deleted:true,text:''}:m));
+    });
+    s.on('application_status_changed', ({applicationId, status})=>{
+      if(String(applicationId)===String(app._id)) onStatusChange(app._id, status);
+    });
+
+    return ()=>{
+      s.emit('leave_chat_room', app._id);
+      s.off('new_chat_message'); s.off('message_edited');
+      s.off('message_deleted'); s.off('application_status_changed');
     };
-    socket.on('new_chat_message', handler);
+  },[app._id, onStatusChange, scrollDown]);
 
-    const statusHandler = ({ applicationId, status }) => {
-      if (String(applicationId) === String(app._id)) {
-        onStatusChange(app._id, status);
-      }
-    };
-    socket.on('application_status_changed', statusHandler);
-
-    return () => {
-      socket.emit('leave_chat_room', app._id);
-      socket.off('new_chat_message', handler);
-      socket.off('application_status_changed', statusHandler);
-    };
-  }, [app._id, onStatusChange]);
-
-  /* Scroll to bottom when new messages arrive */
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const sendMessage = async () => {
-    const trimmed = text.trim();
-    if (!trimmed || sending) return;
-    setSending(true);
+  /* optimistic send */
+  const sendMessage = useCallback(async (txt) => {
+    const trimmed = (txt??text).trim();
+    if(!trimmed || sending) return;
     setText("");
+    setShowStk(false);
+    // reset textarea height
+    if(inputRef.current){ inputRef.current.style.height="auto"; }
+
+    const tempId = `tmp-${Date.now()}`;
+    const tempMsg = {
+      _id:       tempId,
+      text:      trimmed,
+      sender:    { _id:myId, firstName:user?.firstName, lastName:user?.lastName, avatar:user?.avatar },
+      createdAt: new Date().toISOString(),
+      isRead:    false,
+      _pending:  true,
+    };
+    setMessages(p=>[...p, tempMsg]);
+    setTimeout(scrollDown, 50);
+
     try {
       const res = await applicationService.send(app._id, trimmed);
-      setMessages(prev => {
-        const exists = prev.some(m => m._id === res.data._id);
-        return exists ? prev : [...prev, res.data];
-      });
+      setMessages(p=>p.map(m=>m._id===tempId ? res.data : m));
     } catch {
+      setMessages(p=>p.filter(m=>m._id!==tempId));
       setText(trimmed);
       toast.error("Xabar yuborishda xatolik");
-    } finally {
-      setSending(false);
-      inputRef.current?.focus();
     }
-  };
+  },[text, sending, myId, user, app._id, scrollDown]);
 
-  const handleKey = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+  const handleKey = (e)=>{
+    if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendMessage(); }
   };
 
   const handleStatus = async (status) => {
     try {
       await applicationService.status(app._id, status);
       onStatusChange(app._id, status);
-      toast.success(status === "accepted" ? "Qabul qilindi" : "Rad etildi");
-    } catch {
-      toast.error("Xatolik yuz berdi");
-    }
+      toast.success(status==="accepted"?"Qabul qilindi":"Rad etildi");
+    } catch { toast.error("Xatolik"); }
   };
 
+  const handleEdited  = (id,txt) => setMessages(p=>p.map(m=>m._id===id?{...m,text:txt,edited:true}:m));
+  const handleDeleted = (id)     => setMessages(p=>p.map(m=>m._id===id?{...m,deleted:true,text:''}:m));
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#fff" }}>
-      {/* Header */}
-      <div style={{ padding: "14px 18px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-        <button onClick={onBack} className="chat-back-btn" style={{ display: "none", background: "none", border: "none", cursor: "pointer", color: "#6b7280", padding: 4 }}>
-          <LuChevronLeft size={22} />
+    <div style={{display:"flex",flexDirection:"column",height:"100%",background:C.surface,position:"relative"}}>
+
+      {/* ── Header ── */}
+      <div style={{
+        padding:"13px 16px", borderBottom:`1px solid ${C.border}`,
+        display:"flex", alignItems:"center", gap:10, flexShrink:0,
+        background:C.surface, zIndex:2,
+      }}>
+        <button onClick={onBack} className="chat-back-btn"
+          style={{display:"none",background:"none",border:"none",cursor:"pointer",color:C.muted,padding:4,borderRadius:8}}>
+          <LuChevronLeft size={22}/>
         </button>
-        <Avatar user={other} size={40} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>{other?.firstName} {other?.lastName}</div>
-          <div style={{ fontSize: 11.5, color: "#6b7280", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-            {adTitle(app)}
-          </div>
+        <Av user={other} size={42} online/>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:14,fontWeight:700,color:C.text}}>{other?.firstName} {other?.lastName}</div>
+          <div style={{fontSize:11.5,color:C.muted,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{adTitle(app)}</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 10.5, fontWeight: 700, color: st.color, background: st.bg, border: `1px solid ${st.border}`, padding: "3px 8px", borderRadius: 6 }}>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          <span style={{fontSize:11,fontWeight:700,color:st.color,background:st.bg,padding:"3px 9px",borderRadius:99,border:`1px solid ${st.color}22`}}>
             {st.label}
           </span>
-          {isOwner && app.status !== "accepted" && app.status !== "rejected" && (
-            <div style={{ display: "flex", gap: 5 }}>
-              <button onClick={() => handleStatus("accepted")} title="Qabul qilish"
-                style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", fontSize: 11.5, fontWeight: 700, borderRadius: 8, border: "1.5px solid #bbf7d0", background: "#f0fdf4", color: "#16a34a", cursor: "pointer" }}>
-                <LuCheck size={12} /> Qabul
+          {isOwner && app.status!=="accepted" && app.status!=="rejected" && (
+            <div style={{display:"flex",gap:5}}>
+              <button onClick={()=>handleStatus("accepted")}
+                style={{padding:"5px 11px",fontSize:11.5,fontWeight:700,borderRadius:8,border:"1.5px solid #A5D6A7",background:"#E8F5E9",color:C.green,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+                <LuCheck size={12}/> Qabul
               </button>
-              <button onClick={() => handleStatus("rejected")} title="Rad etish"
-                style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", fontSize: 11.5, fontWeight: 700, borderRadius: 8, border: "1.5px solid #fecaca", background: "#fef2f2", color: "#dc2626", cursor: "pointer" }}>
-                <LuX size={12} /> Rad
+              <button onClick={()=>handleStatus("rejected")}
+                style={{padding:"5px 11px",fontSize:11.5,fontWeight:700,borderRadius:8,border:`1.5px solid ${C.redBd}`,background:C.redLight,color:C.red,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+                <LuX size={12}/> Rad
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Messages */}
-      <div style={{ flex: 1, overflow: "auto", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+      {/* ── Messages ── */}
+      <div ref={msgsRef} style={{
+        flex:1, overflowY:"auto", overflowX:"hidden",
+        padding:"16px 18px", display:"flex", flexDirection:"column", gap:4,
+        background: "#F8F9FA",
+        scrollbarWidth:"thin", scrollbarColor:`${C.dim} transparent`,
+      }}>
         {loading ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 80 }}>
-            <LuLoader size={22} style={{ color: "#dc2626", animation: "spin 1s linear infinite" }} />
+          <div style={{display:"flex",justifyContent:"center",alignItems:"center",height:100}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
+              <LuLoader size={26} style={{color:C.red,animation:"spin 1s linear infinite"}}/>
+              <span style={{fontSize:12,color:C.muted}}>Yuklanmoqda...</span>
+            </div>
           </div>
-        ) : messages.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "40px 20px", color: "#9ca3af" }}>
-            <LuMessageCircle size={36} style={{ marginBottom: 10, opacity: 0.4 }} />
-            <p style={{ fontSize: 13.5 }}>Hali xabar yo'q</p>
-            <p style={{ fontSize: 12 }}>Birinchi xabarni yuboring</p>
+        ) : messages.length===0 ? (
+          <div style={{textAlign:"center",padding:"60px 20px"}}>
+            <div style={{width:72,height:72,borderRadius:"50%",background:C.redLight,border:`2px solid ${C.redBd}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",fontSize:30}}>
+              💬
+            </div>
+            <p style={{fontSize:14,fontWeight:700,color:C.text,margin:"0 0 4px"}}>Suhbatni boshlang</p>
+            <p style={{fontSize:12.5,color:C.muted,margin:0}}>Birinchi xabarni yuboring</p>
           </div>
         ) : (
-          messages.map((msg) => {
-            const isMine = String(msg.sender?._id || msg.sender) === myId;
-            return (
-              <div key={msg._id} style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start" }}>
-                {!isMine && (
-                  <Avatar user={msg.sender} size={28} />
-                )}
-                <div style={{
-                  maxWidth: "70%", padding: "10px 14px", borderRadius: isMine ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                  background: isMine ? "linear-gradient(135deg,#dc2626,#b91c1c)" : "#f3f4f6",
-                  color: isMine ? "#fff" : "#111827",
-                  fontSize: 13.5, lineHeight: 1.55, wordBreak: "break-word",
-                  marginLeft: !isMine ? 8 : 0,
-                }}>
-                  {msg.text}
-                  <div style={{ fontSize: 10, marginTop: 4, textAlign: "right", opacity: 0.7, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 3 }}>
-                    {fmtTime(msg.createdAt)}
-                    {isMine && (msg.isRead ? <LuCheckCheck size={11} /> : <LuCheck size={11} />)}
-                  </div>
-                </div>
-              </div>
-            );
-          })
+          <>
+            {messages.map(msg=>(
+              <Bubble
+                key={msg._id}
+                msg={msg}
+                myId={myId}
+                appId={app._id}
+                onEdited={handleEdited}
+                onDeleted={handleDeleted}
+              />
+            ))}
+          </>
         )}
-        <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div style={{ padding: "12px 16px", borderTop: "1px solid #f3f4f6", display: "flex", gap: 8, alignItems: "flex-end", flexShrink: 0 }}>
-        <textarea
-          ref={inputRef}
-          rows={1}
-          value={text}
-          onChange={e => { setText(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }}
-          onKeyDown={handleKey}
-          placeholder="Xabar yozing... (Enter — yuborish)"
+      {/* ── Sticker panel ── */}
+      {showStk && (
+        <div style={{
+          position:"absolute", bottom:72, left:0, right:0,
+          background:C.surface, borderTop:`1px solid ${C.border}`,
+          padding:"12px 14px", zIndex:10,
+          boxShadow:"0 -4px 20px rgba(0,0,0,.08)",
+        }}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <span style={{fontSize:12,fontWeight:700,color:C.muted}}>Stikerlar</span>
+            <button onClick={()=>setShowStk(false)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,display:"flex"}}>
+              <LuX size={14}/>
+            </button>
+          </div>
+          {STICKER_ROWS.map((row,i)=>(
+            <div key={i} style={{display:"flex",gap:4,marginBottom:4}}>
+              {row.map(em=>(
+                <button key={em} onClick={()=>sendMessage(em)}
+                  style={{
+                    width:38,height:38,fontSize:20,border:`1px solid ${C.border}`,
+                    borderRadius:10,background:C.surface,cursor:"pointer",
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    transition:"transform .1s, background .1s",
+                  }}
+                  onMouseEnter={e=>{e.currentTarget.style.background=C.redLight;e.currentTarget.style.transform="scale(1.18)";}}
+                  onMouseLeave={e=>{e.currentTarget.style.background=C.surface;e.currentTarget.style.transform="scale(1)";}}
+                >{em}</button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Input ── */}
+      <div style={{
+        padding:"10px 14px", borderTop:`1px solid ${C.border}`,
+        display:"flex", gap:8, alignItems:"flex-end", flexShrink:0,
+        background:C.surface, zIndex:2,
+      }}>
+        {/* Sticker toggle */}
+        <button onClick={()=>setShowStk(v=>!v)}
+          title="Stikerlar"
           style={{
-            flex: 1, padding: "10px 14px", border: "1.5px solid #e5e7eb", borderRadius: 12, fontSize: 13.5,
-            outline: "none", resize: "none", fontFamily: "inherit", lineHeight: 1.5, maxHeight: 120,
-            background: "#f9fafb", transition: "border-color 0.2s",
-          }}
-          onFocus={e => e.target.style.borderColor = "#dc2626"}
-          onBlur={e => e.target.style.borderColor = "#e5e7eb"}
-        />
+            width:40, height:40, borderRadius:12, border:`1.5px solid ${showStk ? C.red : C.border}`,
+            background: showStk ? C.redLight : C.surface, cursor:"pointer",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            color: showStk ? C.red : C.muted, flexShrink:0, transition:"all .15s",
+          }}>
+          <LuSmile size={18}/>
+        </button>
+
+        {/* Textarea */}
+        <div style={{flex:1,position:"relative"}}>
+          <textarea
+            ref={inputRef}
+            rows={1}
+            value={text}
+            onChange={e=>{
+              setText(e.target.value);
+              e.target.style.height="auto";
+              e.target.style.height=Math.min(e.target.scrollHeight,120)+"px";
+            }}
+            onKeyDown={handleKey}
+            placeholder="Xabar yozing..."
+            style={{
+              width:"100%", padding:"10px 14px",
+              border:`1.5px solid ${C.border}`, borderRadius:22,
+              fontSize:13.5, outline:"none", resize:"none",
+              fontFamily:"inherit", lineHeight:1.5, maxHeight:120,
+              background:"#F0F2F5", color:C.text,
+              transition:"border-color .2s, background .2s",
+              boxSizing:"border-box", display:"block",
+            }}
+            onFocus={e=>{ e.target.style.borderColor=C.red; e.target.style.background=C.surface; }}
+            onBlur={e=>{ e.target.style.borderColor=C.border; e.target.style.background="#F0F2F5"; }}
+          />
+        </div>
+
+        {/* Send */}
         <button
-          onClick={sendMessage}
-          disabled={!text.trim() || sending}
+          onClick={()=>sendMessage()}
+          disabled={!text.trim()}
           style={{
-            width: 42, height: 42, borderRadius: 12, border: "none", flexShrink: 0,
-            background: text.trim() && !sending ? "linear-gradient(135deg,#dc2626,#b91c1c)" : "#f3f4f6",
-            color: text.trim() && !sending ? "#fff" : "#9ca3af",
-            cursor: text.trim() && !sending ? "pointer" : "not-allowed",
-            display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.2s",
+            width:40, height:40, borderRadius:12, border:"none", flexShrink:0,
+            background: text.trim() ? `linear-gradient(135deg,${C.red},${C.redDark})` : "#F0F2F5",
+            color: text.trim() ? "#fff" : C.dim,
+            cursor: text.trim() ? "pointer" : "not-allowed",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            transition:"all .15s",
+            boxShadow: text.trim() ? "0 3px 10px rgba(229,57,53,.4)" : "none",
           }}
         >
-          {sending ? <LuLoader size={15} style={{ animation: "spin 1s linear infinite" }} /> : <LuSend size={15} />}
+          <LuSend size={16}/>
         </button>
       </div>
     </div>
@@ -327,213 +557,196 @@ export default function MyApplications() {
   const { user, token } = useAuthStore();
   const navigate = useNavigate();
 
-  const [tab, setTab]         = useState("received"); // 'received' | 'sent'
+  const [tab,      setTab]      = useState("received");
   const [received, setReceived] = useState([]);
-  const [sent, setSent]         = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [selected, setSelected] = useState(null); // selected application
-  const [showChat, setShowChat] = useState(false); // mobile: show chat panel
+  const [sent,     setSent]     = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [showChat, setShowChat] = useState(false);
 
-  /* Auth guard */
-  useEffect(() => {
-    if (!token) { navigate("/login"); }
-  }, [token, navigate]);
+  useEffect(()=>{ if(!token) navigate("/login"); },[token,navigate]);
 
-  /* Connect socket */
-  useEffect(() => {
-    if (!user?._id) return;
+  const loadReceived = useCallback(async ()=>{
+    try { const r=await applicationService.received(); setReceived(r.data||[]); } catch{}
+  },[]);
+  const loadSent = useCallback(async ()=>{
+    try { const r=await applicationService.sent(); setSent(r.data||[]); } catch{}
+  },[]);
+
+  useEffect(()=>{
+    if(!user?._id) return;
     const s = connectSocket(user._id);
-
-    // Yangi zayavka notification → received listni yangilash
-    s.on('new_application', () => {
-      loadReceived();
+    s.on('new_application', loadReceived);
+    s.on('new_chat_message', ({applicationId, message})=>{
+      const update = arr => arr.map(a =>
+        a._id===applicationId
+          ? { ...a, lastMessage:message?.text||'', lastMessageAt:message?.createdAt }
+          : a
+      );
+      setReceived(p=>update(p));
+      setSent(p=>update(p));
     });
-    s.on('new_chat_message', ({ applicationId }) => {
-      // last message ni yangilash (silent)
-      setReceived(prev => prev.map(a =>
-        a._id === applicationId ? { ...a, ownerUnread: (a.ownerUnread || 0) + 1 } : a
-      ));
-      setSent(prev => prev.map(a =>
-        a._id === applicationId ? { ...a, applicantUnread: (a.applicantUnread || 0) + 1 } : a
-      ));
-    });
+    return ()=>{ s.off('new_application',loadReceived); s.off('new_chat_message'); };
+  },[user?._id, loadReceived]);
 
-    return () => {
-      s.off('new_application');
-      s.off('new_chat_message');
-    };
-  }, [user?._id]);
-
-  const loadReceived = useCallback(async () => {
-    try {
-      const res = await applicationService.received();
-      setReceived(res.data || []);
-    } catch {}
-  }, []);
-
-  const loadSent = useCallback(async () => {
-    try {
-      const res = await applicationService.sent();
-      setSent(res.data || []);
-    } catch {}
-  }, []);
-
-  /* Initial load */
-  useEffect(() => {
-    if (!token) return;
+  useEffect(()=>{
+    if(!token) return;
     setLoading(true);
-    Promise.all([loadReceived(), loadSent()]).finally(() => setLoading(false));
-  }, [token, loadReceived, loadSent]);
+    Promise.all([loadReceived(),loadSent()]).finally(()=>setLoading(false));
+  },[token,loadReceived,loadSent]);
 
-  const handleSelect = (app) => {
-    setSelected(app);
-    setShowChat(true);
-    // Unread ni nollaymiz (optimistic)
-    const myId = user._id;
-    const isOwner = String(app.adOwner?._id || app.adOwner) === String(myId);
-    if (isOwner) {
-      setReceived(prev => prev.map(a => a._id === app._id ? { ...a, ownerUnread: 0, status: a.status === 'pending' ? 'read' : a.status } : a));
+  const handleSelect = (app)=>{
+    setSelected(app); setShowChat(true);
+    const myId = String(user._id);
+    const isOwner = String(app.adOwner?._id||app.adOwner)===myId;
+    if(isOwner){
+      setReceived(p=>p.map(a=>a._id===app._id?{...a,ownerUnread:0,status:a.status==='pending'?'read':a.status}:a));
     } else {
-      setSent(prev => prev.map(a => a._id === app._id ? { ...a, applicantUnread: 0 } : a));
+      setSent(p=>p.map(a=>a._id===app._id?{...a,applicantUnread:0}:a));
     }
   };
 
-  const handleStatusChange = useCallback((appId, status) => {
-    const update = a => a._id === appId ? { ...a, status } : a;
-    setReceived(prev => prev.map(update));
-    setSent(prev => prev.map(update));
-    setSelected(prev => prev?._id === appId ? { ...prev, status } : prev);
-  }, []);
+  const handleStatusChange = useCallback((appId,status)=>{
+    const f = a=>a._id===appId?{...a,status}:a;
+    setReceived(p=>p.map(f)); setSent(p=>p.map(f));
+    setSelected(p=>p?._id===appId?{...p,status}:p);
+  },[]);
 
-  const handleBack = () => setShowChat(false);
+  const myId = String(user?._id||"");
+  const list = tab==="received" ? received : sent;
+  const totalUnread = received.reduce((s,a)=>s+(a.ownerUnread||0),0)
+                    + sent.reduce((s,a)=>s+(a.applicantUnread||0),0);
 
-  const myId = String(user?._id || "");
-  const list = tab === "received" ? received : sent;
-
-  const totalUnread = received.reduce((s, a) => s + (a.ownerUnread || 0), 0)
-    + sent.reduce((s, a) => s + (a.applicantUnread || 0), 0);
-
-  if (!token || !user) return null;
+  if(!token||!user) return null;
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", height: "calc(100vh - 140px)", display: "flex", flexDirection: "column" }}>
+    <div style={{fontFamily:"'Inter',sans-serif",height:"calc(100vh - 130px)",display:"flex",flexDirection:"column",gap:0}}>
       <style>{`
-        @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-        @media(max-width:640px) {
-          .chat-layout { flex-direction: column !important; }
-          .chat-sidebar { display: ${showChat ? "none" : "flex"} !important; width: 100% !important; border-right: none !important; border-bottom: 1px solid #f3f4f6 !important; height: 100% !important; }
-          .chat-main { display: ${showChat ? "flex" : "none"} !important; width: 100% !important; }
-          .chat-back-btn { display: flex !important; }
+        @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        @media(max-width:640px){
+          .chat-layout{flex-direction:column!important}
+          .chat-sidebar{display:${showChat?"none":"flex"}!important;width:100%!important;border-right:none!important;height:100%!important}
+          .chat-main{display:${showChat?"flex":"none"}!important;width:100%!important}
+          .chat-back-btn{display:flex!important}
         }
       `}</style>
 
-      {/* Page Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexShrink: 0 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: "#fef2f2", border: "1.5px solid #fecaca", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <LuMessageCircle size={18} style={{ color: "#dc2626" }} />
+      {/* ── Page header ── */}
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14,flexShrink:0}}>
+        <div style={{width:40,height:40,borderRadius:12,background:C.redLight,border:`1.5px solid ${C.redBd}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <LuMessageCircle size={20} style={{color:C.red}}/>
         </div>
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111827", margin: 0 }}>
+          <h1 style={{fontSize:20,fontWeight:800,color:C.text,margin:0,display:"flex",alignItems:"center",gap:8}}>
             Mening Zayavkalarim
-            {totalUnread > 0 && (
-              <span style={{ marginLeft: 8, minWidth: 22, height: 22, borderRadius: 99, background: "#dc2626", color: "#fff", fontSize: 11, fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 6px" }}>
+            {totalUnread>0 && (
+              <span style={{minWidth:22,height:22,borderRadius:99,background:C.red,color:"#fff",fontSize:11,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center",padding:"0 6px"}}>
                 {totalUnread}
               </span>
             )}
           </h1>
-          <p style={{ fontSize: 12.5, color: "#9ca3af", margin: 0 }}>E'lonlarga yuborilgan va kelgan zayavkalar</p>
+          <p style={{fontSize:12,color:C.muted,margin:0}}>Kelgan va yuborgan zayavkalaringiz</p>
         </div>
-        <button onClick={() => { loadReceived(); loadSent(); }} title="Yangilash"
-          style={{ marginLeft: "auto", width: 34, height: 34, border: "1.5px solid #e5e7eb", borderRadius: 9, background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280" }}>
-          <LuRefreshCw size={14} />
+        <button onClick={()=>{loadReceived();loadSent();}}
+          style={{marginLeft:"auto",width:36,height:36,border:`1.5px solid ${C.border}`,borderRadius:10,background:C.surface,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,transition:"all .15s"}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor=C.red;e.currentTarget.style.color=C.red;}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.muted;}}>
+          <LuRefreshCw size={15}/>
         </button>
       </div>
 
-      {/* Layout */}
-      <div className="chat-layout" style={{ flex: 1, display: "flex", background: "#fff", border: "1.5px solid #f3f4f6", borderRadius: 16, overflow: "hidden", minHeight: 0 }}>
+      {/* ── Layout ── */}
+      <div className="chat-layout" style={{
+        flex:1, display:"flex", minHeight:0,
+        background:C.surface,
+        border:`1.5px solid ${C.border}`,
+        borderRadius:18, overflow:"hidden",
+        boxShadow:"0 2px 20px rgba(0,0,0,.06)",
+      }}>
 
         {/* Sidebar */}
-        <div className="chat-sidebar" style={{ width: 340, borderRight: "1px solid #f3f4f6", display: "flex", flexDirection: "column", flexShrink: 0 }}>
-
+        <div className="chat-sidebar" style={{
+          width:320, borderRight:`1px solid ${C.border}`,
+          display:"flex", flexDirection:"column", flexShrink:0,
+          background:C.surface,
+        }}>
           {/* Tabs */}
-          <div style={{ display: "flex", borderBottom: "1px solid #f3f4f6", flexShrink: 0 }}>
+          <div style={{display:"flex",borderBottom:`1px solid ${C.border}`,flexShrink:0,padding:"0 8px",paddingTop:8,gap:4}}>
             {[
-              { key: "received", label: "Kelgan",  Icon: LuInbox,         count: received.reduce((s,a) => s+(a.ownerUnread||0),0) },
-              { key: "sent",     label: "Yuborgan", Icon: LuSendHorizontal, count: sent.reduce((s,a) => s+(a.applicantUnread||0),0) },
-            ].map(({ key, label, Icon, count }) => (
-              <button key={key} onClick={() => setTab(key)}
-                style={{
-                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                  padding: "13px 8px", border: "none", background: "none", cursor: "pointer",
-                  fontSize: 13, fontWeight: tab === key ? 700 : 500,
-                  color: tab === key ? "#dc2626" : "#6b7280",
-                  borderBottom: tab === key ? "2px solid #dc2626" : "2px solid transparent",
-                  transition: "color 0.15s",
-                }}>
-                <Icon size={14} />
+              {key:"received",label:"Kelgan",    Icon:LuInbox,         cnt:received.reduce((s,a)=>s+(a.ownerUnread||0),0),   len:received.length},
+              {key:"sent",    label:"Yuborgan",  Icon:LuSendHorizontal,cnt:sent.reduce((s,a)=>s+(a.applicantUnread||0),0),    len:sent.length},
+            ].map(({key,label,Icon,cnt,len})=>(
+              <button key={key} onClick={()=>setTab(key)} style={{
+                flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+                padding:"9px 6px 10px", border:"none", background:"none", cursor:"pointer",
+                fontSize:13, fontWeight:tab===key?700:500,
+                color:tab===key?C.red:C.muted,
+                borderBottom:tab===key?`2.5px solid ${C.red}`:"2.5px solid transparent",
+                borderRadius:"8px 8px 0 0", transition:"color .15s",
+              }}>
+                <Icon size={14}/>
                 {label}
-                {count > 0 && (
-                  <span style={{ minWidth: 18, height: 18, borderRadius: 99, background: "#dc2626", color: "#fff", fontSize: 10, fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
-                    {count}
+                <span style={{fontSize:11,color:C.dim,fontWeight:500}}>({len})</span>
+                {cnt>0 && (
+                  <span style={{minWidth:16,height:16,borderRadius:99,background:C.red,color:"#fff",fontSize:9,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>
+                    {cnt>9?"9+":cnt}
                   </span>
                 )}
-                <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600 }}>
-                  ({tab === "received" ? received.length : sent.length})
-                </span>
               </button>
             ))}
           </div>
 
           {/* List */}
-          <div style={{ flex: 1, overflow: "auto" }}>
+          <div style={{flex:1,overflowY:"auto",scrollbarWidth:"thin",scrollbarColor:`${C.dim} transparent`}}>
             {loading ? (
-              <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-                <LuLoader size={24} style={{ color: "#dc2626", animation: "spin 1s linear infinite" }} />
+              <div style={{display:"flex",justifyContent:"center",alignItems:"center",height:120}}>
+                <LuLoader size={24} style={{color:C.red,animation:"spin 1s linear infinite"}}/>
               </div>
-            ) : list.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "48px 20px", color: "#9ca3af" }}>
-                <div style={{ fontSize: 40, marginBottom: 10 }}>{tab === "received" ? "📥" : "📤"}</div>
-                <p style={{ fontSize: 13.5, fontWeight: 600, color: "#374151", margin: "0 0 4px" }}>
-                  {tab === "received" ? "Kelgan zayavka yo'q" : "Yuborgan zayavka yo'q"}
+            ) : list.length===0 ? (
+              <div style={{textAlign:"center",padding:"52px 20px",color:C.muted}}>
+                <div style={{fontSize:44,marginBottom:12}}>{tab==="received"?"📥":"📤"}</div>
+                <p style={{fontSize:13.5,fontWeight:700,color:C.text,margin:"0 0 5px"}}>
+                  {tab==="received"?"Kelgan zayavka yo'q":"Yuborgan zayavka yo'q"}
                 </p>
-                <p style={{ fontSize: 12, margin: 0 }}>
-                  {tab === "received"
+                <p style={{fontSize:12.5,margin:0,lineHeight:1.5}}>
+                  {tab==="received"
                     ? "E'lonlaringizga zayavka kelganida bu yerda ko'rasiz"
-                    : <><Link to="/ads" style={{ color: "#dc2626" }}>E'lonlar</Link> sahifasiga o'ting va zayavka yuboring</>
-                  }
+                    : <><Link to="/ads" style={{color:C.red,fontWeight:600}}>E'lonlar</Link> sahifasidan zayavka yuboring</>}
                 </p>
               </div>
             ) : (
-              list.map(app => (
-                <ApplicationRow
+              list.map(app=>(
+                <AppRow
                   key={app._id}
                   app={app}
                   myId={myId}
-                  isActive={selected?._id === app._id}
-                  onClick={() => handleSelect(app)}
+                  isActive={selected?._id===app._id}
+                  onClick={()=>handleSelect(app)}
                 />
               ))
             )}
           </div>
         </div>
 
-        {/* Chat main area */}
-        <div className="chat-main" style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        {/* Chat */}
+        <div className="chat-main" style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
           {selected ? (
             <ChatPanel
               key={selected._id}
               app={selected}
               myId={myId}
               onStatusChange={handleStatusChange}
-              onBack={handleBack}
+              onBack={()=>setShowChat(false)}
             />
           ) : (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9ca3af", padding: 40 }}>
-              <LuMessageCircle size={52} style={{ marginBottom: 14, opacity: 0.25 }} />
-              <p style={{ fontSize: 15, fontWeight: 600, color: "#374151", margin: "0 0 6px" }}>Chat tanlang</p>
-              <p style={{ fontSize: 13, margin: 0, textAlign: "center" }}>
-                Chap tarafdan zayavkani tanlab muloqot boshlang
-              </p>
+            <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:40,background:"#F8F9FA"}}>
+              <div style={{width:80,height:80,borderRadius:"50%",background:C.redLight,border:`2px solid ${C.redBd}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:34}}>
+                💬
+              </div>
+              <div style={{textAlign:"center"}}>
+                <p style={{fontSize:15,fontWeight:700,color:C.text,margin:"0 0 5px"}}>Chat tanlang</p>
+                <p style={{fontSize:13,color:C.muted,margin:0}}>Chap tarafdan zayavka tanlab muloqot boshlang</p>
+              </div>
             </div>
           )}
         </div>
