@@ -8,8 +8,9 @@ import {
   LuHeart, LuBell, LuMessageCircle,
 } from "react-icons/lu";
 import { useAuthStore } from "../../store/useAuthStore";
-import { useNotificationStore } from "../../store/useNotificationStore";
-import { connectSocket, disconnectSocket } from "../../utils/socket";
+import { useNotificationStore, playNotificationSound } from "../../store/useNotificationStore";
+import { connectSocket, disconnectSocket, getSocket } from "../../utils/socket";
+import { toast } from "../ui/toast";
 import LogoutModal from "../ui/LogoutModal";
 import HeroSwiper from "./HeroSwiper";
 import CategorySection from "./CategorySection";
@@ -110,14 +111,27 @@ export default function Header() {
     return () => clearInterval(id);
   }, [token, fetchNotifs, resetNotifs]);
 
-  // Socket.io connection — user login/logout bilan sinxronlash
+  // Socket.io connection + real-time notification
   useEffect(() => {
-    if (user?._id) {
-      connectSocket(user._id);
-    } else {
-      disconnectSocket();
-    }
-  }, [user?._id]);
+    if (!user?._id) { disconnectSocket(); return; }
+
+    connectSocket(user._id);
+    const socket = getSocket();
+
+    const onNewNotif = (notif) => {
+      // Badge ni darhol yangilash
+      fetchNotifs();
+      // Ovoz + toast
+      playNotificationSound();
+      const msg = notif.body
+        ? `${notif.title} — ${notif.body}`
+        : (notif.title || "Yangi bildirishnoma");
+      toast.info(msg, { duration: 6000 });
+    };
+
+    socket.on('new_notification', onNewNotif);
+    return () => socket.off('new_notification', onNewNotif);
+  }, [user?._id, fetchNotifs]);
 
   const handleLogout = () => {
     setUserMenuOpen(false);

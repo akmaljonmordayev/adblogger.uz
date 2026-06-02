@@ -3,22 +3,25 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   LuBell, LuCheck, LuCheckCheck, LuMegaphone,
   LuUserCheck, LuBriefcase, LuStar, LuInfo, LuMail,
-  LuTrash2,
+  LuTrash2, LuSend, LuMessageCircle,
 } from "react-icons/lu";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNotificationStore } from "../store/useNotificationStore";
+import { getSocket } from "../utils/socket";
 import SEO from "../components/SEO";
 import api from "../services/api";
 import { toast } from "../components/ui/toast";
 
 const TYPE_CONFIG = {
-  contact_reply: { icon: LuMail,       iconBg: "#fef2f2", iconColor: "#dc2626" },
-  campaign:      { icon: LuBriefcase,  iconBg: "#dbeafe", iconColor: "#1d4ed8" },
-  ad_approved:   { icon: LuMegaphone,  iconBg: "#dcfce7", iconColor: "#15803d" },
-  ad_rejected:   { icon: LuMegaphone,  iconBg: "#fff7ed", iconColor: "#c2410c" },
-  review:        { icon: LuStar,       iconBg: "#fef9c3", iconColor: "#92400e" },
-  verify:        { icon: LuUserCheck,  iconBg: "#ede9fe", iconColor: "#6d28d9" },
-  info:          { icon: LuInfo,       iconBg: "#f0f9ff", iconColor: "#0369a1" },
+  contact_reply:      { icon: LuMail,          iconBg: "#fef2f2", iconColor: "#dc2626" },
+  campaign:           { icon: LuBriefcase,      iconBg: "#dbeafe", iconColor: "#1d4ed8" },
+  ad_approved:        { icon: LuMegaphone,      iconBg: "#dcfce7", iconColor: "#15803d" },
+  ad_rejected:        { icon: LuMegaphone,      iconBg: "#fff7ed", iconColor: "#c2410c" },
+  review:             { icon: LuStar,           iconBg: "#fef9c3", iconColor: "#92400e" },
+  verify:             { icon: LuUserCheck,      iconBg: "#ede9fe", iconColor: "#6d28d9" },
+  info:               { icon: LuInfo,           iconBg: "#f0f9ff", iconColor: "#0369a1" },
+  new_application:    { icon: LuSend,           iconBg: "#fef2f2", iconColor: "#dc2626" },
+  application_status: { icon: LuMessageCircle,  iconBg: "#f0fdf4", iconColor: "#15803d" },
 };
 
 function timeAgo(dateStr) {
@@ -53,12 +56,23 @@ export default function Notifications() {
   }, []);
 
   useEffect(() => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
+    if (!token) { navigate("/login"); return; }
     fetchNotifications();
   }, [token, navigate, fetchNotifications]);
+
+  // Real-time: yangi notification kelsa ro'yxat boshiga qo'shish
+  useEffect(() => {
+    const socket = getSocket();
+    const handler = (notif) => {
+      setNotifications(prev => {
+        // Takrorlanishning oldini olish
+        if (prev.some(n => n._id === notif._id)) return prev;
+        return [notif, ...prev];
+      });
+    };
+    socket.on('new_notification', handler);
+    return () => socket.off('new_notification', handler);
+  }, []);
 
   const markRead = async (id) => {
     setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));

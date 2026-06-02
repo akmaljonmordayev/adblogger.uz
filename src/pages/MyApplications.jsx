@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  LuArrowLeft, LuSend, LuLoader, LuInbox, LuSendHorizonal,
+  LuArrowLeft, LuSend, LuLoader, LuInbox, LuSendHorizontal,
   LuMessageCircle, LuUser, LuCheck, LuCheckCheck, LuX,
   LuBuilding2, LuUsers, LuChevronLeft, LuRefreshCw,
   LuBell, LuClock,
@@ -459,7 +459,7 @@ export default function MyApplications() {
           <div style={{ display: "flex", borderBottom: "1px solid #f3f4f6", flexShrink: 0 }}>
             {[
               { key: "received", label: "Kelgan",  Icon: LuInbox,         count: received.reduce((s,a) => s+(a.ownerUnread||0),0) },
-              { key: "sent",     label: "Yuborgan", Icon: LuSendHorizonal, count: sent.reduce((s,a) => s+(a.applicantUnread||0),0) },
+              { key: "sent",     label: "Yuborgan", Icon: LuSendHorizontal, count: sent.reduce((s,a) => s+(a.applicantUnread||0),0) },
             ].map(({ key, label, Icon, count }) => (
               <button key={key} onClick={() => setTab(key)}
                 style={{
