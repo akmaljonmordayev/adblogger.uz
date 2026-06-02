@@ -152,7 +152,11 @@ function Bubble({ msg, myId, appId, onEdited, onDeleted }) {
   const [editing,setEditing]= useState(false);
   const [editTxt,setEditTxt]= useState(msg.text);
   const [saving, setSaving] = useState(false);
-  const editRef = useRef(null);
+  const editRef    = useRef(null);
+  const leaveTimer = useRef(null);
+
+  const onEnter = () => { clearTimeout(leaveTimer.current); setHover(true); };
+  const onLeave = () => { leaveTimer.current = setTimeout(() => setHover(false), 180); };
 
   useEffect(()=>{ if(editing) editRef.current?.focus(); },[editing]);
 
@@ -191,35 +195,39 @@ function Bubble({ msg, myId, appId, onEdited, onDeleted }) {
 
   return (
     <div
-      style={{display:"flex", justifyContent:isMine?"flex-end":"flex-start", padding:"2px 0", gap:8}}
-      onMouseEnter={()=>setHover(true)}
-      onMouseLeave={()=>setHover(false)}
+      style={{display:"flex", justifyContent:isMine?"flex-end":"flex-start", padding:"2px 0", gap:8, alignItems:"flex-end"}}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
     >
       {!isMine && <Av user={msg.sender} size={30}/>}
 
+      {/* Action buttons — left of bubble for mine messages */}
+      {isMine && hover && !editing && !msg._pending && !msg.deleted && (
+        <div
+          style={{
+            display:"flex", gap:3, alignItems:"center", flexShrink:0,
+            background:"#fff", borderRadius:10, padding:"3px 5px",
+            boxShadow:"0 2px 10px rgba(0,0,0,.13)", border:`1px solid ${C.border}`,
+          }}
+          onMouseEnter={onEnter}
+          onMouseLeave={onLeave}
+        >
+          <button type="button" onClick={()=>{ setEditing(true); setEditTxt(msg.text); }}
+            title="Tahrirlash"
+            style={{width:26,height:26,border:"none",background:"none",cursor:"pointer",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,transition:"all .12s"}}
+            onMouseEnter={e=>{e.currentTarget.style.background="#F0F2F5";e.currentTarget.style.color=C.blue;}}
+            onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color=C.muted;}}
+          ><LuPencil size={13}/></button>
+          <button type="button" onClick={doDelete}
+            title="O'chirish"
+            style={{width:26,height:26,border:"none",background:"none",cursor:"pointer",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,transition:"all .12s"}}
+            onMouseEnter={e=>{e.currentTarget.style.background="#FFEBEE";e.currentTarget.style.color=C.red;}}
+            onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color=C.muted;}}
+          ><LuTrash2 size={13}/></button>
+        </div>
+      )}
+
       <div style={{maxWidth:"68%", position:"relative"}}>
-        {/* Action buttons — hover da ko'rinadi */}
-        {isMine && hover && !editing && !msg._pending && (
-          <div style={{
-            position:"absolute", top:-28,
-            right:0, display:"flex", gap:4, zIndex:10,
-            background:"#fff", borderRadius:10, padding:"3px 6px",
-            boxShadow:"0 2px 12px rgba(0,0,0,.14)", border:`1px solid ${C.border}`,
-          }}>
-            <button onClick={()=>{ setEditing(true); setEditTxt(msg.text); }}
-              title="Tahrirlash"
-              style={{width:26,height:26,border:"none",background:"none",cursor:"pointer",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,transition:"all .12s"}}
-              onMouseEnter={e=>{e.currentTarget.style.background="#F0F2F5";e.currentTarget.style.color=C.blue;}}
-              onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color=C.muted;}}
-            ><LuPencil size={13}/></button>
-            <button onClick={doDelete}
-              title="O'chirish"
-              style={{width:26,height:26,border:"none",background:"none",cursor:"pointer",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,transition:"all .12s"}}
-              onMouseEnter={e=>{e.currentTarget.style.background="#FFEBEE";e.currentTarget.style.color=C.red;}}
-              onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color=C.muted;}}
-            ><LuTrash2 size={13}/></button>
-          </div>
-        )}
 
         {editing ? (
           <div style={{background:"#fff",border:`2px solid ${C.red}`,borderRadius:14,overflow:"hidden",minWidth:200}}>
@@ -387,8 +395,8 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
         display:"flex", alignItems:"center", gap:10, flexShrink:0,
         background:C.surface, zIndex:2,
       }}>
-        <button onClick={onBack} className="chat-back-btn"
-          style={{display:"none",background:"none",border:"none",cursor:"pointer",color:C.muted,padding:4,borderRadius:8}}>
+        <button type="button" onClick={onBack}
+          style={{background:"none",border:"none",cursor:"pointer",color:C.muted,padding:4,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center"}}>
           <LuChevronLeft size={22}/>
         </button>
         <Av user={other} size={42} online/>
@@ -463,14 +471,14 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
         }}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
             <span style={{fontSize:12,fontWeight:700,color:C.muted}}>Stikerlar</span>
-            <button onClick={()=>setShowStk(false)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,display:"flex"}}>
+            <button type="button" onClick={()=>setShowStk(false)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,display:"flex"}}>
               <LuX size={14}/>
             </button>
           </div>
           {STICKER_ROWS.map((row,i)=>(
             <div key={i} style={{display:"flex",gap:4,marginBottom:4}}>
               {row.map(em=>(
-                <button key={em} onClick={()=>sendMessage(em)}
+                <button type="button" key={em} onClick={()=>sendMessage(em)}
                   style={{
                     width:38,height:38,fontSize:20,border:`1px solid ${C.border}`,
                     borderRadius:10,background:C.surface,cursor:"pointer",
@@ -493,7 +501,7 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
         background:C.surface, zIndex:2,
       }}>
         {/* Sticker toggle */}
-        <button onClick={()=>setShowStk(v=>!v)}
+        <button type="button" onClick={()=>setShowStk(v=>!v)}
           title="Stikerlar"
           style={{
             width:40, height:40, borderRadius:12, border:`1.5px solid ${showStk ? C.red : C.border}`,
@@ -532,7 +540,7 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
         </div>
 
         {/* Send */}
-        <button
+        <button type="button"
           onClick={()=>sendMessage()}
           disabled={!text.trim()}
           style={{
@@ -563,6 +571,13 @@ export default function MyApplications() {
   const [loading,  setLoading]  = useState(true);
   const [selected, setSelected] = useState(null);
   const [showChat, setShowChat] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 640);
+
+  useEffect(()=>{
+    const h = ()=>setIsMobile(window.innerWidth<=640);
+    window.addEventListener('resize',h);
+    return ()=>window.removeEventListener('resize',h);
+  },[]);
 
   useEffect(()=>{ if(!token) navigate("/login"); },[token,navigate]);
 
@@ -621,15 +636,7 @@ export default function MyApplications() {
 
   return (
     <div style={{fontFamily:"'Inter',sans-serif",height:"calc(100vh - 130px)",display:"flex",flexDirection:"column",gap:0}}>
-      <style>{`
-        @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-        @media(max-width:640px){
-          .chat-layout{flex-direction:column!important}
-          .chat-sidebar{display:${showChat?"none":"flex"}!important;width:100%!important;border-right:none!important;height:100%!important}
-          .chat-main{display:${showChat?"flex":"none"}!important;width:100%!important}
-          .chat-back-btn{display:flex!important}
-        }
-      `}</style>
+      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
 
       {/* ── Page header ── */}
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14,flexShrink:0}}>
@@ -656,8 +663,9 @@ export default function MyApplications() {
       </div>
 
       {/* ── Layout ── */}
-      <div className="chat-layout" style={{
+      <div style={{
         flex:1, display:"flex", minHeight:0,
+        flexDirection: isMobile ? "column" : "row",
         background:C.surface,
         border:`1.5px solid ${C.border}`,
         borderRadius:18, overflow:"hidden",
@@ -665,9 +673,11 @@ export default function MyApplications() {
       }}>
 
         {/* Sidebar */}
-        <div className="chat-sidebar" style={{
-          width:320, borderRight:`1px solid ${C.border}`,
-          display:"flex", flexDirection:"column", flexShrink:0,
+        <div style={{
+          width: isMobile ? "100%" : 320,
+          borderRight: isMobile ? "none" : `1px solid ${C.border}`,
+          display: isMobile && showChat ? "none" : "flex",
+          flexDirection:"column", flexShrink:0,
           background:C.surface,
         }}>
           {/* Tabs */}
@@ -729,14 +739,17 @@ export default function MyApplications() {
         </div>
 
         {/* Chat */}
-        <div className="chat-main" style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
+        <div style={{
+          flex:1, display: isMobile && !showChat ? "none" : "flex",
+          flexDirection:"column", minWidth:0,
+        }}>
           {selected ? (
             <ChatPanel
               key={selected._id}
               app={selected}
               myId={myId}
               onStatusChange={handleStatusChange}
-              onBack={()=>setShowChat(false)}
+              onBack={()=>{ setShowChat(false); setSelected(null); }}
             />
           ) : (
             <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:40,background:"#F8F9FA"}}>
