@@ -1,13 +1,17 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import {
   LuUsers, LuBuilding2, LuArrowRight, LuArrowLeft,
   LuCheck, LuInstagram, LuYoutube, LuMessageCircle,
   LuImage, LuSend, LuCircleCheck, LuLoader, LuLock,
+  LuX, LuCloudUpload,
 } from "react-icons/lu";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
 import { toast } from "../components/ui/toast";
+import { useState, useRef, useCallback } from "react";
 
 /* ── Font ── */
 if (!document.getElementById("elon-fonts")) {
@@ -17,15 +21,14 @@ if (!document.getElementById("elon-fonts")) {
   document.head.appendChild(l);
 }
 
-/* ── Shared input style ── */
+/* ── Shared styles ── */
 const INP = {
   width: "100%", padding: "11px 14px", fontSize: 14,
   border: "1.5px solid #e5e7eb", borderRadius: 10, outline: "none",
   background: "#fff", color: "#111827", boxSizing: "border-box",
   fontFamily: "inherit", transition: "border-color 0.2s",
 };
-const FOCUS = e => e.target.style.borderColor = "#dc2626";
-const BLUR  = e => e.target.style.borderColor = "#e5e7eb";
+const INP_ERR = { ...INP, borderColor: "#dc2626", background: "#fff9f9" };
 
 /* ── API enum mapping ── */
 const FOLLOWER_RANGE_MAP = {
@@ -109,8 +112,46 @@ const BUDGET_RANGES = [
 ];
 const DURATIONS = ["1 hafta", "2 hafta", "1 oy", "2–3 oy", "6 oy", "1 yil"];
 
+/* ── Yup schemas ── */
+const bloggerSchema = yup.object({
+  name:      yup.string().required("Ism-familiya kiritish majburiy"),
+  phone:     yup.string().required("Telefon raqam kiritish majburiy"),
+  platforms: yup.array().min(1, "Kamida 1 ta platforma tanlang"),
+  followers: yup.string().required("Obunachilar sonini tanlang"),
+  niche:     yup.array().min(1, "Kamida 1 ta yo'nalish tanlang"),
+  services:  yup.array().min(1, "Kamida 1 ta xizmat turi tanlang"),
+  pricePost: yup.string().required("Post narxini kiriting"),
+  about:     yup.string().required("O'zingiz haqida yozing"),
+  portfolio: yup.string().url("To'g'ri URL kiriting").nullable().transform(v => v || null),
+  priceStory: yup.string(),
+  priceVideo: yup.string(),
+});
+
+const businessSchema = yup.object({
+  companyName:    yup.string().required("Kompaniya nomi kiritish majburiy"),
+  contactName:    yup.string().required("Aloqa shaxsi kiritish majburiy"),
+  phone:          yup.string().required("Telefon raqam kiritish majburiy"),
+  businessType:   yup.string().required("Faoliyat turini tanlang"),
+  product:        yup.string().required("Mahsulot / xizmat nomini kiriting"),
+  description:    yup.string().required("Mahsulot haqida batafsil yozing"),
+  platforms:      yup.array().min(1, "Kamida 1 ta platforma tanlang"),
+  bloggerTypes:   yup.array().min(1, "Qanday bloger kerakligini tanlang"),
+  targetAudience: yup.string().required("Maqsadli auditoriyani kiriting"),
+  budget:         yup.string().required("Byudjetni tanlang"),
+  duration:       yup.string().required("Kampaniya davomiyligini tanlang"),
+  location:       yup.string().required("Joylashuvni kiriting"),
+  goal:           yup.string().required("Kampaniya maqsadini kiriting"),
+  extra:          yup.string(),
+});
+
+/* ── Error message ── */
+function ErrMsg({ msg }) {
+  if (!msg) return null;
+  return <p style={{ color: "#dc2626", fontSize: 11, marginTop: 4, fontWeight: 600 }}>⚠ {msg}</p>;
+}
+
 /* ── Multi-select chips ── */
-function Chips({ options, selected, onChange }) {
+function Chips({ options, selected = [], onChange, hasError }) {
   const toggle = v =>
     onChange(selected.includes(v) ? selected.filter(x => x !== v) : [...selected, v]);
   return (
@@ -121,9 +162,9 @@ function Chips({ options, selected, onChange }) {
           <button key={o} type="button" onClick={() => toggle(o)} style={{
             padding: "7px 14px", borderRadius: 100, cursor: "pointer",
             fontSize: 12, fontWeight: 600, fontFamily: "inherit",
-            border: "1.5px solid",
+            border: `1.5px solid`,
             background: active ? "#fef2f2" : "#f9fafb",
-            borderColor: active ? "#dc2626" : "#e5e7eb",
+            borderColor: active ? "#dc2626" : hasError ? "#fca5a5" : "#e5e7eb",
             color: active ? "#dc2626" : "#374151",
             transition: "all 0.15s",
             display: "flex", alignItems: "center", gap: 5,
@@ -138,7 +179,7 @@ function Chips({ options, selected, onChange }) {
 }
 
 /* ── Platform chips ── */
-function PlatformChips({ selected, onChange }) {
+function PlatformChips({ selected = [], onChange, hasError }) {
   const toggle = k =>
     onChange(selected.includes(k) ? selected.filter(x => x !== k) : [...selected, k]);
   return (
@@ -152,7 +193,7 @@ function PlatformChips({ selected, onChange }) {
             fontSize: 13, fontWeight: 600, fontFamily: "inherit",
             border: "1.5px solid",
             background: active ? "#fff" : "#f9fafb",
-            borderColor: active ? color : "#e5e7eb",
+            borderColor: active ? color : hasError ? "#fca5a5" : "#e5e7eb",
             color: active ? color : "#374151",
             boxShadow: active ? `0 0 0 3px ${color}18` : "none",
             transition: "all 0.15s",
@@ -167,7 +208,7 @@ function PlatformChips({ selected, onChange }) {
 }
 
 /* ── Field wrapper ── */
-function Field({ label, required, hint, children }) {
+function Field({ label, required, hint, children, error }) {
   return (
     <div>
       <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 6 }}>
@@ -176,6 +217,97 @@ function Field({ label, required, hint, children }) {
         {hint && <span style={{ fontWeight: 400, color: "#9ca3af", marginLeft: 6 }}>{hint}</span>}
       </label>
       {children}
+      <ErrMsg msg={error} />
+    </div>
+  );
+}
+
+/* ── Image Upload ── */
+function ImageUpload({ value = [], onChange, accentColor = "#dc2626" }) {
+  const inputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
+
+  const uploadFiles = useCallback(async (files) => {
+    if (!files.length) return;
+    const allowed = Array.from(files).filter(f => f.type.startsWith("image/"));
+    if (!allowed.length) { toast.error("Faqat rasm fayllar qabul qilinadi"); return; }
+    if (value.length + allowed.length > 5) { toast.error("Maksimal 5 ta rasm yuklash mumkin"); return; }
+
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      allowed.forEach(f => fd.append("images", f));
+      const res = await api.post("/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      onChange([...value, ...res.data.urls]);
+      toast.success(`${res.data.urls.length} ta rasm yuklandi`);
+    } catch {
+      toast.error("Rasm yuklashda xatolik");
+    } finally {
+      setUploading(false);
+    }
+  }, [value, onChange]);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setDragging(false);
+    uploadFiles(e.dataTransfer.files);
+  }, [uploadFiles]);
+
+  const remove = (idx) => onChange(value.filter((_, i) => i !== idx));
+
+  return (
+    <div>
+      {/* Preview grid */}
+      {value.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+          {value.map((url, i) => (
+            <div key={i} style={{ position: "relative", width: 80, height: 80 }}>
+              <img src={url} alt="" style={{ width: 80, height: 80, borderRadius: 8, objectFit: "cover", border: "1.5px solid #e5e7eb" }} />
+              <button type="button" onClick={() => remove(i)} style={{
+                position: "absolute", top: -6, right: -6,
+                width: 20, height: 20, borderRadius: "50%",
+                background: "#ef4444", border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <LuX size={11} color="#fff" strokeWidth={3} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Drop zone */}
+      {value.length < 5 && (
+        <div
+          onClick={() => !uploading && inputRef.current?.click()}
+          onDragOver={e => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+          style={{
+            height: 90, border: `2px dashed ${dragging ? accentColor : "#e5e7eb"}`,
+            borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
+            gap: 8, cursor: uploading ? "not-allowed" : "pointer", background: dragging ? `${accentColor}08` : "#fafafa",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={e => !uploading && (e.currentTarget.style.borderColor = accentColor)}
+          onMouseLeave={e => !dragging && (e.currentTarget.style.borderColor = "#e5e7eb")}
+        >
+          {uploading
+            ? <><LuLoader size={18} style={{ color: "#9ca3af", animation: "spin 1s linear infinite" }} /><span style={{ fontSize: 12, color: "#9ca3af" }}>Yuklanmoqda...</span></>
+            : <><LuCloudUpload size={20} style={{ color: "#9ca3af" }} /><div style={{ textAlign: "center" }}><p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Rasm yuklash uchun bosing yoki sudrang</p><p style={{ fontSize: 10, color: "#d1d5db", margin: "2px 0 0" }}>JPG, PNG, WEBP — max 5MB, {5 - value.length} ta qoldi</p></div></>
+          }
+        </div>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        accept="image/jpg,image/jpeg,image/png,image/webp"
+        style={{ display: "none" }}
+        onChange={e => { uploadFiles(e.target.files); e.target.value = ""; }}
+      />
     </div>
   );
 }
@@ -211,36 +343,40 @@ function SubmitBtn({ loading, color = "#dc2626", shadow = "rgba(220,38,38,0.35)"
 
 /* ── Blogger form ── */
 function BloggerForm({ onSubmit, loading }) {
-  const [form, setForm] = useState({
-    name: "", phone: "", platforms: [], services: [], niche: [], followers: "",
-    pricePost: "", priceStory: "", priceVideo: "", portfolio: "", about: "",
+  const [images, setImages] = useState([]);
+  const { register, control, handleSubmit, formState: { errors } } = useForm({
+    resolver: yupResolver(bloggerSchema),
+    defaultValues: {
+      name: "", phone: "", platforms: [], services: [], niche: [],
+      followers: "", pricePost: "", priceStory: "", priceVideo: "",
+      portfolio: "", about: "",
+    },
   });
-  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
-  const handleSubmit = e => {
-    e.preventDefault();
-    if (!form.phone || !form.platforms.length) {
-      toast.error("Telefon va platforma majburiy!");
-      return;
-    }
-    onSubmit(form);
-  };
+  const submitWithImages = (data) => onSubmit({ ...data, images });
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <form onSubmit={handleSubmit(submitWithImages)} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
 
       {/* Shaxsiy ma'lumot */}
       <div>
         <SectionTitle label="Shaxsiy ma'lumotlar" />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-          <Field label="Ism-familiya">
-            <input style={INP} placeholder="To'liq ism" value={form.name}
-              onChange={e => set("name", e.target.value)} onFocus={FOCUS} onBlur={BLUR} />
+          <Field label="Ism-familiya" required error={errors.name?.message}>
+            <input
+              {...register("name")}
+              style={errors.name ? INP_ERR : INP}
+              placeholder="To'liq ism"
+            />
           </Field>
-          <Field label="Telefon" required>
-            <input style={INP} placeholder="+998 90 000 00 00" type="tel" value={form.phone}
-              onChange={e => set("phone", e.target.value)} onFocus={FOCUS} onBlur={BLUR} />
+          <Field label="Telefon" required error={errors.phone?.message}>
+            <input
+              {...register("phone")}
+              style={errors.phone ? INP_ERR : INP}
+              placeholder="+998 90 000 00 00"
+              type="tel"
+            />
           </Field>
         </div>
       </div>
@@ -248,8 +384,18 @@ function BloggerForm({ onSubmit, loading }) {
       {/* Platformalar */}
       <div>
         <SectionTitle label="Platformalar" />
-        <Field label="Qaysi platformalarda faolsiz?" required>
-          <PlatformChips selected={form.platforms} onChange={v => set("platforms", v)} />
+        <Field label="Qaysi platformalarda faolsiz?" required error={errors.platforms?.message}>
+          <Controller
+            name="platforms"
+            control={control}
+            render={({ field }) => (
+              <PlatformChips
+                selected={field.value}
+                onChange={field.onChange}
+                hasError={!!errors.platforms}
+              />
+            )}
+          />
         </Field>
       </div>
 
@@ -257,15 +403,28 @@ function BloggerForm({ onSubmit, loading }) {
       <div>
         <SectionTitle label="Auditoriya & yo'nalish" />
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Field label="Jami obunachilar soni" required>
-            <select style={{ ...INP, color: form.followers ? "#111827" : "#9ca3af" }}
-              value={form.followers} onChange={e => set("followers", e.target.value)}>
+          <Field label="Jami obunachilar soni" required error={errors.followers?.message}>
+            <select
+              {...register("followers")}
+              style={errors.followers ? { ...INP_ERR, color: "#111827" } : INP}
+            >
               <option value="">Tanlang...</option>
               {FOLLOWER_RANGES.map(r => <option key={r}>{r}</option>)}
             </select>
           </Field>
-          <Field label="Nisha (yo'nalishingiz)" required hint="(bir nechtasini tanlang)">
-            <Chips options={BLOGGER_NICHES} selected={form.niche} onChange={v => set("niche", v)} />
+          <Field label="Nisha (yo'nalishingiz)" required hint="(bir nechtasini tanlang)" error={errors.niche?.message}>
+            <Controller
+              name="niche"
+              control={control}
+              render={({ field }) => (
+                <Chips
+                  options={BLOGGER_NICHES}
+                  selected={field.value}
+                  onChange={field.onChange}
+                  hasError={!!errors.niche}
+                />
+              )}
+            />
           </Field>
         </div>
       </div>
@@ -274,21 +433,33 @@ function BloggerForm({ onSubmit, loading }) {
       <div>
         <SectionTitle label="Xizmatlar & narxlar" />
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Field label="Qanday reklama xizmatlarini taklif qilasiz?" required>
-            <Chips options={BLOGGER_SERVICES} selected={form.services} onChange={v => set("services", v)} />
+          <Field label="Qanday reklama xizmatlarini taklif qilasiz?" required error={errors.services?.message}>
+            <Controller
+              name="services"
+              control={control}
+              render={({ field }) => (
+                <Chips
+                  options={BLOGGER_SERVICES}
+                  selected={field.value}
+                  onChange={field.onChange}
+                  hasError={!!errors.services}
+                />
+              )}
+            />
           </Field>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-            <Field label="Post narxi" hint="(so'm)">
-              <input style={INP} placeholder="500 000" value={form.pricePost}
-                onChange={e => set("pricePost", e.target.value)} onFocus={FOCUS} onBlur={BLUR} />
+            <Field label="Post narxi" required hint="(so'm)" error={errors.pricePost?.message}>
+              <input
+                {...register("pricePost")}
+                style={errors.pricePost ? INP_ERR : INP}
+                placeholder="500 000"
+              />
             </Field>
             <Field label="Story narxi" hint="(so'm)">
-              <input style={INP} placeholder="200 000" value={form.priceStory}
-                onChange={e => set("priceStory", e.target.value)} onFocus={FOCUS} onBlur={BLUR} />
+              <input {...register("priceStory")} style={INP} placeholder="200 000" />
             </Field>
             <Field label="Video narxi" hint="(so'm)">
-              <input style={INP} placeholder="1 500 000" value={form.priceVideo}
-                onChange={e => set("priceVideo", e.target.value)} onFocus={FOCUS} onBlur={BLUR} />
+              <input {...register("priceVideo")} style={INP} placeholder="1 500 000" />
             </Field>
           </div>
         </div>
@@ -298,29 +469,23 @@ function BloggerForm({ onSubmit, loading }) {
       <div>
         <SectionTitle label="Qo'shimcha ma'lumot" />
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Field label="Portfolio yoki namuna" hint="(link)">
-            <input style={INP} placeholder="https://..." value={form.portfolio}
-              onChange={e => set("portfolio", e.target.value)} onFocus={FOCUS} onBlur={BLUR} />
+          <Field label="Portfolio yoki namuna" hint="(link)" error={errors.portfolio?.message}>
+            <input
+              {...register("portfolio")}
+              style={errors.portfolio ? INP_ERR : INP}
+              placeholder="https://..."
+            />
           </Field>
-          <Field label="O'zingiz haqida qisqacha">
-            <textarea style={{ ...INP, resize: "vertical" }} rows={4}
+          <Field label="O'zingiz haqida qisqacha" required error={errors.about?.message}>
+            <textarea
+              {...register("about")}
+              style={errors.about ? { ...INP_ERR, resize: "vertical" } : { ...INP, resize: "vertical" }}
+              rows={4}
               placeholder="Nima haqida post qilasiz, auditoriyangiznig xususiyatlari, avvalgi hamkorlaringiz..."
-              value={form.about} onChange={e => set("about", e.target.value)}
-              onFocus={FOCUS} onBlur={BLUR}
             />
           </Field>
           <Field label="Rasm / Screenshoot" hint="(ixtiyoriy)">
-            <div style={{
-              height: 90, border: "2px dashed #e5e7eb", borderRadius: 12,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              gap: 8, cursor: "pointer", background: "#fafafa",
-            }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "#dc2626"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "#e5e7eb"}
-            >
-              <LuImage size={20} style={{ color: "#9ca3af" }} />
-              <span style={{ fontSize: 12, color: "#9ca3af" }}>Rasm yuklash uchun bosing</span>
-            </div>
+            <ImageUpload value={images} onChange={setImages} accentColor="#dc2626" />
           </Field>
         </div>
       </div>
@@ -332,47 +497,55 @@ function BloggerForm({ onSubmit, loading }) {
 
 /* ── Business form ── */
 function BusinessForm({ onSubmit, loading }) {
-  const [form, setForm] = useState({
-    companyName: "", contactName: "", phone: "",
-    businessType: "", description: "", product: "",
-    platforms: [], bloggerTypes: [],
-    targetAudience: "", budget: "", duration: "",
-    location: "", goal: "", extra: "",
+  const [images, setImages] = useState([]);
+  const { register, control, handleSubmit, formState: { errors } } = useForm({
+    resolver: yupResolver(businessSchema),
+    defaultValues: {
+      companyName: "", contactName: "", phone: "",
+      businessType: "", description: "", product: "",
+      platforms: [], bloggerTypes: [],
+      targetAudience: "", budget: "", duration: "",
+      location: "", goal: "", extra: "",
+    },
   });
-  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
-  const handleSubmit = e => {
-    e.preventDefault();
-    if (!form.companyName || !form.phone || !form.product) {
-      toast.error("Kompaniya nomi, telefon va mahsulot majburiy!");
-      return;
-    }
-    onSubmit(form);
-  };
+  const submitWithImages = (data) => onSubmit({ ...data, images });
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <form onSubmit={handleSubmit(submitWithImages)} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
 
       {/* Kompaniya */}
       <div>
         <SectionTitle label="Kompaniya ma'lumotlari" color="#2563eb" />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-          <Field label="Kompaniya / Brend nomi" required>
-            <input style={INP} placeholder="Masalan: Shirin Zavodi" value={form.companyName}
-              onChange={e => set("companyName", e.target.value)} onFocus={FOCUS} onBlur={BLUR} />
+          <Field label="Kompaniya / Brend nomi" required error={errors.companyName?.message}>
+            <input
+              {...register("companyName")}
+              style={errors.companyName ? INP_ERR : INP}
+              placeholder="Masalan: Shirin Zavodi"
+            />
           </Field>
-          <Field label="Aloqa shaxsi" required>
-            <input style={INP} placeholder="Ism-familiya" value={form.contactName}
-              onChange={e => set("contactName", e.target.value)} onFocus={FOCUS} onBlur={BLUR} />
+          <Field label="Aloqa shaxsi" required error={errors.contactName?.message}>
+            <input
+              {...register("contactName")}
+              style={errors.contactName ? INP_ERR : INP}
+              placeholder="Ism-familiya"
+            />
           </Field>
-          <Field label="Telefon" required>
-            <input style={INP} placeholder="+998 90 000 00 00" type="tel" value={form.phone}
-              onChange={e => set("phone", e.target.value)} onFocus={FOCUS} onBlur={BLUR} />
+          <Field label="Telefon" required error={errors.phone?.message}>
+            <input
+              {...register("phone")}
+              style={errors.phone ? INP_ERR : INP}
+              placeholder="+998 90 000 00 00"
+              type="tel"
+            />
           </Field>
-          <Field label="Faoliyat turi" required>
-            <select style={{ ...INP, color: form.businessType ? "#111827" : "#9ca3af" }}
-              value={form.businessType} onChange={e => set("businessType", e.target.value)}>
+          <Field label="Faoliyat turi" required error={errors.businessType?.message}>
+            <select
+              {...register("businessType")}
+              style={errors.businessType ? { ...INP_ERR, color: "#111827" } : INP}
+            >
               <option value="">Tanlang...</option>
               {BUSINESS_TYPES.map(t => <option key={t}>{t}</option>)}
             </select>
@@ -384,16 +557,19 @@ function BusinessForm({ onSubmit, loading }) {
       <div>
         <SectionTitle label="Mahsulot / xizmat" color="#2563eb" />
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Field label="Reklama qilinadigan mahsulot / xizmat" required>
-            <input style={INP} placeholder="Masalan: Yangi konfet liniyamiz — Shirin Premium"
-              value={form.product} onChange={e => set("product", e.target.value)}
-              onFocus={FOCUS} onBlur={BLUR} />
+          <Field label="Reklama qilinadigan mahsulot / xizmat" required error={errors.product?.message}>
+            <input
+              {...register("product")}
+              style={errors.product ? INP_ERR : INP}
+              placeholder="Masalan: Yangi konfet liniyamiz — Shirin Premium"
+            />
           </Field>
-          <Field label="Mahsulot / xizmat haqida batafsil" required>
-            <textarea style={{ ...INP, resize: "vertical" }} rows={4}
+          <Field label="Mahsulot / xizmat haqida batafsil" required error={errors.description?.message}>
+            <textarea
+              {...register("description")}
+              style={errors.description ? { ...INP_ERR, resize: "vertical" } : { ...INP, resize: "vertical" }}
+              rows={4}
               placeholder="Mahsulot qanday muammoni hal qiladi? Afzalliklari nima? Narxi, sifati, noyob xususiyatlari..."
-              value={form.description} onChange={e => set("description", e.target.value)}
-              onFocus={FOCUS} onBlur={BLUR}
             />
           </Field>
         </div>
@@ -403,35 +579,65 @@ function BusinessForm({ onSubmit, loading }) {
       <div>
         <SectionTitle label="Kampaniya talablari" color="#2563eb" />
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Field label="Qaysi platformalarda reklama kerak?" required>
-            <PlatformChips selected={form.platforms} onChange={v => set("platforms", v)} />
+          <Field label="Qaysi platformalarda reklama kerak?" required error={errors.platforms?.message}>
+            <Controller
+              name="platforms"
+              control={control}
+              render={({ field }) => (
+                <PlatformChips
+                  selected={field.value}
+                  onChange={field.onChange}
+                  hasError={!!errors.platforms}
+                />
+              )}
+            />
           </Field>
-          <Field label="Qanday bloger kerak?" hint="(bir nechtasini tanlang)">
-            <Chips options={BLOGGER_TYPES_NEEDED} selected={form.bloggerTypes} onChange={v => set("bloggerTypes", v)} />
+          <Field label="Qanday bloger kerak?" required hint="(bir nechtasini tanlang)" error={errors.bloggerTypes?.message}>
+            <Controller
+              name="bloggerTypes"
+              control={control}
+              render={({ field }) => (
+                <Chips
+                  options={BLOGGER_TYPES_NEEDED}
+                  selected={field.value}
+                  onChange={field.onChange}
+                  hasError={!!errors.bloggerTypes}
+                />
+              )}
+            />
           </Field>
-          <Field label="Maqsadli auditoriya" hint="(kim sotib olishi kerak)">
-            <input style={INP} placeholder="Masalan: 20–35 yosh, Toshkent, oilali ayollar"
-              value={form.targetAudience} onChange={e => set("targetAudience", e.target.value)}
-              onFocus={FOCUS} onBlur={BLUR} />
+          <Field label="Maqsadli auditoriya" required hint="(kim sotib olishi kerak)" error={errors.targetAudience?.message}>
+            <input
+              {...register("targetAudience")}
+              style={errors.targetAudience ? INP_ERR : INP}
+              placeholder="Masalan: 20–35 yosh, Toshkent, oilali ayollar"
+            />
           </Field>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-            <Field label="Byudjet" required>
-              <select style={{ ...INP, color: form.budget ? "#111827" : "#9ca3af" }}
-                value={form.budget} onChange={e => set("budget", e.target.value)}>
+            <Field label="Byudjet" required error={errors.budget?.message}>
+              <select
+                {...register("budget")}
+                style={errors.budget ? { ...INP_ERR, color: "#111827" } : INP}
+              >
                 <option value="">Tanlang...</option>
                 {BUDGET_RANGES.map(b => <option key={b}>{b}</option>)}
               </select>
             </Field>
-            <Field label="Kampaniya davomiyligi">
-              <select style={{ ...INP, color: form.duration ? "#111827" : "#9ca3af" }}
-                value={form.duration} onChange={e => set("duration", e.target.value)}>
+            <Field label="Kampaniya davomiyligi" required error={errors.duration?.message}>
+              <select
+                {...register("duration")}
+                style={errors.duration ? { ...INP_ERR, color: "#111827" } : INP}
+              >
                 <option value="">Tanlang...</option>
                 {DURATIONS.map(d => <option key={d}>{d}</option>)}
               </select>
             </Field>
-            <Field label="Joylashuv">
-              <input style={INP} placeholder="Shahar / Viloyat" value={form.location}
-                onChange={e => set("location", e.target.value)} onFocus={FOCUS} onBlur={BLUR} />
+            <Field label="Joylashuv" required error={errors.location?.message}>
+              <input
+                {...register("location")}
+                style={errors.location ? INP_ERR : INP}
+                placeholder="Shahar / Viloyat"
+              />
             </Field>
           </div>
         </div>
@@ -441,30 +647,23 @@ function BusinessForm({ onSubmit, loading }) {
       <div>
         <SectionTitle label="Qo'shimcha" color="#2563eb" />
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Field label="Kampaniya maqsadi">
-            <input style={INP} placeholder="Masalan: brend taniqliligini oshirish, sotuv, obunachilarni jalb qilish"
-              value={form.goal} onChange={e => set("goal", e.target.value)}
-              onFocus={FOCUS} onBlur={BLUR} />
+          <Field label="Kampaniya maqsadi" required error={errors.goal?.message}>
+            <input
+              {...register("goal")}
+              style={errors.goal ? INP_ERR : INP}
+              placeholder="Masalan: brend taniqliligini oshirish, sotuv, obunachilarni jalb qilish"
+            />
           </Field>
           <Field label="Boshqa qo'shimcha talablar" hint="(ixtiyoriy)">
-            <textarea style={{ ...INP, resize: "vertical" }} rows={3}
+            <textarea
+              {...register("extra")}
+              style={{ ...INP, resize: "vertical" }}
+              rows={3}
               placeholder="Bloger talablari, ko'rsatmalar, maxsus shartlar..."
-              value={form.extra} onChange={e => set("extra", e.target.value)}
-              onFocus={FOCUS} onBlur={BLUR}
             />
           </Field>
           <Field label="Mahsulot rasmlari / reklama materiallari" hint="(ixtiyoriy)">
-            <div style={{
-              height: 90, border: "2px dashed #e5e7eb", borderRadius: 12,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              gap: 8, cursor: "pointer", background: "#fafafa",
-            }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "#2563eb"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "#e5e7eb"}
-            >
-              <LuImage size={20} style={{ color: "#9ca3af" }} />
-              <span style={{ fontSize: 12, color: "#9ca3af" }}>Rasm yuklash uchun bosing</span>
-            </div>
+            <ImageUpload value={images} onChange={setImages} accentColor="#2563eb" />
           </Field>
         </div>
       </div>
@@ -484,7 +683,6 @@ export default function ElonBerish() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading]     = useState(false);
 
-  /* ── API submit handler ── */
   const handleSubmit = async (formData) => {
     if (!isLoggedIn()) {
       toast.error("E'lon berish uchun tizimga kiring!");
@@ -517,6 +715,7 @@ export default function ElonBerish() {
           },
           portfolio: formData.portfolio || undefined,
           phone: formData.phone,
+          images: formData.images || [],
         };
       } else {
         body = {
@@ -535,6 +734,7 @@ export default function ElonBerish() {
           campaignGoal:       formData.goal || undefined,
           requirements:       formData.extra || undefined,
           location:           formData.location || undefined,
+          images:             formData.images || [],
         };
       }
 
@@ -635,7 +835,6 @@ export default function ElonBerish() {
       {/* ── Step 1: Type select ── */}
       {step === 1 && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          {/* Blogger card */}
           <button
             onClick={() => { setType("blogger"); setStep(2); }}
             style={{ padding: "36px 28px", borderRadius: 20, border: "2px solid #e5e7eb", background: "#fff", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all 0.2s", display: "flex", flexDirection: "column", gap: 16 }}
@@ -661,7 +860,6 @@ export default function ElonBerish() {
             </div>
           </button>
 
-          {/* Business card */}
           <button
             onClick={() => { setType("business"); setStep(2); }}
             style={{ padding: "36px 28px", borderRadius: 20, border: "2px solid #e5e7eb", background: "#fff", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all 0.2s", display: "flex", flexDirection: "column", gap: 16 }}

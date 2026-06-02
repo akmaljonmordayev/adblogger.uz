@@ -370,7 +370,7 @@ export default function AdminDashboard() {
         </motion.div>
 
         {/* ── 8 Stat Cards ───────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {STATS_CFG.map((cfg, i) => (
             <StatCard key={cfg.label} {...cfg} loading={loading} delay={i * 0.05} />
           ))}

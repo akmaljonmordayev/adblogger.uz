@@ -76,10 +76,11 @@ export default function BloggerDetail() {
   const [reviews, setReviews]         = useState([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState(null);
-  const [activeTab, setActiveTab]     = useState("pricing");
-  const [inWishlist, setInWishlist]   = useState(false);
-  const [isOrderOpen, setIsOrderOpen] = useState(false);
-  const [isMsgOpen, setIsMsgOpen]     = useState(false);
+  const [activeTab, setActiveTab]       = useState("pricing");
+  const [inWishlist, setInWishlist]     = useState(false);
+  const [isOrderOpen, setIsOrderOpen]   = useState(false);
+  const [isMsgOpen, setIsMsgOpen]       = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -89,7 +90,9 @@ export default function BloggerDetail() {
       api.get(`/bloggers/${id}/reviews`),
     ])
       .then(([bRes, rRes]) => {
-        setBlogger(bRes.data.data);
+        const b = bRes.data.data;
+        setBlogger(b);
+        setSelectedPlatform(b?.platforms?.[0] || null);
         setReviews(rRes.data.data || []);
       })
       .catch(err => setError(err.response?.data?.message || err.message || "Xatolik"))
@@ -161,9 +164,24 @@ export default function BloggerDetail() {
       }[key] || key,
     }));
 
-  const minPrice = packages.length
-    ? Math.min(...packages.map(p => p.rawPrice))
-    : 0;
+  const PLATFORM_SERVICES = {
+    instagram: ["post", "story", "reel"],
+    youtube:   ["video", "unboxing"],
+    telegram:  ["post", "story"],
+    tiktok:    ["video", "story"],
+  };
+
+  const displayPackages = (() => {
+    if (!selectedPlatform) return packages;
+    const allowed = PLATFORM_SERVICES[selectedPlatform];
+    if (!allowed) return packages;
+    const filtered = packages.filter(p => allowed.includes(p.name.toLowerCase()));
+    return filtered.length > 0 ? filtered : packages;
+  })();
+
+  const minPrice = displayPackages.length
+    ? Math.min(...displayPackages.map(p => p.rawPrice))
+    : packages.length ? Math.min(...packages.map(p => p.rawPrice)) : 0;
 
   const tabs = [
     { key: "pricing",  label: "Tariflar" },
@@ -252,7 +270,7 @@ export default function BloggerDetail() {
                   padding: "4px 12px", borderRadius: 20,
                   border: "1px solid rgba(255,255,255,0.3)",
                 }}>
-                  {PLATFORM_DISPLAY[plat] ?? plat}
+                  {PLATFORM_DISPLAY[selectedPlatform ?? plat] ?? (selectedPlatform ?? plat)}
                 </div>
               </div>
 
@@ -261,14 +279,16 @@ export default function BloggerDetail() {
                 <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: -40, marginBottom: 16 }}>
                   <div className="bd-avatar" style={{
                     width: 80, height: 80, borderRadius: 20,
-                    background: gradient, border: "4px solid #fff",
+                    background: blogger.user?.avatar ? "#fff" : gradient,
+                    border: "4px solid #fff",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 28, fontWeight: 800, color: "#fff",
                     boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                     overflow: "hidden", flexShrink: 0,
+                    position: "relative", zIndex: 2,
                   }}>
                     {blogger.user?.avatar
-                      ? <img src={blogger.user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ? <img src={blogger.user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
                       : fullName.charAt(0).toUpperCase()
                     }
                   </div>
@@ -338,6 +358,38 @@ export default function BloggerDetail() {
               </div>
             </div>
 
+            {/* Platform Selector — only if multiple platforms */}
+            {(blogger.platforms?.length ?? 0) > 1 && (() => {
+              const PLAT_ICONS  = { instagram: FaInstagram, youtube: FaYoutube, telegram: FaTelegram, tiktok: FaTiktok };
+              const PLAT_COLORS = { instagram: "#e1306c", youtube: "#ff0000", telegram: "#2aabee", tiktok: "#010101" };
+              return (
+                <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 16, padding: 5, display: "flex", gap: 5 }}>
+                  {blogger.platforms.map(p => {
+                    const Icon    = PLAT_ICONS[p];
+                    const color   = PLAT_COLORS[p] || "#334155";
+                    const isActive = selectedPlatform === p;
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => setSelectedPlatform(p)}
+                        style={{
+                          flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                          padding: "10px 12px", border: "none", borderRadius: 12, cursor: "pointer",
+                          background: isActive ? color : "transparent",
+                          color: isActive ? "#fff" : "#64748b",
+                          fontWeight: 700, fontSize: 13, transition: "all 0.18s",
+                          boxShadow: isActive ? `0 4px 12px ${color}40` : "none",
+                        }}
+                      >
+                        {Icon && <Icon size={15} />}
+                        {PLATFORM_DISPLAY[p] ?? p}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
             {/* Tabs */}
             <div className="bd-tabs">
               {tabs.map(t => (
@@ -361,12 +413,12 @@ export default function BloggerDetail() {
             {/* ── Tariflar ── */}
             {activeTab === "pricing" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {packages.length === 0 && (
+                {displayPackages.length === 0 && (
                   <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 16, padding: "40px 20px", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
                     Narxlar kiritilmagan
                   </div>
                 )}
-                {packages.map(pkg => (
+                {displayPackages.map(pkg => (
                   <div key={pkg.name} className="bd-pkg" style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center",
                     padding: "16px 18px", border: "1.5px solid #e2e8f0", borderRadius: 16,
@@ -849,7 +901,7 @@ export default function BloggerDetail() {
         </div>
       </div>
 
-      {isOrderOpen && <OrderModal onClose={() => setIsOrderOpen(false)} bloggerName={fullName} packages={packages} />}
+      {isOrderOpen && <OrderModal onClose={() => setIsOrderOpen(false)} bloggerName={fullName} packages={displayPackages.length ? displayPackages : packages} />}
       {isMsgOpen  && <MessageModal onClose={() => setIsMsgOpen(false)} bloggerName={fullName} />}
     </>
   );
