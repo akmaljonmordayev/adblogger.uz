@@ -5,10 +5,11 @@ import {
   LuUser, LuPlus, LuHouse, LuUsers, LuTag,
   LuDollarSign, LuMail, LuBadgeCheck, LuTrendingUp,
   LuLogOut, LuLayoutDashboard, LuChevronDown,
-  LuHeart, LuBell,
+  LuHeart, LuBell, LuMessageCircle,
 } from "react-icons/lu";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useNotificationStore } from "../../store/useNotificationStore";
+import { connectSocket, disconnectSocket } from "../../utils/socket";
 import LogoutModal from "../ui/LogoutModal";
 import HeroSwiper from "./HeroSwiper";
 import CategorySection from "./CategorySection";
@@ -108,6 +109,15 @@ export default function Header() {
     const id = setInterval(fetchNotifs, 30_000);
     return () => clearInterval(id);
   }, [token, fetchNotifs, resetNotifs]);
+
+  // Socket.io connection — user login/logout bilan sinxronlash
+  useEffect(() => {
+    if (user?._id) {
+      connectSocket(user._id);
+    } else {
+      disconnectSocket();
+    }
+  }, [user?._id]);
 
   const handleLogout = () => {
     setUserMenuOpen(false);
@@ -299,8 +309,9 @@ export default function Header() {
                       </div>
                       {[
                         user.role === "admin"
-                          ? { to: "/admin", icon: <LuLayoutDashboard size={13} />, label: "Admin panel" }
-                          : { to: "/profile", icon: <LuUser size={13} />, label: "Profilim" },
+                          ? { to: "/admin",            icon: <LuLayoutDashboard size={13} />, label: "Admin panel" }
+                          : { to: "/profile",          icon: <LuUser size={13} />,            label: "Profilim" },
+                        { to: "/my-applications",    icon: <LuMessageCircle size={13} />,   label: "Mening zayavkalarim" },
                       ].map(item => (
                         <NavLink key={item.to} to={item.to} onClick={() => setUserMenuOpen(false)}
                           style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", textDecoration: "none", color: "#374151", fontSize: 13, fontWeight: 500 }}

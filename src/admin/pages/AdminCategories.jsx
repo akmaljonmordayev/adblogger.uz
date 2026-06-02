@@ -1,12 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "../../components/ui/toast";
 import { adminCategoriesService } from "../../services/adminService";
 import {
   LuLoader, LuSearch, LuPlus, LuPencil, LuTrash2,
   LuTriangleAlert, LuX, LuCheck, LuTag, LuUsers,
   LuRefreshCw, LuStar, LuChevronDown, LuGrip,
-  LuLayers,
+  LuLayers, LuWifi,
 } from "react-icons/lu";
+
+const POLL_INTERVAL = 30_000; // 30 soniya
 
 /* ── Design Tokens ─────────────────────────────────────────────── */
 const T = {
@@ -269,21 +271,33 @@ export default function AdminCategories() {
   const [deletingCat,   setDeletingCat]   = useState(null);
   const [saving,        setSaving]        = useState(false);
   const [syncing,       setSyncing]       = useState(false);
+  const [lastUpdated,   setLastUpdated]   = useState(null);
+  const [isLive,        setIsLive]        = useState(true);
+  const pollRef = useRef(null);
 
-  /* ── Fetch ── */
-  const fetchCategories = useCallback(async () => {
-    setLoading(true);
+  /* ── Fetch (silent = no loading spinner, for background poll) ── */
+  const fetchCategories = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await adminCategoriesService.getAll();
       setCategories(res.data || []);
+      setLastUpdated(new Date());
     } catch {
-      toast.error("Kategoriyalarni yuklashda xatolik");
+      if (!silent) toast.error("Kategoriyalarni yuklashda xatolik");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
+  /* ── Initial load ── */
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
+
+  /* ── 30-soniya polling ── */
+  useEffect(() => {
+    if (!isLive) { clearInterval(pollRef.current); return; }
+    pollRef.current = setInterval(() => fetchCategories(true), POLL_INTERVAL);
+    return () => clearInterval(pollRef.current);
+  }, [isLive, fetchCategories]);
 
   /* ── Create ── */
   const handleCreate = async (form) => {
@@ -366,7 +380,30 @@ export default function AdminCategories() {
           </div>
           <p style={{ fontSize: 13, color: T.textDim, margin: 0 }}>Barcha kategoriyalar, bloggerlar soni va boshqaruv</p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          {/* Live badge */}
+          <button
+            onClick={() => setIsLive(v => !v)}
+            title={isLive ? "Real-time yoqiq (o'chirish uchun bosing)" : "Real-time o'chiq (yoqish uchun bosing)"}
+            style={{
+              display: "flex", alignItems: "center", gap: 5,
+              padding: "7px 13px", borderRadius: 99,
+              border: `1.5px solid ${isLive ? T.successBd : T.border}`,
+              background: isLive ? T.successBg : T.surfaceUp,
+              color: isLive ? T.success : T.textDim,
+              fontSize: 12, fontWeight: 700, cursor: "pointer",
+            }}
+          >
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: isLive ? T.success : T.textDim, display: "inline-block", boxShadow: isLive ? `0 0 0 2px ${T.successBd}` : "none" }} className={isLive ? "pulse" : ""} />
+            {isLive ? "Live" : "Paused"}
+          </button>
+
+          {lastUpdated && (
+            <span style={{ fontSize: 11.5, color: T.textDim, fontWeight: 500 }}>
+              {lastUpdated.toLocaleTimeString("uz-UZ")} da yangilandi
+            </span>
+          )}
+
           <button
             onClick={() => setShowCreate(true)}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 18px", border: "none", borderRadius: 12, background: `linear-gradient(135deg,${T.red},#B91C1C)`, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(198,40,40,.3)" }}
@@ -376,14 +413,14 @@ export default function AdminCategories() {
           <button
             onClick={handleSync}
             disabled={syncing}
-            title="Blogger sonlarini DB dan qayta hisoblash"
+            title="Blogger sonlarini DB dan qayta hisoblash + yo'q kategoriyalarni yaratish"
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", border: `1.5px solid ${T.infoBd}`, borderRadius: 12, background: T.infoBg, color: T.info, fontSize: 13, fontWeight: 600, cursor: syncing ? "not-allowed" : "pointer", opacity: syncing ? 0.7 : 1 }}
           >
             {syncing ? <LuLoader size={14} className="spin" /> : <LuUsers size={14} />}
             Sync
           </button>
           <button
-            onClick={fetchCategories}
+            onClick={() => fetchCategories()}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", border: `1.5px solid ${T.border}`, borderRadius: 12, background: T.surface, color: T.textMuted, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
           >
             <LuRefreshCw size={14} /> Yangilash
@@ -470,9 +507,16 @@ export default function AdminCategories() {
                     {cat.icon || "📌"}
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: "0 0 2px", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-                      {cat.name}
-                    </p>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+                        {cat.name}
+                      </p>
+                      {cat._noDoc && (
+                        <span title="Bu kategoriya DB da yo'q, faqat bloggerlarda mavjud" style={{ fontSize: 10, fontWeight: 700, color: T.warn, background: T.warnBg, border: `1px solid ${T.warnBd}`, padding: "1px 6px", borderRadius: 6 }}>
+                          DB yo'q
+                        </span>
+                      )}
+                    </div>
                     {cat.slug && (
                       <p style={{ fontSize: 11, color: T.textDim, margin: 0, fontFamily: "monospace" }}>/{cat.slug}</p>
                     )}
@@ -515,24 +559,32 @@ export default function AdminCategories() {
 
                 {/* Actions */}
                 <div style={{ display: "flex", gap: 5 }}>
-                  <button
-                    onClick={() => setEditingCat(cat)}
-                    title="Tahrirlash"
-                    style={{ width: 32, height: 32, border: `1.5px solid ${T.border}`, borderRadius: 8, background: T.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted, transition: "all .12s" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = T.purpleBg; e.currentTarget.style.borderColor = T.purpleBd; e.currentTarget.style.color = T.purple; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = T.surface; e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textMuted; }}
-                  >
-                    <LuPencil size={13} />
-                  </button>
-                  <button
-                    onClick={() => setDeletingCat(cat)}
-                    title="O'chirish"
-                    style={{ width: 32, height: 32, border: `1.5px solid ${T.border}`, borderRadius: 8, background: T.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textDim, transition: "all .12s" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = T.redLight; e.currentTarget.style.borderColor = T.redBorder; e.currentTarget.style.color = T.red; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = T.surface; e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textDim; }}
-                  >
-                    <LuTrash2 size={13} />
-                  </button>
+                  {cat._noDoc ? (
+                    <span title="Sync bosib avval DB ga yarating" style={{ fontSize: 11, color: T.textDim, fontStyle: "italic", alignSelf: "center" }}>
+                      Sync kerak
+                    </span>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setEditingCat(cat)}
+                        title="Tahrirlash"
+                        style={{ width: 32, height: 32, border: `1.5px solid ${T.border}`, borderRadius: 8, background: T.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted, transition: "all .12s" }}
+                        onMouseEnter={e => { e.currentTarget.style.background = T.purpleBg; e.currentTarget.style.borderColor = T.purpleBd; e.currentTarget.style.color = T.purple; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = T.surface; e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textMuted; }}
+                      >
+                        <LuPencil size={13} />
+                      </button>
+                      <button
+                        onClick={() => setDeletingCat(cat)}
+                        title="O'chirish"
+                        style={{ width: 32, height: 32, border: `1.5px solid ${T.border}`, borderRadius: 8, background: T.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textDim, transition: "all .12s" }}
+                        onMouseEnter={e => { e.currentTarget.style.background = T.redLight; e.currentTarget.style.borderColor = T.redBorder; e.currentTarget.style.color = T.red; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = T.surface; e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textDim; }}
+                      >
+                        <LuTrash2 size={13} />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );
@@ -573,8 +625,10 @@ export default function AdminCategories() {
       )}
 
       <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .spin { animation: spin 0.8s linear infinite; }
+        @keyframes spin  { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100% { opacity:1; box-shadow:0 0 0 2px #BBF7D0; } 50% { opacity:.6; box-shadow:0 0 0 4px #86EFAC; } }
+        .spin  { animation: spin  0.8s linear infinite; }
+        .pulse { animation: pulse 2s  ease   infinite; }
       `}</style>
     </div>
   );

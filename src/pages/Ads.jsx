@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import SEO, { breadcrumbSchema } from "../components/SEO";
 import {
   LuInstagram, LuYoutube, LuMessageCircle, LuSearch,
@@ -8,6 +8,9 @@ import {
   LuTrendingUp, LuEye, LuFilter, LuPlus, LuLoader,
 } from "react-icons/lu";
 import api from "../services/api";
+import { useAuthStore } from "../store/useAuthStore";
+import applicationService from "../services/applicationService";
+import { toast } from "../components/ui/toast";
 
 /* ── Font ── */
 if (!document.getElementById("ads-fonts")) {
@@ -178,12 +181,35 @@ function ContactModal({ ad, onClose }) {
 
 /* ── Zayavka modal ── */
 function ZayavkaModal({ ad, onClose }) {
-  const [form, setForm] = useState({ name: "", phone: "", message: "" });
-  const [sent, setSent] = useState(false);
-  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const [message, setMessage] = useState("");
+  const [sent, setSent]       = useState(false);
+  const [sending, setSending] = useState(false);
   const inp = { width: "100%", padding: "11px 14px", fontSize: 14, border: "1.5px solid #e5e7eb", borderRadius: 10, outline: "none", fontFamily: "inherit", boxSizing: "border-box", transition: "border-color 0.2s" };
 
   if (!ad) return null;
+
+  const handleSubmit = async () => {
+    if (!user) {
+      onClose();
+      toast.error("Zayavka yuborish uchun avval tizimga kiring");
+      navigate("/login");
+      return;
+    }
+    if (sending) return;
+    setSending(true);
+    try {
+      await applicationService.apply(ad._id, { message: message.trim() });
+      setSent(true);
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Xatolik yuz berdi";
+      toast.error(msg);
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
       <div style={{ background: "#fff", borderRadius: 20, padding: "32px", maxWidth: 440, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
@@ -191,25 +217,48 @@ function ZayavkaModal({ ad, onClose }) {
           <div style={{ textAlign: "center", padding: "20px 0" }}>
             <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 28 }}>✓</div>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 800, color: "#111827", marginBottom: 8 }}>Zayavka yuborildi!</div>
-            <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 20 }}>{ad.name} siz bilan tez orada bog'lanadi.</p>
-            <button onClick={onClose} style={{ padding: "11px 28px", borderRadius: 12, background: "linear-gradient(135deg,#dc2626,#b91c1c)", color: "#fff", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "inherit" }}>Yopish</button>
+            <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 20 }}>
+              {ad.name} siz bilan tez orada bog'lanadi. Chat orqali muloqot qilishingiz mumkin.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <button onClick={() => { onClose(); navigate("/my-applications"); }}
+                style={{ padding: "11px 28px", borderRadius: 12, background: "linear-gradient(135deg,#dc2626,#b91c1c)", color: "#fff", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "inherit" }}>
+                Zayavkalarimga o'tish →
+              </button>
+              <button onClick={onClose} style={{ padding: "10px", background: "none", border: "1.5px solid #e5e7eb", borderRadius: 12, fontSize: 13, color: "#9ca3af", cursor: "pointer", fontFamily: "inherit" }}>Yopish</button>
+            </div>
           </div>
         ) : (
           <>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 800, color: "#111827", marginBottom: 6 }}>Zayavka yozish</div>
-            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 20 }}><strong style={{ color: "#111827" }}>{ad.name}</strong> ga zayavka yuborish</p>
+            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 20 }}>
+              <strong style={{ color: "#111827" }}>{ad.name}</strong> ga zayavka yuborish
+            </p>
+            {!user && (
+              <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#92400e" }}>
+                ⚠️ Zayavka yuborish uchun avval <strong>tizimga kiring</strong>
+              </div>
+            )}
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <input style={inp} placeholder="Ismingiz *" value={form.name} onChange={e => set("name", e.target.value)} onFocus={e => e.target.style.borderColor = "#dc2626"} onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
-              <input style={inp} placeholder="Telefon raqamingiz *" type="tel" value={form.phone} onChange={e => set("phone", e.target.value)} onFocus={e => e.target.style.borderColor = "#dc2626"} onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
-              <textarea style={{ ...inp, resize: "vertical" }} rows={3} placeholder="Reklama haqida qisqacha (brendingiz, mahsulot, talablar...)" value={form.message} onChange={e => set("message", e.target.value)} onFocus={e => e.target.style.borderColor = "#dc2626"} onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
-              <button onClick={() => { if (form.name && form.phone) setSent(true); }} style={{ padding: "13px", borderRadius: 12, background: "linear-gradient(135deg,#dc2626,#b91c1c)", color: "#fff", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 4px 16px rgba(220,38,38,0.35)" }}>
-                <LuSend size={15} /> Yuborish
+              <textarea style={{ ...inp, resize: "vertical" }} rows={4}
+                placeholder="Qisqacha xabar: brendingiz, mahsulot, hamkorlik shartlari..."
+                value={message} onChange={e => setMessage(e.target.value)}
+                onFocus={e => e.target.style.borderColor = "#dc2626"}
+                onBlur={e => e.target.style.borderColor = "#e5e7eb"}
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={sending}
+                style={{ padding: "13px", borderRadius: 12, background: "linear-gradient(135deg,#dc2626,#b91c1c)", color: "#fff", border: "none", cursor: sending ? "not-allowed" : "pointer", opacity: sending ? 0.7 : 1, fontSize: 14, fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 4px 16px rgba(220,38,38,0.35)" }}>
+                {sending ? <LuLoader size={15} style={{ animation: "spin 1s linear infinite" }} /> : <LuSend size={15} />}
+                {sending ? "Yuborilmoqda..." : "Yuborish"}
               </button>
               <button onClick={onClose} style={{ padding: "10px", background: "none", border: "1.5px solid #e5e7eb", borderRadius: 12, fontSize: 13, color: "#9ca3af", cursor: "pointer", fontFamily: "inherit" }}>Bekor qilish</button>
             </div>
           </>
         )}
       </div>
+      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }

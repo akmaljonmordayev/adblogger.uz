@@ -30,7 +30,8 @@ import FAQ           from "../pages/FAQ";
 import Auth          from "../pages/Auth";
 import Profile       from "../pages/Profile";
 import Wishlist      from "../pages/Wishlist";
-import Notifications from "../pages/Notifications";
+import Notifications    from "../pages/Notifications";
+import MyApplications  from "../pages/MyApplications";
 
 import NotFound      from "../pages/NotFound";
 
@@ -92,8 +93,9 @@ export const router = createBrowserRouter([
       { path: ROUTE_PATHS.LOGIN,          element: <Auth /> },
       { path: ROUTE_PATHS.REGISTER,       element: <Auth /> },
       { path: ROUTE_PATHS.PROFILE,        element: <Profile /> },
-      { path: ROUTE_PATHS.WISHLIST,       element: <Wishlist /> },
-      { path: ROUTE_PATHS.NOTIFICATIONS,  element: <Notifications /> },
+      { path: ROUTE_PATHS.WISHLIST,         element: <Wishlist /> },
+      { path: ROUTE_PATHS.NOTIFICATIONS,   element: <Notifications /> },
+      { path: ROUTE_PATHS.MY_APPLICATIONS, element: <MyApplications /> },
     ],
   },
   {
