@@ -41,8 +41,9 @@ exports.applyToAd = catchAsync(async (req, res, next) => {
     });
   }
 
-  // E'lon egasiga Socket.io orqali bildirishnoma
   const io = req.app.get('io');
+
+  // E'lon egasiga Socket.io orqali new_application event
   io.to(`user_${ad.user._id}`).emit('new_application', {
     applicationId: application._id,
     adTitle:       ad.title || ad.companyName || "E'lon",
@@ -50,14 +51,17 @@ exports.applyToAd = catchAsync(async (req, res, next) => {
     message:       message || '',
   });
 
-  // Notification yozish
-  await Notification.create({
+  // Notification DB ga saqlash
+  const notif = await Notification.create({
     user:  ad.user._id,
-    type:  'info',
-    title: 'Yangi zayavka keldi!',
+    type:  'new_application',
+    title: '📩 Yangi zayavka keldi!',
     body:  `${req.user.firstName} ${req.user.lastName} sizning e'loningizga zayavka yubordi`,
     link:  '/my-applications',
   });
+
+  // Notification ni ham socket orqali yuborish (real-time badge + list update)
+  io.to(`user_${ad.user._id}`).emit('new_notification', notif);
 
   res.status(201).json({ success: true, data: application });
 });
@@ -193,15 +197,16 @@ exports.updateStatus = catchAsync(async (req, res, next) => {
       status,
     });
 
-    await Notification.create({
+    const statusNotif = await Notification.create({
       user:  app.applicant,
-      type:  'info',
-      title: status === 'accepted' ? 'Zayavkangiz qabul qilindi! 🎉' : "Zayavkangiz rad etildi",
+      type:  'application_status',
+      title: status === 'accepted' ? '✅ Zayavkangiz qabul qilindi!' : '❌ Zayavkangiz rad etildi',
       body:  status === 'accepted'
         ? "E'lon egasi zayavkangizni qabul qildi. Chat orqali muloqot qilishingiz mumkin."
         : "Afsuski, zayavkangiz rad etildi.",
       link:  '/my-applications',
     });
+    io.to(`user_${app.applicant}`).emit('new_notification', statusNotif);
   }
 
   res.status(200).json({ success: true });

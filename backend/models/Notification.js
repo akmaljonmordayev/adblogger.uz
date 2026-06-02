@@ -10,7 +10,7 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['contact_reply', 'campaign', 'ad_approved', 'ad_rejected', 'review', 'verify', 'info'],
+      enum: ['contact_reply', 'campaign', 'ad_approved', 'ad_rejected', 'review', 'verify', 'info', 'new_application', 'application_status'],
       default: 'info',
     },
     title: { type: String, required: true },
