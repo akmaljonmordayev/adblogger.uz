@@ -215,7 +215,7 @@ function Bubble({ msg, myId, appId, onEdited, onDeleted }) {
             <button onClick={doDelete}
               title="O'chirish"
               style={{width:26,height:26,border:"none",background:"none",cursor:"pointer",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,transition:"all .12s"}}
-              onMouseEnter={e=>{e.currentTarget.style.background:"#FFEBEE";e.currentTarget.style.color=C.red;}}
+              onMouseEnter={e=>{e.currentTarget.style.background="#FFEBEE";e.currentTarget.style.color=C.red;}}
               onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color=C.muted;}}
             ><LuTrash2 size={13}/></button>
           </div>
