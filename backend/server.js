@@ -40,8 +40,7 @@ const io = new Server(httpServer, {
 app.set('io', io);
 
 io.on('connection', (socket) => {
-  // Client sends their userId to join personal room
-  // Admin sends "admin" to join admin_room
+  // Foydalanuvchi o'z personal roomiga qo'shiladi
   socket.on('join_user_room', (userId) => {
     if (!userId) return;
     if (userId === 'admin') {
@@ -49,6 +48,15 @@ io.on('connection', (socket) => {
     } else {
       socket.join(`user_${userId}`);
     }
+  });
+
+  // Chat roomiga qo'shilish (applicationId bo'yicha)
+  socket.on('join_chat_room', (applicationId) => {
+    if (applicationId) socket.join(`chat_${applicationId}`);
+  });
+
+  socket.on('leave_chat_room', (applicationId) => {
+    if (applicationId) socket.leave(`chat_${applicationId}`);
   });
 
   socket.on('disconnect', () => {});
