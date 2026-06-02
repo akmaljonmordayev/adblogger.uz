@@ -173,6 +173,53 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
   res.status(201).json({ success: true, data: populated });
 });
 
+/* ── PATCH /api/v1/ad-applications/:appId/messages/:msgId ─── xabarni tahrirlash ── */
+exports.editMessage = catchAsync(async (req, res, next) => {
+  const { text } = req.body;
+  if (!text?.trim()) return next(new AppError("Xabar bo'sh bo'lishi mumkin emas", 400));
+
+  const msg = await ChatMessage.findById(req.params.msgId);
+  if (!msg) return next(new AppError('Xabar topilmadi', 404));
+  if (String(msg.sender) !== String(req.user._id)) {
+    return next(new AppError("Faqat o'z xabaringizni tahrirlashingiz mumkin", 403));
+  }
+
+  msg.text   = text.trim();
+  msg.edited = true;
+  await msg.save();
+
+  const io = req.app.get('io');
+  io.to(`chat_${req.params.appId}`).emit('message_edited', {
+    applicationId: req.params.appId,
+    messageId:     String(msg._id),
+    text:          msg.text,
+  });
+
+  res.status(200).json({ success: true, data: msg });
+});
+
+/* ── DELETE /api/v1/ad-applications/:appId/messages/:msgId ─── xabarni o'chirish ── */
+exports.deleteMessage = catchAsync(async (req, res, next) => {
+  const msg = await ChatMessage.findById(req.params.msgId);
+  if (!msg) return next(new AppError('Xabar topilmadi', 404));
+  if (String(msg.sender) !== String(req.user._id)) {
+    return next(new AppError("Faqat o'z xabaringizni o'chirishingiz mumkin", 403));
+  }
+
+  // Softdelete — "Xabar o'chirildi" ko'rsatish uchun
+  msg.deleted = true;
+  msg.text    = '';
+  await msg.save();
+
+  const io = req.app.get('io');
+  io.to(`chat_${req.params.appId}`).emit('message_deleted', {
+    applicationId: req.params.appId,
+    messageId:     String(msg._id),
+  });
+
+  res.status(200).json({ success: true });
+});
+
 /* ── PATCH /api/v1/ad-applications/:appId/status ─── status o'zgartirish ── */
 exports.updateStatus = catchAsync(async (req, res, next) => {
   const { status } = req.body;
