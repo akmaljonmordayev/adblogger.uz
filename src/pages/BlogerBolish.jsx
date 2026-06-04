@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { LuInstagram, LuYoutube, LuCheck, LuArrowRight, LuUsers, LuTrendingUp, LuDollarSign, LuStar, LuLoader, LuEye, LuEyeOff } from "react-icons/lu";
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import SEO, { breadcrumbSchema } from "../components/SEO";
 import { useAuthStore } from "../store/useAuthStore";
 import { toast } from "../components/ui/toast";
@@ -61,7 +61,7 @@ function Field({ label, error, children }) {
   );
 }
 
-function BBInput({ label, type = "text", placeholder, error, ...rest }) {
+const BBInput = forwardRef(function BBInput({ label, type = "text", placeholder, error, ...rest }, ref) {
   const [show, setShow] = useState(false);
   const isPassword = type === "password";
   const actualType = isPassword && show ? "text" : type;
@@ -70,6 +70,7 @@ function BBInput({ label, type = "text", placeholder, error, ...rest }) {
     <Field label={label} error={error}>
       <div style={{ position: "relative" }}>
         <input
+          ref={ref}
           type={actualType}
           placeholder={placeholder}
           style={{ ...inputBase(!!error), paddingRight: isPassword ? 42 : 14 }}
@@ -96,15 +97,15 @@ function BBInput({ label, type = "text", placeholder, error, ...rest }) {
       </div>
     </Field>
   );
-}
+});
 
-function BBSelect({ label, error, children, ...rest }) {
+const BBSelect = forwardRef(function BBSelect({ label, error, children, ...rest }, ref) {
   return (
     <Field label={label} error={error}>
       <select
+        ref={ref}
         style={{
           ...inputBase(!!error),
-          color: rest.value ? "#0f172a" : "#9ca3af",
           cursor: "pointer", appearance: "none",
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
           backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", paddingRight: 36,
@@ -117,7 +118,7 @@ function BBSelect({ label, error, children, ...rest }) {
       </select>
     </Field>
   );
-}
+});
 
 /* ─── Main component ─────────────────────────────────────────────── */
 export default function BlogerBolish() {
@@ -126,6 +127,7 @@ export default function BlogerBolish() {
 
   const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: yupResolver(schema),
+    mode: "onChange",
     defaultValues: {
       firstName: "", lastName: "", email: "", phone: "",
       password: "", confirmPassword: "", platform: "", followers: "", category: "",
