@@ -16,6 +16,7 @@ router.use('/business',  require('./businessRoutes'));
 router.use('/admin',     require('./adminRoutes'));
 router.use('/upload',           require('./uploadRoutes'));
 router.use('/ad-applications',  require('./adApplicationRoutes'));
+router.use('/blogger-orders',   require('./bloggerOrderRoutes'));
 
 // Nested reviews under bloggers
 router.use('/bloggers/:bloggerId/reviews', require('./reviewRoutes'));

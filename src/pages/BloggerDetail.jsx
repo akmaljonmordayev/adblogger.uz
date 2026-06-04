@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import SEO from "../components/SEO";
 import {
   LuArrowLeft, LuUsers, LuTrendingUp, LuStar, LuMapPin,
@@ -11,6 +11,9 @@ import {
 import { FaInstagram, FaYoutube, FaTelegram, FaTiktok } from "react-icons/fa";
 import { toast } from "../components/ui/toast";
 import api from "../services/api";
+import orderService from "../services/orderService";
+import { useAuthStore } from "../store/useAuthStore";
+import { ROUTE_PATHS } from "../config/constants";
 
 /* ─── helpers ────────────────────────────────────────────── */
 const PLATFORM_DISPLAY = {
@@ -71,6 +74,8 @@ function Spinner() {
 /* ─── Main page ──────────────────────────────────────────── */
 export default function BloggerDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
 
   const [blogger, setBlogger]         = useState(null);
   const [reviews, setReviews]         = useState([]);
@@ -901,43 +906,139 @@ export default function BloggerDetail() {
         </div>
       </div>
 
-      {isOrderOpen && <OrderModal onClose={() => setIsOrderOpen(false)} bloggerName={fullName} packages={displayPackages.length ? displayPackages : packages} />}
+      {isOrderOpen && (
+        <OrderModal
+          onClose={() => setIsOrderOpen(false)}
+          bloggerName={fullName}
+          bloggerId={blogger?.user?._id || id}
+          packages={displayPackages.length ? displayPackages : packages}
+          isLoggedIn={!!user}
+          navigate={navigate}
+        />
+      )}
       {isMsgOpen  && <MessageModal onClose={() => setIsMsgOpen(false)} bloggerName={fullName} />}
     </>
   );
 }
 
 /* ─── Order Modal ────────────────────────────────────────── */
-function OrderModal({ onClose, bloggerName, packages }) {
-  const [selectedPkg, setSelectedPkg] = useState(packages[0]?.name || "");
+function OrderModal({ onClose, bloggerName, bloggerId, packages, isLoggedIn, navigate }) {
+  const [projectName,   setProjectName]   = useState("");
+  const [selectedPkgs,  setSelectedPkgs]  = useState(packages[0] ? [packages[0].name] : []);
+  const [brief,         setBrief]         = useState("");
+  const [submitting,    setSubmitting]    = useState(false);
+
+  const togglePkg = (name) => {
+    setSelectedPkgs(prev =>
+      prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
+    );
+  };
+
+  const totalBudget = packages
+    .filter(p => selectedPkgs.includes(p.name))
+    .reduce((sum, p) => sum + (p.rawPrice || 0), 0);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!isLoggedIn) {
+      toast.error("Buyurtma berish uchun tizimga kiring");
+      navigate(ROUTE_PATHS.LOGIN);
+      return;
+    }
+    if (!brief.trim()) { toast.error("Brief kiritilishi shart"); return; }
+    if (selectedPkgs.length === 0) { toast.error("Kamida bitta xizmat tanlang"); return; }
+
+    setSubmitting(true);
+    try {
+      await orderService.create(bloggerId, {
+        projectName: projectName.trim(),
+        services:    selectedPkgs,
+        brief:       brief.trim(),
+        budget:      totalBudget,
+      });
+      toast.success("Buyurtma yuborildi! Blogger javob berguncha kuting.");
+      onClose();
+      navigate(ROUTE_PATHS.MY_APPLICATIONS + "?tab=orders");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Xatolik yuz berdi");
+    }
+    setSubmitting(false);
+  };
 
   return (
-    <div style={ov}>
+    <div style={ov} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={mc}>
         <div style={mh}>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#0f172a" }}>Reklama buyurtmasi</h3>
           <button onClick={onClose} style={cb}><LuX size={20} /></button>
         </div>
         <p style={{ margin: "6px 0 20px", fontSize: 13, color: "#64748b" }}>{bloggerName} uchun buyurtma</p>
-        <form style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
             <label style={lbl}>Loyiha / Brend nomi</label>
-            <input type="text" placeholder="Masalan: 'Poytaxt' o'quv markazi" style={inp} />
+            <input
+              type="text"
+              value={projectName}
+              onChange={e => setProjectName(e.target.value)}
+              placeholder="Masalan: 'Poytaxt' o'quv markazi"
+              style={inp}
+            />
           </div>
+
           <div>
-            <label style={lbl}>Reklama formati</label>
-            <select value={selectedPkg} onChange={e => setSelectedPkg(e.target.value)} style={inp}>
-              {packages.map(p => (
-                <option key={p.name} value={p.name}>{p.name} — {p.price} so'm</option>
-              ))}
-            </select>
+            <label style={lbl}>Xizmat turini tanlang *</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+              {packages.map(p => {
+                const selected = selectedPkgs.includes(p.name);
+                return (
+                  <button
+                    key={p.name}
+                    type="button"
+                    onClick={() => togglePkg(p.name)}
+                    style={{
+                      padding: "7px 14px", borderRadius: 20, cursor: "pointer",
+                      border: `1.5px solid ${selected ? "#dc2626" : "#e2e8f0"}`,
+                      background: selected ? "#fef2f2" : "#f8fafc",
+                      color: selected ? "#dc2626" : "#475569",
+                      fontSize: 13, fontWeight: 600, transition: "all .15s",
+                    }}
+                  >
+                    {p.name} — {p.price}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedPkgs.length === 0 && (
+              <p style={{ fontSize: 11.5, color: "#ef4444", marginTop: 4 }}>Kamida bitta xizmat tanlang</p>
+            )}
           </div>
+
           <div>
-            <label style={lbl}>Maqsad va havola</label>
-            <textarea placeholder="Reklama haqida qisqacha ma'lumot va linklar..." style={{ ...inp, height: 90, resize: "none" }} />
+            <label style={lbl}>Brief (maqsad, havola, talablar) *</label>
+            <textarea
+              value={brief}
+              onChange={e => setBrief(e.target.value)}
+              placeholder="Reklama haqida qisqacha ma'lumot, maqsad va linklar..."
+              style={{ ...inp, height: 100, resize: "vertical" }}
+              required
+            />
           </div>
-          <button type="button" onClick={() => { toast.success("Buyurtma yuborildi!"); onClose(); }} style={pbtn}>
-            So'rovni yuborish
+
+          {totalBudget > 0 && (
+            <div style={{
+              background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12,
+              padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center",
+            }}>
+              <span style={{ fontSize: 13, color: "#166534", fontWeight: 600 }}>Taxminiy narx</span>
+              <span style={{ fontSize: 15, fontWeight: 800, color: "#166534" }}>
+                {totalBudget.toLocaleString("uz-UZ")} so'm
+              </span>
+            </div>
+          )}
+
+          <button type="submit" disabled={submitting} style={{ ...pbtn, opacity: submitting ? 0.7 : 1 }}>
+            {submitting ? "Yuborilmoqda..." : "Buyurtmani yuborish"}
           </button>
         </form>
       </div>

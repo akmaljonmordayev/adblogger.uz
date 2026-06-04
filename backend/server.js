@@ -59,6 +59,14 @@ io.on('connection', (socket) => {
     if (applicationId) socket.leave(`chat_${applicationId}`);
   });
 
+  // Blogger order chat roomiga qo'shilish
+  socket.on('join_order_room', (orderId) => {
+    if (orderId) socket.join(`order_${orderId}`);
+  });
+  socket.on('leave_order_room', (orderId) => {
+    if (orderId) socket.leave(`order_${orderId}`);
+  });
+
   socket.on('disconnect', () => {});
 });
 

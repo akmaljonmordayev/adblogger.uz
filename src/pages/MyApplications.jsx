@@ -4,12 +4,14 @@ import {
   LuSend, LuLoader, LuInbox, LuSendHorizontal,
   LuMessageCircle, LuCheck, LuCheckCheck, LuX,
   LuChevronLeft, LuRefreshCw, LuSmile, LuPencil,
-  LuTrash2, LuBan,
+  LuTrash2, LuBan, LuBriefcase,
 } from "react-icons/lu";
 import { useAuthStore } from "../store/useAuthStore";
 import { toast } from "../components/ui/toast";
 import applicationService from "../services/applicationService";
+import orderService from "../services/orderService";
 import { getSocket, connectSocket } from "../utils/socket";
+import { useLocation } from "react-router-dom";
 
 /* ─── Design tokens ───────────────────────────────────────────── */
 const C = {
@@ -57,6 +59,7 @@ function initials(u) {
   return ((u.firstName?.[0]||"")+(u.lastName?.[0]||"")).toUpperCase()||"?";
 }
 function adTitle(app) {
+  if (app._isOrder) return app._projectName || "Buyurtma";
   const a = app.ad;
   return a?.title || a?.companyName || a?.productName || "E'lon";
 }
@@ -65,10 +68,12 @@ function otherUser(app, myId) {
 }
 
 const ST = {
-  pending:  { label:"Yangi",          bg:"#E8F4FD", color:"#1877F2" },
-  read:     { label:"Ko'rilgan",      bg:"#F0F2F5", color:"#65676B" },
-  accepted: { label:"✓ Qabul",        bg:"#E6F4EA", color:"#31A24C" },
-  rejected: { label:"✗ Rad etildi",   bg:"#FFEBEE", color:"#E53935" },
+  pending:    { label:"Yangi",          bg:"#E8F4FD", color:"#1877F2" },
+  read:       { label:"Ko'rilgan",      bg:"#F0F2F5", color:"#65676B" },
+  accepted:   { label:"✓ Qabul",        bg:"#E6F4EA", color:"#31A24C" },
+  rejected:   { label:"✗ Rad etildi",   bg:"#FFEBEE", color:"#E53935" },
+  in_progress:{ label:"⚡ Jarayonda",   bg:"#FFF8E1", color:"#F57F17" },
+  completed:  { label:"✓ Tugallandi",   bg:"#E8F5E9", color:"#2E7D32" },
 };
 
 /* ─── Avatar ──────────────────────────────────────────────────── */
@@ -146,7 +151,7 @@ function AppRow({ app, myId, isActive, onClick }) {
 }
 
 /* ─── MessageBubble ───────────────────────────────────────────── */
-function Bubble({ msg, myId, appId, onEdited, onDeleted }) {
+function Bubble({ msg, myId, appId, onEdited, onDeleted, service=applicationService }) {
   const isMine   = String(msg.sender?._id||msg.sender) === myId;
   const [hover,  setHover]  = useState(false);
   const [editing,setEditing]= useState(false);
@@ -164,7 +169,7 @@ function Bubble({ msg, myId, appId, onEdited, onDeleted }) {
     if(!editTxt.trim()||editTxt.trim()===msg.text){ setEditing(false); return; }
     setSaving(true);
     try {
-      await applicationService.editMsg(appId, msg._id, editTxt.trim());
+      await service.editMsg(appId, msg._id, editTxt.trim());
       onEdited(msg._id, editTxt.trim());
       setEditing(false);
     } catch { toast.error("Tahrirda xatolik"); }
@@ -173,7 +178,7 @@ function Bubble({ msg, myId, appId, onEdited, onDeleted }) {
 
   const doDelete = async () => {
     try {
-      await applicationService.deleteMsg(appId, msg._id);
+      await service.deleteMsg(appId, msg._id);
       onDeleted(msg._id);
     } catch { toast.error("O'chirishda xatolik"); }
   };
@@ -280,7 +285,16 @@ function Bubble({ msg, myId, appId, onEdited, onDeleted }) {
 }
 
 /* ─── ChatPanel ───────────────────────────────────────────────── */
-function ChatPanel({ app, myId, onStatusChange, onBack }) {
+function ChatPanel({ app, myId, onStatusChange, onBack, type="application", service=applicationService }) {
+  // Socket event/room names differ for orders vs applications
+  const isOrder   = type === "order";
+  const joinEvt   = isOrder ? "join_order_room"  : "join_chat_room";
+  const leaveEvt  = isOrder ? "leave_order_room" : "leave_chat_room";
+  const newMsgEvt = isOrder ? "new_order_message"         : "new_chat_message";
+  const editedEvt = isOrder ? "order_message_edited"      : "message_edited";
+  const deletedEvt= isOrder ? "order_message_deleted"     : "message_deleted";
+  const readEvt   = isOrder ? "order_messages_read"       : "messages_read";
+  const statusEvt = isOrder ? "order_status_changed"      : "application_status_changed";
   const { user } = useAuthStore();
   const [messages,      setMessages]      = useState([]);
   const [text,          setText]          = useState("");
@@ -306,30 +320,30 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
   /* fetch */
   const fetchMessages = useCallback(async () => {
     try {
-      const res = await applicationService.messages(app._id);
+      const res = await service.messages(app._id);
       setMessages(res.data||[]);
       setIBlockedThem(res.iBlockedThem||false);
       setTheyBlockedMe(res.theyBlockedMe||false);
     } catch { toast.error("Xabarlarni yuklashda xatolik"); }
     finally { setLoading(false); }
-  },[app._id]);
+  },[app._id, service]);
 
   /* block / unblock */
   const handleBlock = useCallback(async () => {
     setBlockLoading(true);
     try {
       if (iBlockedThem) {
-        await applicationService.unblock(app._id);
+        await service.unblock(app._id);
         setIBlockedThem(false);
         toast.success("Blokdan chiqarildi");
       } else {
-        await applicationService.block(app._id);
+        await service.block(app._id);
         setIBlockedThem(true);
         toast.success(`${other?.firstName} bloklandi`);
       }
     } catch { toast.error("Xatolik"); }
     setBlockLoading(false);
-  }, [app._id, iBlockedThem, other?.firstName]);
+  }, [app._id, iBlockedThem, other?.firstName, service]);
 
   useEffect(()=>{ setLoading(true); fetchMessages(); },[fetchMessages]);
   useEffect(()=>{ if(!loading) scrollDown(); },[loading, scrollDown]);
@@ -337,54 +351,60 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
   /* socket */
   useEffect(()=>{
     const s = getSocket();
-    s.emit('join_chat_room', app._id);
+    s.emit(joinEvt, app._id);
 
-    const onNewMsg = ({applicationId, message})=>{
-      if(String(applicationId)!==String(app._id)) return;
+    const idKey = isOrder ? "orderId" : "applicationId";
+    const onNewMsg = (payload)=>{
+      if(String(payload[idKey])!==String(app._id)) return;
+      const message = payload.message;
       setMessages(p=>{ if(p.some(m=>m._id===message._id)) return p; return [...p, message]; });
       setTimeout(scrollDown, 60);
     };
-    const onEdited = ({applicationId, messageId, text})=>{
-      if(String(applicationId)!==String(app._id)) return;
-      setMessages(p=>p.map(m=>m._id===messageId?{...m,text,edited:true}:m));
+    const onEdited = (payload)=>{
+      if(String(payload[idKey])!==String(app._id)) return;
+      setMessages(p=>p.map(m=>m._id===payload.messageId?{...m,text:payload.text,edited:true}:m));
     };
-    const onDeleted = ({applicationId, messageId})=>{
-      if(String(applicationId)!==String(app._id)) return;
-      setMessages(p=>p.map(m=>m._id===messageId?{...m,deleted:true}:m));
+    const onDeleted = (payload)=>{
+      if(String(payload[idKey])!==String(app._id)) return;
+      setMessages(p=>p.map(m=>m._id===payload.messageId?{...m,deleted:true}:m));
     };
-    const onStatus = ({applicationId, status})=>{
-      if(String(applicationId)===String(app._id)) onStatusChange(app._id, status);
+    const onStatus = (payload)=>{
+      const cid = payload[idKey] || payload.applicationId || payload.orderId;
+      if(String(cid)===String(app._id)) onStatusChange(app._id, payload.status);
     };
-    const onRead = ({applicationId})=>{
-      if(String(applicationId)!==String(app._id)) return;
+    const onRead = (payload)=>{
+      const cid = payload[idKey] || payload.applicationId || payload.orderId;
+      if(String(cid)!==String(app._id)) return;
       setMessages(p=>p.map(m=>String(m.sender?._id||m.sender)===myId?{...m,isRead:true}:m));
     };
-    const onUserBlocked = ({applicationId})=>{
-      if(String(applicationId)===String(app._id)) setTheyBlockedMe(true);
+    const onUserBlocked = (payload)=>{
+      const cid = payload.applicationId||payload.orderId;
+      if(String(cid)===String(app._id)) setTheyBlockedMe(true);
     };
-    const onUserUnblocked = ({applicationId})=>{
-      if(String(applicationId)===String(app._id)) setTheyBlockedMe(false);
+    const onUserUnblocked = (payload)=>{
+      const cid = payload.applicationId||payload.orderId;
+      if(String(cid)===String(app._id)) setTheyBlockedMe(false);
     };
 
-    s.on('new_chat_message',          onNewMsg);
-    s.on('message_edited',            onEdited);
-    s.on('message_deleted',           onDeleted);
-    s.on('application_status_changed', onStatus);
-    s.on('messages_read',             onRead);
-    s.on('user_blocked',              onUserBlocked);
-    s.on('user_unblocked',            onUserUnblocked);
+    s.on(newMsgEvt,  onNewMsg);
+    s.on(editedEvt,  onEdited);
+    s.on(deletedEvt, onDeleted);
+    s.on(statusEvt,  onStatus);
+    s.on(readEvt,    onRead);
+    s.on('user_blocked',   onUserBlocked);
+    s.on('user_unblocked', onUserUnblocked);
 
     return ()=>{
-      s.emit('leave_chat_room', app._id);
-      s.off('new_chat_message',          onNewMsg);
-      s.off('message_edited',            onEdited);
-      s.off('message_deleted',           onDeleted);
-      s.off('application_status_changed', onStatus);
-      s.off('messages_read',             onRead);
-      s.off('user_blocked',              onUserBlocked);
-      s.off('user_unblocked',            onUserUnblocked);
+      s.emit(leaveEvt, app._id);
+      s.off(newMsgEvt,  onNewMsg);
+      s.off(editedEvt,  onEdited);
+      s.off(deletedEvt, onDeleted);
+      s.off(statusEvt,  onStatus);
+      s.off(readEvt,    onRead);
+      s.off('user_blocked',   onUserBlocked);
+      s.off('user_unblocked', onUserUnblocked);
     };
-  },[app._id, onStatusChange, scrollDown]);
+  },[app._id, onStatusChange, scrollDown, isOrder, newMsgEvt, editedEvt, deletedEvt, statusEvt, readEvt, joinEvt, leaveEvt]);
 
   /* optimistic send */
   const sendMessage = useCallback(async (txt) => {
@@ -408,7 +428,7 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
     setTimeout(scrollDown, 50);
 
     try {
-      const res = await applicationService.send(app._id, trimmed);
+      const res = await service.send(app._id, trimmed);
       setMessages(p => {
         const filtered = p.filter(m => m._id !== tempId);
         if (filtered.some(m => m._id === res.data._id)) return filtered;
@@ -427,9 +447,10 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
 
   const handleStatus = async (status) => {
     try {
-      await applicationService.status(app._id, status);
+      await service.status(app._id, status);
       onStatusChange(app._id, status);
-      toast.success(status==="accepted"?"Qabul qilindi":"Rad etildi");
+      const msgs = { accepted:"Qabul qilindi", rejected:"Rad etildi", in_progress:"Jarayonda", completed:"Tugallandi" };
+      toast.success(msgs[status] || "Status yangilandi");
     } catch { toast.error("Xatolik"); }
   };
 
@@ -458,16 +479,30 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
           <span style={{fontSize:11,fontWeight:700,color:st.color,background:st.bg,padding:"3px 9px",borderRadius:99,border:`1px solid ${st.color}22`}}>
             {st.label}
           </span>
-          {isOwner && app.status!=="accepted" && app.status!=="rejected" && (
+          {isOwner && !["accepted","rejected","completed"].includes(app.status) && (
             <div style={{display:"flex",gap:5}}>
-              <button onClick={()=>handleStatus("accepted")}
-                style={{padding:"5px 11px",fontSize:11.5,fontWeight:700,borderRadius:8,border:"1.5px solid #A5D6A7",background:"#E8F5E9",color:C.green,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
-                <LuCheck size={12}/> Qabul
-              </button>
-              <button onClick={()=>handleStatus("rejected")}
-                style={{padding:"5px 11px",fontSize:11.5,fontWeight:700,borderRadius:8,border:`1.5px solid ${C.redBd}`,background:C.redLight,color:C.red,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
-                <LuX size={12}/> Rad
-              </button>
+              {app.status !== "in_progress" && <>
+                <button onClick={()=>handleStatus("accepted")}
+                  style={{padding:"5px 11px",fontSize:11.5,fontWeight:700,borderRadius:8,border:"1.5px solid #A5D6A7",background:"#E8F5E9",color:C.green,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+                  <LuCheck size={12}/> Qabul
+                </button>
+                <button onClick={()=>handleStatus("rejected")}
+                  style={{padding:"5px 11px",fontSize:11.5,fontWeight:700,borderRadius:8,border:`1.5px solid ${C.redBd}`,background:C.redLight,color:C.red,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+                  <LuX size={12}/> Rad
+                </button>
+              </>}
+              {isOrder && app.status === "accepted" && (
+                <button onClick={()=>handleStatus("in_progress")}
+                  style={{padding:"5px 11px",fontSize:11.5,fontWeight:700,borderRadius:8,border:"1.5px solid #FFC107",background:"#FFF8E1",color:"#F57F17",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+                  ⚡ Boshlash
+                </button>
+              )}
+              {isOrder && app.status === "in_progress" && (
+                <button onClick={()=>handleStatus("completed")}
+                  style={{padding:"5px 11px",fontSize:11.5,fontWeight:700,borderRadius:8,border:"1.5px solid #A5D6A7",background:"#E8F5E9",color:C.green,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+                  ✓ Tugatish
+                </button>
+              )}
             </div>
           )}
           {/* Block / Unblock tugmasi */}
@@ -523,6 +558,7 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
                 appId={app._id}
                 onEdited={handleEdited}
                 onDeleted={handleDeleted}
+                service={service}
               />
             ))}
           </>
@@ -655,12 +691,16 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
 export default function MyApplications() {
   const { user, token } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [tab,      setTab]      = useState("received");
+  const defaultTab = new URLSearchParams(location.search).get("tab") === "orders" ? "orders" : "received";
+  const [tab,      setTab]      = useState(defaultTab);
   const [received, setReceived] = useState([]);
   const [sent,     setSent]     = useState([]);
+  const [orders,   setOrders]   = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [selected, setSelected] = useState(null);
+  const [selectedType, setSelectedType] = useState("application"); // "application" | "order"
   const [showChat, setShowChat] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 640);
 
@@ -678,6 +718,9 @@ export default function MyApplications() {
   const loadSent = useCallback(async ()=>{
     try { const r=await applicationService.sent(); setSent(r.data||[]); } catch{}
   },[]);
+  const loadOrders = useCallback(async ()=>{
+    try { const r=await orderService.myOrders(); setOrders(r.data||[]); } catch{}
+  },[]);
 
   useEffect(()=>{
     if(!user?._id) return;
@@ -691,19 +734,44 @@ export default function MyApplications() {
       setReceived(p=>update(p));
       setSent(p=>update(p));
     };
+    const onOrderMsg = ({orderId, message})=>{
+      setOrders(p=>p.map(a=>
+        a._id===orderId
+          ? { ...a, lastMessage:message?.text||'', lastMessageAt:message?.createdAt }
+          : a
+      ));
+    };
     s.on('new_application', loadReceived);
     s.on('new_chat_message', onLastMsg);
-    return ()=>{ s.off('new_application', loadReceived); s.off('new_chat_message', onLastMsg); };
-  },[user?._id, loadReceived]);
+    s.on('new_order', loadOrders);
+    s.on('new_order_message', onOrderMsg);
+    return ()=>{
+      s.off('new_application', loadReceived);
+      s.off('new_chat_message', onLastMsg);
+      s.off('new_order', loadOrders);
+      s.off('new_order_message', onOrderMsg);
+    };
+  },[user?._id, loadReceived, loadOrders]);
 
   useEffect(()=>{
     if(!token) return;
     setLoading(true);
-    Promise.all([loadReceived(),loadSent()]).finally(()=>setLoading(false));
-  },[token,loadReceived,loadSent]);
+    Promise.all([loadReceived(),loadSent(),loadOrders()]).finally(()=>setLoading(false));
+  },[token,loadReceived,loadSent,loadOrders]);
+
+  /* Normalize order → app-like object for ChatPanel */
+  const normalizeOrder = useCallback((order)=>({
+    ...order,
+    adOwner:        order.blogger,
+    applicant:      order.business,
+    ownerUnread:    order.bloggerUnread,
+    applicantUnread:order.businessUnread,
+    _isOrder:       true,
+    _projectName:   order.projectName,
+  }),[]);
 
   const handleSelect = (app)=>{
-    setSelected(app); setShowChat(true);
+    setSelected(app); setSelectedType("application"); setShowChat(true);
     const myId = String(user._id);
     const isOwner = String(app.adOwner?._id||app.adOwner)===myId;
     if(isOwner){
@@ -713,16 +781,33 @@ export default function MyApplications() {
     }
   };
 
-  const handleStatusChange = useCallback((appId,status)=>{
-    const f = a=>a._id===appId?{...a,status}:a;
-    setReceived(p=>p.map(f)); setSent(p=>p.map(f));
-    setSelected(p=>p?._id===appId?{...p,status}:p);
+  const handleSelectOrder = (order)=>{
+    const norm = normalizeOrder(order);
+    setSelected(norm); setSelectedType("order"); setShowChat(true);
+    const myId = String(user._id);
+    const isBlogger = String(order.blogger?._id||order.blogger)===myId;
+    if(isBlogger){
+      setOrders(p=>p.map(a=>a._id===order._id?{...a,bloggerUnread:0,status:a.status==='pending'?'read':a.status}:a));
+    } else {
+      setOrders(p=>p.map(a=>a._id===order._id?{...a,businessUnread:0}:a));
+    }
+  };
+
+  const handleStatusChange = useCallback((id,status)=>{
+    const f = a=>a._id===id?{...a,status}:a;
+    setReceived(p=>p.map(f)); setSent(p=>p.map(f)); setOrders(p=>p.map(f));
+    setSelected(p=>p?._id===id?{...p,status}:p);
   },[]);
 
   const myId = String(user?._id||"");
-  const list = tab==="received" ? received : sent;
+  const ordersUnread = orders.reduce((s,o)=>{
+    const isBlogger = String(o.blogger?._id||o.blogger)===myId;
+    return s+(isBlogger?(o.bloggerUnread||0):(o.businessUnread||0));
+  },0);
+  const list = tab==="received" ? received : tab==="sent" ? sent : orders;
   const totalUnread = received.reduce((s,a)=>s+(a.ownerUnread||0),0)
-                    + sent.reduce((s,a)=>s+(a.applicantUnread||0),0);
+                    + sent.reduce((s,a)=>s+(a.applicantUnread||0),0)
+                    + ordersUnread;
 
   if(!token||!user) return null;
 
@@ -773,22 +858,23 @@ export default function MyApplications() {
           background:C.surface,
         }}>
           {/* Tabs */}
-          <div style={{display:"flex",borderBottom:`1px solid ${C.border}`,flexShrink:0,padding:"0 8px",paddingTop:8,gap:4}}>
+          <div style={{display:"flex",borderBottom:`1px solid ${C.border}`,flexShrink:0,padding:"0 4px",paddingTop:8,gap:2}}>
             {[
               {key:"received",label:"Kelgan",    Icon:LuInbox,         cnt:received.reduce((s,a)=>s+(a.ownerUnread||0),0),   len:received.length},
               {key:"sent",    label:"Yuborgan",  Icon:LuSendHorizontal,cnt:sent.reduce((s,a)=>s+(a.applicantUnread||0),0),    len:sent.length},
+              {key:"orders",  label:"Buyurtma",  Icon:LuBriefcase,     cnt:ordersUnread, len:orders.length},
             ].map(({key,label,Icon,cnt,len})=>(
               <button key={key} onClick={()=>setTab(key)} style={{
-                flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6,
-                padding:"9px 6px 10px", border:"none", background:"none", cursor:"pointer",
-                fontSize:13, fontWeight:tab===key?700:500,
+                flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:4,
+                padding:"9px 4px 10px", border:"none", background:"none", cursor:"pointer",
+                fontSize:12, fontWeight:tab===key?700:500,
                 color:tab===key?C.red:C.muted,
                 borderBottom:tab===key?`2.5px solid ${C.red}`:"2.5px solid transparent",
                 borderRadius:"8px 8px 0 0", transition:"color .15s",
               }}>
-                <Icon size={14}/>
+                <Icon size={13}/>
                 {label}
-                <span style={{fontSize:11,color:C.dim,fontWeight:500}}>({len})</span>
+                <span style={{fontSize:10,color:C.dim,fontWeight:500}}>({len})</span>
                 {cnt>0 && (
                   <span style={{minWidth:16,height:16,borderRadius:99,background:C.red,color:"#fff",fontSize:9,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>
                     {cnt>9?"9+":cnt}
@@ -806,16 +892,37 @@ export default function MyApplications() {
               </div>
             ) : list.length===0 ? (
               <div style={{textAlign:"center",padding:"52px 20px",color:C.muted}}>
-                <div style={{fontSize:44,marginBottom:12}}>{tab==="received"?"📥":"📤"}</div>
+                <div style={{fontSize:44,marginBottom:12}}>{tab==="received"?"📥":tab==="orders"?"📋":"📤"}</div>
                 <p style={{fontSize:13.5,fontWeight:700,color:C.text,margin:"0 0 5px"}}>
-                  {tab==="received"?"Kelgan zayavka yo'q":"Yuborgan zayavka yo'q"}
+                  {tab==="received"?"Kelgan zayavka yo'q":tab==="orders"?"Buyurtma yo'q":"Yuborgan zayavka yo'q"}
                 </p>
                 <p style={{fontSize:12.5,margin:0,lineHeight:1.5}}>
                   {tab==="received"
                     ? "E'lonlaringizga zayavka kelganida bu yerda ko'rasiz"
+                    : tab==="orders"
+                    ? <><Link to="/blogerlar" style={{color:C.red,fontWeight:600}}>Bloggerlar</Link> sahifasidan buyurtma bering</>
                     : <><Link to="/elonlar" style={{color:C.red,fontWeight:600}}>E'lonlar</Link> sahifasidan zayavka yuboring</>}
                 </p>
               </div>
+            ) : tab==="orders" ? (
+              orders.map(order=>{
+                const norm = normalizeOrder(order);
+                const isBlogger = String(order.blogger?._id||order.blogger)===myId;
+                const unread = isBlogger?(order.bloggerUnread||0):(order.businessUnread||0);
+                return (
+                  <AppRow
+                    key={order._id}
+                    app={{
+                      ...norm,
+                      ownerUnread: isBlogger ? unread : 0,
+                      applicantUnread: !isBlogger ? unread : 0,
+                    }}
+                    myId={myId}
+                    isActive={selected?._id===order._id}
+                    onClick={()=>handleSelectOrder(order)}
+                  />
+                );
+              })
             ) : (
               list.map(app=>(
                 <AppRow
@@ -842,6 +949,8 @@ export default function MyApplications() {
               myId={myId}
               onStatusChange={handleStatusChange}
               onBack={()=>{ setShowChat(false); setSelected(null); }}
+              type={selectedType}
+              service={selectedType==="order" ? orderService : applicationService}
             />
           ) : (
             <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:40,background:"#F8F9FA"}}>
