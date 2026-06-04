@@ -119,7 +119,7 @@ export default function BloggerDetail() {
         rating: blogger?.rating,
         avatar: blogger?.user?.avatar || "",
         location: blogger?.location,
-        link: `/bloggers/${id}`,
+        link: `/blogerlar/${id}`,
         savedAt: new Date().toLocaleDateString("uz-UZ"),
       };
       localStorage.setItem("adb_wishlist", JSON.stringify([...stored, item]));
@@ -134,7 +134,7 @@ export default function BloggerDetail() {
       <div style={{ fontSize: 52, marginBottom: 16 }}>😕</div>
       <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>Blogger topilmadi</div>
       <div style={{ fontSize: 14, color: "#64748b", marginBottom: 28 }}>{error}</div>
-      <Link to="/bloggers" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#dc2626", fontWeight: 700, textDecoration: "none", fontSize: 14 }}>
+      <Link to="/blogerlar" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#dc2626", fontWeight: 700, textDecoration: "none", fontSize: 14 }}>
         <LuArrowLeft size={16} /> Blogerlar ro'yxatiga qaytish
       </Link>
     </div>
@@ -195,12 +195,12 @@ export default function BloggerDetail() {
       <SEO
         title={blogger ? `${blogger.user?.firstName} ${blogger.user?.lastName} — Blogger` : "Blogger Profili"}
         description={blogger?.bio || `ADBlogger platformasida blogger profili. Reklama narxlari, auditoriya va platforma ma'lumotlari.`}
-        canonical={`/bloggers/${id}`}
+        canonical={`/blogerlar/${id}`}
         schema={{
           "@context": "https://schema.org",
           "@type": "Person",
           "name": blogger ? `${blogger.user?.firstName} ${blogger.user?.lastName}` : "Blogger",
-          "url": `https://adblogger.uz/bloggers/${id}`,
+          "url": `https://adblogger.uz/blogerlar/${id}`,
           "description": blogger?.bio,
         }}
       />
@@ -247,7 +247,7 @@ export default function BloggerDetail() {
       <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: 1120, margin: "0 auto", padding: "20px 16px 60px" }}>
 
         {/* Back */}
-        <Link to="/bloggers" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#64748b", textDecoration: "none", fontSize: 13, fontWeight: 500, marginBottom: 16 }}>
+        <Link to="/blogerlar" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#64748b", textDecoration: "none", fontSize: 13, fontWeight: 500, marginBottom: 16 }}>
           <LuArrowLeft size={15} /> Blogerlar ro'yxatiga qaytish
         </Link>
 

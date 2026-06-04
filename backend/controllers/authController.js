@@ -8,7 +8,7 @@ const sendEmail = require('../utils/sendEmail');
 
 // POST /api/v1/auth/register
 exports.register = catchAsync(async (req, res, next) => {
-  const { firstName, lastName, email, phone, password, role } = req.body;
+  const { firstName, lastName, email, phone, password, role, platforms, followers, categories } = req.body;
 
   const allowedRoles = ['blogger', 'business'];
   if (!allowedRoles.includes(role)) {
@@ -26,9 +26,13 @@ exports.register = catchAsync(async (req, res, next) => {
     applicationStatus: 'pending',
   });
 
-  // If registering as blogger, create empty blogger profile
+  // If registering as blogger, create blogger profile with initial data
   if (userRole === 'blogger') {
-    await Blogger.create({ user: user._id });
+    const bloggerData = { user: user._id };
+    if (platforms) bloggerData.platforms = Array.isArray(platforms) ? platforms : [platforms];
+    if (followers)  bloggerData.followers = Number(followers) || 0;
+    if (categories) bloggerData.categories = Array.isArray(categories) ? categories : [categories];
+    await Blogger.create(bloggerData);
   }
 
   // Notify admin via socket that a new application arrived

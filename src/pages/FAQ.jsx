@@ -475,7 +475,7 @@ export default function FAQ() {
               Email
             </a>
             <Link
-              to="/contact"
+              to="/aloqa"
               style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
                 padding: "12px 22px", borderRadius: 12, textDecoration: "none",

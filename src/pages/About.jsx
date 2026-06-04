@@ -122,8 +122,8 @@ export default function About() {
       <SEO
         title="Biz Haqimizda — ADBlogger Jamoasi va Missiya"
         description="ADBlogger — O'zbekistonning eng yirik blogger va reklama ekotizimi. Bizning missiyamiz, qadriyatlarimiz va jamoamiz haqida batafsil ma'lumot."
-        canonical="/about"
-        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Biz haqimizda", path: "/about" }])}
+        canonical="/haqida"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Biz haqimizda", path: "/haqida" }])}
       />
 
       {/* ══ HERO ══ */}
@@ -200,7 +200,7 @@ export default function About() {
 
           <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
             <Link
-              to="/bloggers"
+              to="/blogerlar"
               style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
                 background: "linear-gradient(135deg, #dc2626, #b91c1c)",
@@ -222,7 +222,7 @@ export default function About() {
               Blogerlarni ko'rish <LuArrowRight size={16} />
             </Link>
             <Link
-              to="/contact"
+              to="/aloqa"
               style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
                 background: "#fff", color: "#374151",
@@ -753,7 +753,7 @@ export default function About() {
               Bloger bo'lish <LuArrowRight size={16} />
             </Link>
             <Link
-              to="/contact"
+              to="/aloqa"
               style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
                 background: "rgba(255,255,255,0.08)", color: "#fff",

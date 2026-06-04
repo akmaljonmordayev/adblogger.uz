@@ -316,27 +316,34 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
     const s = getSocket();
     s.emit('join_chat_room', app._id);
 
-    s.on('new_chat_message', ({applicationId, message})=>{
+    const onNewMsg = ({applicationId, message})=>{
       if(String(applicationId)!==String(app._id)) return;
       setMessages(p=>{ if(p.some(m=>m._id===message._id)) return p; return [...p, message]; });
       setTimeout(scrollDown, 60);
-    });
-    s.on('message_edited', ({applicationId, messageId, text})=>{
+    };
+    const onEdited = ({applicationId, messageId, text})=>{
       if(String(applicationId)!==String(app._id)) return;
       setMessages(p=>p.map(m=>m._id===messageId?{...m,text,edited:true}:m));
-    });
-    s.on('message_deleted', ({applicationId, messageId})=>{
+    };
+    const onDeleted = ({applicationId, messageId})=>{
       if(String(applicationId)!==String(app._id)) return;
-      setMessages(p=>p.map(m=>m._id===messageId?{...m,deleted:true,text:''}:m));
-    });
-    s.on('application_status_changed', ({applicationId, status})=>{
+      setMessages(p=>p.map(m=>m._id===messageId?{...m,deleted:true}:m));
+    };
+    const onStatus = ({applicationId, status})=>{
       if(String(applicationId)===String(app._id)) onStatusChange(app._id, status);
-    });
+    };
+
+    s.on('new_chat_message',          onNewMsg);
+    s.on('message_edited',            onEdited);
+    s.on('message_deleted',           onDeleted);
+    s.on('application_status_changed', onStatus);
 
     return ()=>{
       s.emit('leave_chat_room', app._id);
-      s.off('new_chat_message'); s.off('message_edited');
-      s.off('message_deleted'); s.off('application_status_changed');
+      s.off('new_chat_message',          onNewMsg);
+      s.off('message_edited',            onEdited);
+      s.off('message_deleted',           onDeleted);
+      s.off('application_status_changed', onStatus);
     };
   },[app._id, onStatusChange, scrollDown]);
 
@@ -363,7 +370,11 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
 
     try {
       const res = await applicationService.send(app._id, trimmed);
-      setMessages(p=>p.map(m=>m._id===tempId ? res.data : m));
+      setMessages(p => {
+        const filtered = p.filter(m => m._id !== tempId);
+        if (filtered.some(m => m._id === res.data._id)) return filtered;
+        return [...filtered, res.data];
+      });
     } catch {
       setMessages(p=>p.filter(m=>m._id!==tempId));
       setText(trimmed);
@@ -579,7 +590,7 @@ export default function MyApplications() {
     return ()=>window.removeEventListener('resize',h);
   },[]);
 
-  useEffect(()=>{ if(!token) navigate("/login"); },[token,navigate]);
+  useEffect(()=>{ if(!token) navigate("/kirish"); },[token,navigate]);
 
   const loadReceived = useCallback(async ()=>{
     try { const r=await applicationService.received(); setReceived(r.data||[]); } catch{}
@@ -591,8 +602,7 @@ export default function MyApplications() {
   useEffect(()=>{
     if(!user?._id) return;
     const s = connectSocket(user._id);
-    s.on('new_application', loadReceived);
-    s.on('new_chat_message', ({applicationId, message})=>{
+    const onLastMsg = ({applicationId, message})=>{
       const update = arr => arr.map(a =>
         a._id===applicationId
           ? { ...a, lastMessage:message?.text||'', lastMessageAt:message?.createdAt }
@@ -600,8 +610,10 @@ export default function MyApplications() {
       );
       setReceived(p=>update(p));
       setSent(p=>update(p));
-    });
-    return ()=>{ s.off('new_application',loadReceived); s.off('new_chat_message'); };
+    };
+    s.on('new_application', loadReceived);
+    s.on('new_chat_message', onLastMsg);
+    return ()=>{ s.off('new_application', loadReceived); s.off('new_chat_message', onLastMsg); };
   },[user?._id, loadReceived]);
 
   useEffect(()=>{
@@ -721,7 +733,7 @@ export default function MyApplications() {
                 <p style={{fontSize:12.5,margin:0,lineHeight:1.5}}>
                   {tab==="received"
                     ? "E'lonlaringizga zayavka kelganida bu yerda ko'rasiz"
-                    : <><Link to="/ads" style={{color:C.red,fontWeight:600}}>E'lonlar</Link> sahifasidan zayavka yuboring</>}
+                    : <><Link to="/elonlar" style={{color:C.red,fontWeight:600}}>E'lonlar</Link> sahifasidan zayavka yuboring</>}
                 </p>
               </div>
             ) : (

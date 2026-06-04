@@ -26,10 +26,10 @@ if (!document.getElementById("syne-font")) {
 
 const NAV = [
   { to: "/",           label: "Bosh sahifa",  Icon: LuHouse },
-  { to: "/bloggers",   label: "Blogerlar",    Icon: LuUsers },
-  { to: "/categories", label: "Kategoriyalar",Icon: LuTag },
-  { to: "/ads",        label: "Reklamalar",   Icon: LuDollarSign },
-  { to: "/contact",    label: "Bog'lanish",   Icon: LuMail },
+  { to: "/blogerlar",   label: "Blogerlar",    Icon: LuUsers },
+  { to: "/kategoriyalar", label: "Kategoriyalar",Icon: LuTag },
+  { to: "/elonlar",        label: "Reklamalar",   Icon: LuDollarSign },
+  { to: "/aloqa",    label: "Bog'lanish",   Icon: LuMail },
 ];
 
 /* ─────────────── LOGO ─────────────── */
@@ -246,7 +246,7 @@ export default function Header() {
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               {user && (
                 <>
-                  <NavLink to="/wishlist" title="Saqlanganlar" style={{
+                  <NavLink to="/sevimlilar" title="Saqlanganlar" style={{
                     display: "flex", alignItems: "center", justifyContent: "center",
                     width: 32, height: 32, borderRadius: 8,
                     color: "rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.1)",
@@ -257,7 +257,7 @@ export default function Header() {
                   >
                     <LuHeart size={14} />
                   </NavLink>
-                  <NavLink to="/notifications" title="Bildirishnomalar" style={{
+                  <NavLink to="/bildirishnomalar" title="Bildirishnomalar" style={{
                     display: "flex", alignItems: "center", justifyContent: "center",
                     width: 32, height: 32, borderRadius: 8,
                     color: "rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.1)",
@@ -324,8 +324,8 @@ export default function Header() {
                       {[
                         user.role === "admin"
                           ? { to: "/admin",            icon: <LuLayoutDashboard size={13} />, label: "Admin panel" }
-                          : { to: "/profile",          icon: <LuUser size={13} />,            label: "Profilim" },
-                        { to: "/my-applications",    icon: <LuMessageCircle size={13} />,   label: "Mening zayavkalarim" },
+                          : { to: "/profil",          icon: <LuUser size={13} />,            label: "Profilim" },
+                        { to: "/mening-zayavkalarim",    icon: <LuMessageCircle size={13} />,   label: "Mening zayavkalarim" },
                       ].map(item => (
                         <NavLink key={item.to} to={item.to} onClick={() => setUserMenuOpen(false)}
                           style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", textDecoration: "none", color: "#374151", fontSize: 13, fontWeight: 500 }}
@@ -351,13 +351,13 @@ export default function Header() {
                     <LuBadgeCheck size={12} /> Ishonchli platforma
                   </span>
                   <div className="hidden-sm" style={{ width: 1, height: 14, background: "rgba(255,255,255,0.25)", margin: "0 4px" }} />
-                  <NavLink to="/login" style={{ color: "#fff", textDecoration: "none", padding: "4px 12px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.3)", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4, transition: "background 0.2s" }}
+                  <NavLink to="/kirish" style={{ color: "#fff", textDecoration: "none", padding: "4px 12px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.3)", fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 4, transition: "background 0.2s" }}
                     onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.18)"}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                   >
                     <LuUser size={11} /> Kirish
                   </NavLink>
-                  <NavLink to="/register" style={{ color: "#dc2626", background: "#fff", textDecoration: "none", padding: "4px 14px", borderRadius: 6, fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, boxShadow: "0 1px 4px rgba(0,0,0,0.15)", transition: "transform 0.15s", whiteSpace: "nowrap" }}
+                  <NavLink to="/royxatdan-otish" style={{ color: "#dc2626", background: "#fff", textDecoration: "none", padding: "4px 14px", borderRadius: 6, fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, boxShadow: "0 1px 4px rgba(0,0,0,0.15)", transition: "transform 0.15s", whiteSpace: "nowrap" }}
                     onMouseEnter={e => e.currentTarget.style.transform = "translateY(-1px)"}
                     onMouseLeave={e => e.currentTarget.style.transform = "none"}
                   >
@@ -423,7 +423,7 @@ export default function Header() {
               </li>
             ))}
             <li style={{ marginLeft: 6 }}>
-              <NavLink to="/post-ad" style={{ textDecoration: "none", background: "linear-gradient(135deg,#dc2626,#b91c1c)", color: "#fff", fontSize: 13, fontWeight: 700, padding: "9px 18px", borderRadius: 10, display: "flex", alignItems: "center", gap: 5, boxShadow: "0 3px 14px rgba(220,38,38,0.35)", transition: "transform 0.18s, box-shadow 0.18s", whiteSpace: "nowrap" }}
+              <NavLink to="/elon-berish" style={{ textDecoration: "none", background: "linear-gradient(135deg,#dc2626,#b91c1c)", color: "#fff", fontSize: 13, fontWeight: 700, padding: "9px 18px", borderRadius: 10, display: "flex", alignItems: "center", gap: 5, boxShadow: "0 3px 14px rgba(220,38,38,0.35)", transition: "transform 0.18s, box-shadow 0.18s", whiteSpace: "nowrap" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(220,38,38,0.45)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 3px 14px rgba(220,38,38,0.35)"; }}
               >
@@ -531,7 +531,7 @@ export default function Header() {
             <div style={{ display: "flex", gap: 10, paddingTop: 6, borderTop: "1px solid #f3f4f6" }}>
               {user ? (
                 <>
-                  <NavLink to={user.role === "admin" ? "/admin" : "/profile"} onClick={() => setOpen(false)}
+                  <NavLink to={user.role === "admin" ? "/admin" : "/profil"} onClick={() => setOpen(false)}
                     style={{ flex: 1, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px", borderRadius: 11, fontSize: 14, fontWeight: 600, color: "#374151", border: "1.5px solid #e5e7eb", background: "#fff" }}
                   >
                     <LuUser size={15} /> {user.firstName}
@@ -544,12 +544,12 @@ export default function Header() {
                 </>
               ) : (
                 <>
-                  <NavLink to="/login" onClick={() => setOpen(false)}
+                  <NavLink to="/kirish" onClick={() => setOpen(false)}
                     style={{ flex: 1, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px", borderRadius: 11, fontSize: 14, fontWeight: 600, color: "#374151", border: "1.5px solid #e5e7eb", background: "#fff" }}
                   >
                     <LuUser size={15} /> Kirish
                   </NavLink>
-                  <NavLink to="/post-ad" onClick={() => setOpen(false)}
+                  <NavLink to="/elon-berish" onClick={() => setOpen(false)}
                     style={{ flex: 1, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px", borderRadius: 11, fontSize: 14, fontWeight: 700, color: "#fff", background: "linear-gradient(135deg,#dc2626,#b91c1c)", boxShadow: "0 3px 12px rgba(220,38,38,0.3)" }}
                   >
                     <LuPlus size={15} strokeWidth={2.5} /> E'lon berish

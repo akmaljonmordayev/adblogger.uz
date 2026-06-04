@@ -10,7 +10,7 @@ export default function Cookies() {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: 720, margin: "0 auto", padding: "0 20px 60px" }}>
-      <SEO title="Cookie Siyosati" description="ADBlogger cookie siyosati — saytimiz qanday cookielardan foydalanishi haqida." canonical="/cookies" noindex />
+      <SEO title="Cookie Siyosati" description="ADBlogger cookie siyosati — saytimiz qanday cookielardan foydalanishi haqida." canonical="/kukilar" noindex />
       <div style={{ marginBottom: 36 }}>
         <span style={{
           display: "inline-block", background: "#fef2f2", color: "#dc2626",

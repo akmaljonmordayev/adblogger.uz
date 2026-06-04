@@ -363,8 +363,8 @@ export default function Career() {
       <SEO
         title="Karyera — ADBlogger Jamoasiga Qo'shiling"
         description="ADBlogger jamoasiga qo'shiling! IT, marketing, dizayn, HR va boshqa yo'nalishlarda ochiq vakansiyalar. Zamonaviy ish sharoiti va raqobatbardosh maosh."
-        canonical="/career"
-        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Karyera", path: "/career" }])}
+        canonical="/martaba"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Karyera", path: "/martaba" }])}
       />
 
       {/* ── HERO ── */}

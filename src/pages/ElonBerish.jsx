@@ -686,7 +686,7 @@ export default function ElonBerish() {
   const handleSubmit = async (formData) => {
     if (!isLoggedIn()) {
       toast.error("E'lon berish uchun tizimga kiring!");
-      navigate("/login");
+      navigate("/kirish");
       return;
     }
 
@@ -767,7 +767,7 @@ export default function ElonBerish() {
         >
           Yangi e'lon berish
         </button>
-        <a href="/profile?tab=my-ads" style={{ padding: "12px 24px", borderRadius: 12, background: "#eff6ff", border: "1.5px solid #bfdbfe", color: "#2563eb", fontSize: 14, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", fontFamily: "inherit" }}>
+        <a href="/profil?tab=my-ads" style={{ padding: "12px 24px", borderRadius: 12, background: "#eff6ff", border: "1.5px solid #bfdbfe", color: "#2563eb", fontSize: 14, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", fontFamily: "inherit" }}>
           E'lonlarimni ko'rish
         </a>
       </div>
@@ -810,7 +810,7 @@ export default function ElonBerish() {
           <LuLock size={16} style={{ color: "#d97706", flexShrink: 0 }} />
           <span style={{ fontSize: 13, color: "#92400e" }}>
             E'lon berish uchun{" "}
-            <a href="/login" style={{ color: "#dc2626", fontWeight: 700, textDecoration: "none" }}>tizimga kiring</a>
+            <a href="/kirish" style={{ color: "#dc2626", fontWeight: 700, textDecoration: "none" }}>tizimga kiring</a>
             {" "}yoki{" "}
             <a href="/auth" style={{ color: "#dc2626", fontWeight: 700, textDecoration: "none" }}>ro'yxatdan o'ting</a>
           </span>

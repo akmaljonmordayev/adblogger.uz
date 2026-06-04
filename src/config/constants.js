@@ -7,52 +7,52 @@ export const APP_CONFIG = {
 export const ROUTE_PATHS = {
   // Asosiy
   HOME:           "/",
-  BLOGGERS:       "/bloggers",
-  BLOGGER_DETAIL: "/bloggers/:id",
-  CATEGORIES:     "/categories",
-  PRICING:        "/pricing",
-  CONTACT:        "/contact",
+  BLOGGERS:       "/blogerlar",
+  BLOGGER_DETAIL: "/blogerlar/:id",
+  CATEGORIES:     "/kategoriyalar",
+  PRICING:        "/narxlar",
+  CONTACT:        "/aloqa",
 
   // E'lon
-  ADS:            "/ads",
-  AD_DETAIL:      "/ads/:id",
-  ELON_BERISH:    "/post-ad",
+  ADS:            "/elonlar",
+  AD_DETAIL:      "/elonlar/:id",
+  ELON_BERISH:    "/elon-berish",
 
   // Blog
   BLOGS:          "/blog",
   BLOG_DETAIL:    "/blog/:id",
 
   // Kompaniya
-  ABOUT:          "/about",
-  CAREER:         "/career",
-  BLOGER_BOLISH:  "/become-blogger",
+  ABOUT:          "/haqida",
+  CAREER:         "/martaba",
+  BLOGER_BOLISH:  "/blogger-bolish",
 
   // Huquqiy
-  PRIVACY:        "/privacy",
-  TERMS:          "/terms",
-  COOKIES:        "/cookies",
+  PRIVACY:        "/maxfiylik",
+  TERMS:          "/shartlar",
+  COOKIES:        "/kukilar",
   FAQ:            "/faq",
 
   // Auth & foydalanuvchi
-  LOGIN:            "/login",
-  REGISTER:         "/register",
-  PROFILE:          "/profile",
-  WISHLIST:         "/wishlist",
-  NOTIFICATIONS:    "/notifications",
-  MY_APPLICATIONS:  "/my-applications",
+  LOGIN:            "/kirish",
+  REGISTER:         "/royxatdan-otish",
+  PROFILE:          "/profil",
+  WISHLIST:         "/sevimlilar",
+  NOTIFICATIONS:    "/bildirishnomalar",
+  MY_APPLICATIONS:  "/mening-zayavkalarim",
 
   // Admin
   ADMIN:                "/admin",
-  ADMIN_LOGIN:          "/admin/login",
-  ADMIN_DASHBOARD:      "/admin/dashboard",
-  ADMIN_USERS:          "/admin/users",
-  ADMIN_BLOGGERS:       "/admin/bloggers",
-  ADMIN_ADS:            "/admin/ads",
-  ADMIN_BLOGS:          "/admin/blogs",
-  ADMIN_CATEGORIES:     "/admin/categories",
-  ADMIN_CAREER:         "/admin/career",
-  ADMIN_CONTACT:        "/admin/contact",
+  ADMIN_LOGIN:          "/admin/kirish",
+  ADMIN_DASHBOARD:      "/admin/boshqaruv",
+  ADMIN_USERS:          "/admin/foydalanuvchilar",
+  ADMIN_BLOGGERS:       "/admin/blogerlar",
+  ADMIN_ADS:            "/admin/elonlar",
+  ADMIN_BLOGS:          "/admin/bloglar",
+  ADMIN_CATEGORIES:     "/admin/kategoriyalar",
+  ADMIN_CAREER:         "/admin/martaba",
+  ADMIN_CONTACT:        "/admin/aloqa",
   ADMIN_FAQ:            "/admin/faq",
-  ADMIN_SETTINGS:       "/admin/settings",
-  ADMIN_APPLICATIONS:   "/admin/applications",
+  ADMIN_SETTINGS:       "/admin/sozlamalar",
+  ADMIN_APPLICATIONS:   "/admin/zayavkalar",
 };

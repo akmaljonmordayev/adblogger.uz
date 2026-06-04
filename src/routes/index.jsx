@@ -123,7 +123,7 @@ export const router = createBrowserRouter([
   },
   // Pending approval page — standalone
   {
-    path: "/pending-approval",
+    path: "/tasdiqlash-kutilmoqda",
     element: <PendingApproval />,
   },
   {

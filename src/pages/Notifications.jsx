@@ -56,7 +56,7 @@ export default function Notifications() {
   }, []);
 
   useEffect(() => {
-    if (!token) { navigate("/login"); return; }
+    if (!token) { navigate("/kirish"); return; }
     fetchNotifications();
   }, [token, navigate, fetchNotifications]);
 
@@ -195,7 +195,7 @@ export default function Notifications() {
             return (
               <Link
                 key={n._id}
-                to={n.link || "/notifications"}
+                to={n.link || "/bildirishnomalar"}
                 onClick={() => !n.read && markRead(n._id)}
                 style={{
                   display: "flex", gap: 14, padding: "16px 18px",

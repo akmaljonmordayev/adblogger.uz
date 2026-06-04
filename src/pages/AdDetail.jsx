@@ -152,7 +152,7 @@ export default function AdDetail() {
     setLoading(true);
     api.get(`/ads/${id}`)
       .then(r => setAd(r.data.data))
-      .catch(() => { toast.error("E'lon topilmadi"); navigate("/ads"); })
+      .catch(() => { toast.error("E'lon topilmadi"); navigate("/elonlar"); })
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -191,7 +191,7 @@ export default function AdDetail() {
       <SEO
         title={ad?.title || "E'lon Tafsilotlari"}
         description={ad?.description || "ADBlogger platformasida reklama e'loni. Blogger yoki biznes bilan hamkorlik qiling."}
-        canonical={`/ads/${id}`}
+        canonical={`/elonlar/${id}`}
       />
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -204,7 +204,7 @@ export default function AdDetail() {
       {zayavka && <ZayavkaModal ad={ad} onClose={()=>setZayavka(false)}/>}
 
       {/* ── Back ── */}
-      <Link to="/ads" style={{display:"inline-flex",alignItems:"center",gap:7,color:"#64748b",textDecoration:"none",fontSize:13,fontWeight:600,marginBottom:28,padding:"8px 14px",background:"#f8fafc",border:"1.5px solid #e2e8f0",borderRadius:10,transition:"all .15s"}}
+      <Link to="/elonlar" style={{display:"inline-flex",alignItems:"center",gap:7,color:"#64748b",textDecoration:"none",fontSize:13,fontWeight:600,marginBottom:28,padding:"8px 14px",background:"#f8fafc",border:"1.5px solid #e2e8f0",borderRadius:10,transition:"all .15s"}}
         onMouseEnter={e=>{e.currentTarget.style.color="#dc2626";e.currentTarget.style.borderColor="#fecaca";}}
         onMouseLeave={e=>{e.currentTarget.style.color="#64748b";e.currentTarget.style.borderColor="#e2e8f0";}}>
         <PiArrowLeftDuotone size={16}/> E'lonlarga qaytish

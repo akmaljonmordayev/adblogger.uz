@@ -84,7 +84,7 @@ export default function Wishlist() {
           <p style={{ fontSize: 14, color: "#94a3b8", marginBottom: 24 }}>
             {tab === "bloggers" ? "Blogger profilida ❤️ belgisini bosing" : "E'lonlarda ❤️ belgisini bosing"}
           </p>
-          <Link to={tab === "bloggers" ? "/bloggers" : "/ads"} style={{
+          <Link to={tab === "bloggers" ? "/blogerlar" : "/elonlar"} style={{
             display: "inline-flex", alignItems: "center", gap: 6,
             padding: "11px 24px",
             background: "linear-gradient(135deg,#dc2626,#b91c1c)",
@@ -203,7 +203,7 @@ export default function Wishlist() {
           <p style={{ fontSize: 15, color: "#374151", marginBottom: 16 }}>
             Saqlanganlarni ko'rish uchun tizimga kiring
           </p>
-          <Link to="/login" style={{
+          <Link to="/kirish" style={{
             padding: "10px 24px",
             background: "linear-gradient(135deg,#dc2626,#b91c1c)",
             color: "#fff", borderRadius: 10, textDecoration: "none",
