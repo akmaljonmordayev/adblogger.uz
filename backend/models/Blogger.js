@@ -69,7 +69,8 @@ async function syncCategoryCounts(categoryNames) {
   const Category = mongoose.model('Category');
   await Promise.all(
     categoryNames.map(async (name) => {
-      const count = await mongoose.model('Blogger').countDocuments({ categories: name });
+      // Faqat asosiy (birinchi) kategoriya bo'yicha hisoblash
+      const count = await mongoose.model('Blogger').countDocuments({ 'categories.0': name });
       await Category.findOneAndUpdate({ name }, { bloggerCount: count });
     })
   );

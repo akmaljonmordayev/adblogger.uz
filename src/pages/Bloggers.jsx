@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import SEO, { breadcrumbSchema } from "../components/SEO";
 import BloggerCard from "../components/ui/BlogerCard";
 import FilterSidebar from '../components/layout/FilterSidebar';
@@ -85,47 +86,39 @@ export default function Blogger() {
   const [searchParams] = useSearchParams();
   const categoryFromQS = searchParams.get("category");
 
-  const [allBloggers, setAllBloggers]   = useState([]);
   const [bloggers, setBloggers]         = useState([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState(null);
   const [sortBy, setSortBy]             = useState("default");
   const allRef = useRef([]);
   const filteredRef = useRef([]);
 
-  /* ── API'dan blogerlarni olish ── */
-  useEffect(() => {
-    setLoading(true);
-    api.get("/bloggers")
-      .then(res => {
-        const mapped = (res.data.data || []).map(mapBlogger);
-        setAllBloggers(mapped);
-        allRef.current = mapped;
-      })
-      .catch(err => setError(err.message || "Xatolik yuz berdi"))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: bloggersRaw, isLoading: loading, isError: error } = useQuery({
+    queryKey: ["bloggers"],
+    queryFn: () => api.get("/bloggers").then(res => (res.data.data || []).map(mapBlogger)),
+    staleTime: 5 * 60 * 1000,
+  });
 
   /* ── QS category o'zgarganda filter ── */
   useEffect(() => {
-    if (!allRef.current.length) return;
+    const mapped = bloggersRaw || [];
+    if (!mapped.length) return;
+    allRef.current = mapped;
     if (categoryFromQS) {
       const q = categoryFromQS.toLowerCase();
-      const filtered = allRef.current.filter(b =>
+      const filtered = mapped.filter(b =>
         b.categoryText.toLowerCase() === q ||
         b.categoryType.toLowerCase() === q ||
         b.allCategories.some(c => c.toLowerCase() === q)
       );
-      const result = filtered.length > 0 ? filtered : allRef.current;
+      const result = filtered.length > 0 ? filtered : mapped;
       filteredRef.current = result;
       setBloggers(applySort(result, sortBy));
     } else {
-      filteredRef.current = allRef.current;
-      setBloggers(applySort(allRef.current, sortBy));
+      filteredRef.current = mapped;
+      setBloggers(applySort(mapped, sortBy));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryFromQS, allBloggers]);
+  }, [categoryFromQS, bloggersRaw]);
 
   const applySort = (list, sort) => {
     const arr = [...list];
@@ -343,7 +336,7 @@ export default function Blogger() {
           {/* Error */}
           {error && !loading && (
             <div style={{ background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 16, padding: 24, textAlign: "center" }}>
-              <div style={{ fontSize: 14, color: "#dc2626", fontWeight: 600 }}>Xatolik: {error}</div>
+              <div style={{ fontSize: 14, color: "#dc2626", fontWeight: 600 }}>Xatolik yuz berdi</div>
             </div>
           )}
 

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import SEO, { breadcrumbSchema } from "../components/SEO";
 import {
@@ -401,22 +402,17 @@ function AdCard({ ad, onContact, onZayavka }) {
 
 /* ══ MAIN ══ */
 export default function Ads() {
-  const [ads, setAds]           = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState(null);
   const [filter, setFilter]     = useState("all");
   const [search, setSearch]     = useState("");
   const [contactAd, setContactAd] = useState(null);
   const [zayavkaAd, setZayavkaAd] = useState(null);
 
-  /* fetch */
-  useEffect(() => {
-    setLoading(true);
-    api.get("/ads")
-      .then(res => setAds((res.data.data || []).map(mapAd)))
-      .catch(err => setError(err.message || "Xatolik"))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: adsData, isLoading: loading, isError: error } = useQuery({
+    queryKey: ["ads"],
+    queryFn: () => api.get("/ads").then(res => (res.data.data || []).map(mapAd)),
+    staleTime: 5 * 60 * 1000,
+  });
+  const ads = adsData || [];
 
   /* filter + search */
   const filtered = ads.filter(ad => {

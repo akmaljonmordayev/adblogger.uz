@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useRef } from "react";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import {
   LuSearch, LuEye, LuPencil, LuTrash2, LuCheck, LuX,
   LuLoader, LuChevronLeft, LuChevronRight, LuRefreshCw,
@@ -527,10 +528,7 @@ function FormField({ label, children }) {
 
 /* ══════════════════════════════════════════════════════════════════ */
 export default function AdminBlogs() {
-  const [blogs,      setBlogs]      = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [total,      setTotal]      = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  const queryClient = useQueryClient();
   const [counts,     setCounts]     = useState({ all: 0, pending: 0, approved: 0, rejected: 0 });
 
   const [statusTab,   setStatusTab]   = useState("");
@@ -550,27 +548,23 @@ export default function AdminBlogs() {
   const debRef = useRef(null);
 
   /* ── Fetch ── */
-  const fetchBlogs = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { data: blogsData, isLoading: loading, refetch: fetchBlogs } = useQuery({
+    queryKey: ["admin-blogs", page, sort, statusTab, category, search],
+    queryFn: async () => {
       const params = { page, limit: PER_PAGE, sort };
       if (statusTab) params.status   = statusTab;
       if (category)  params.category = category;
       if (search)    params.search   = search;
-
       const res = await api.get("/blogs/admin/all", { params });
-      setBlogs(res.data.data || []);
-      setTotal(res.data.total || 0);
-      setTotalPages(res.data.totalPages || 1);
       if (res.data.counts) setCounts(res.data.counts);
-    } catch {
-      setBlogs([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, sort, statusTab, category, search]);
-
-  useEffect(() => { fetchBlogs(); }, [fetchBlogs]);
+      return res.data;
+    },
+    staleTime: 2 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
+  const blogs      = blogsData?.data       || [];
+  const total      = blogsData?.total      || 0;
+  const totalPages = blogsData?.totalPages || 1;
 
   /* ── Search debounce ── */
   const handleSearchInput = (val) => {
@@ -588,7 +582,7 @@ export default function AdminBlogs() {
       const all = res.data.data || [];
       if (!all.length) { toast.success("Resetlanadigan blog topilmadi"); return; }
       await Promise.all(all.map(b => api.patch(`/blogs/admin/${b._id}`, { views: 0 })));
-      setBlogs(prev => prev.map(b => ({ ...b, views: 0 })));
+      queryClient.invalidateQueries({ queryKey: ["admin-blogs"] });
       toast.success(`${all.length} ta blogning ko'rishlar soni 0 ga tushirildi`);
     } catch {
       toast.error("Xatolik yuz berdi");
@@ -602,11 +596,7 @@ export default function AdminBlogs() {
     setActionLoading(p => ({ ...p, [id]: true }));
     try {
       await api.patch(`/blogs/admin/${id}/status`, { status });
-      setBlogs(prev => prev.map(b => b._id === id ? { ...b, status, isPublished: status === "approved" } : b));
-      setCounts(p => {
-        const old = blogs.find(b => b._id === id)?.status || "pending";
-        return { ...p, [old]: Math.max(0, (p[old] || 0) - 1), [status]: (p[status] || 0) + 1 };
-      });
+      queryClient.invalidateQueries({ queryKey: ["admin-blogs"] });
       const msgs = { approved: "Tasdiqlandi", rejected: "Rad etildi" };
       toast.success(msgs[status] || "Yangilandi");
       if (viewBlog?._id === id) setViewBlog(p => ({ ...p, status, isPublished: status === "approved" }));
@@ -620,8 +610,8 @@ export default function AdminBlogs() {
   /* ── Edit save ── */
   const handleEditSave = async (id, data) => {
     try {
-      const r = await api.patch(`/blogs/admin/${id}`, data);
-      setBlogs(prev => prev.map(b => b._id === id ? { ...b, ...r.data.data } : b));
+      await api.patch(`/blogs/admin/${id}`, data);
+      queryClient.invalidateQueries({ queryKey: ["admin-blogs"] });
       toast.success("Blog yangilandi");
     } catch {
       toast.error("Xatolik");
@@ -634,8 +624,7 @@ export default function AdminBlogs() {
     const id = deleteTarget?.id;
     try {
       await api.delete(`/blogs/admin/${id}`);
-      setBlogs(prev => prev.filter(b => b._id !== id));
-      setTotal(p => p - 1);
+      queryClient.invalidateQueries({ queryKey: ["admin-blogs"] });
       toast.success("O'chirildi");
     } catch {
       toast.error("O'chirishda xatolik");
@@ -977,10 +966,8 @@ export default function AdminBlogs() {
       {showCreate && (
         <CreateModal
           onClose={() => setShowCreate(false)}
-          onCreated={(newBlog) => {
-            setBlogs(prev => [newBlog, ...prev]);
-            setTotal(p => p + 1);
-            setCounts(p => ({ ...p, all: p.all + 1, [newBlog.status || "pending"]: (p[newBlog.status || "pending"] || 0) + 1 }));
+          onCreated={() => {
+            queryClient.invalidateQueries({ queryKey: ["admin-blogs"] });
           }}
         />
       )}

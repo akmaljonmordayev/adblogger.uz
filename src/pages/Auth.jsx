@@ -317,11 +317,13 @@ function RegisterForm({ onSwitchTab }) {
             <option value="">Kategoriyani tanlang</option>
             <option value="Tech">Texnologiya</option>
             <option value="Lifestyle">Lifestyle</option>
+            <option value="Beauty">Go'zallik</option>
             <option value="Food">Ovqat</option>
             <option value="Sports">Sport</option>
             <option value="Travel">Sayohat</option>
+            <option value="Education">Ta'lim</option>
             <option value="Business">Biznes</option>
-            <option value="Beauty">Go'zallik</option>
+            <option value="Gaming">Gaming</option>
             <option value="Music">Musiqa</option>
             <option value="Other">Boshqa</option>
           </SelectField>

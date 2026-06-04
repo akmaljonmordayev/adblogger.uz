@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "../../components/ui/toast";
 import { adminUsersService } from "../../services/adminService";
 import { LuSearch, LuRefreshCw, LuEye, LuLoader, LuChevronLeft, LuChevronRight, LuTrash2 } from "react-icons/lu";
@@ -125,8 +126,7 @@ function ViewModal({ user, onClose, onToggle }) {
 }
 
 export default function AdminUsers() {
-  const [allUsers, setAllUsers] = useState([]); // barcha userlar (stats uchun)
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("");
   const [page, setPage] = useState(1);
@@ -134,19 +134,13 @@ export default function AdminUsers() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await adminUsersService.getAll({ role: role || undefined });
-      setAllUsers(res.data || []);
-    } catch {
-      toast.error("Foydalanuvchilarni yuklashda xatolik");
-    } finally {
-      setLoading(false);
-    }
-  }, [role]);
+  const { data: usersData, isLoading: loading, refetch: fetchUsers } = useQuery({
+    queryKey: ["admin-users", role],
+    queryFn: () => adminUsersService.getAll({ role: role || undefined }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const allUsers = usersData?.data || [];
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
   useEffect(() => { setPage(1); }, [search, role]);
 
   const handleDelete = async () => {
@@ -156,7 +150,7 @@ export default function AdminUsers() {
       await adminUsersService.remove(deleteTarget._id);
       toast.success(`${deleteTarget.firstName} ${deleteTarget.lastName} o'chirildi`);
       setDeleteTarget(null);
-      fetchUsers();
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     } catch {
       toast.error("O'chirishda xatolik yuz berdi");
     } finally {
@@ -317,7 +311,7 @@ export default function AdminUsers() {
       </div>
 
       {selected && (
-        <ViewModal user={selected} onClose={() => setSelected(null)} onToggle={fetchUsers} />
+        <ViewModal user={selected} onClose={() => setSelected(null)} onToggle={() => queryClient.invalidateQueries({ queryKey: ["admin-users"] })} />
       )}
 
       {/* Delete confirm modal */}

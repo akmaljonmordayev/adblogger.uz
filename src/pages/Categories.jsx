@@ -88,10 +88,27 @@ export default function CategoriesPage() {
   const fetchCategories = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/categories");
-      const data = res.data.data || [];
-      setCategories(data);
-      setTotalBloggers(data.reduce((s, c) => s + (c.bloggerCount || 0), 0));
+      const [catRes, blogRes] = await Promise.all([
+        api.get("/categories"),
+        api.get("/bloggers"),
+      ]);
+      const cats     = catRes.data.data  || [];
+      const bloggers = blogRes.data.data || [];
+
+      // Har bir bloger faqat bir marta — asosiy (birinchi) kategoriyasida hisoblanadi
+      const countMap = {};
+      bloggers.forEach(b => {
+        const primary = (b.categories || [])[0];
+        if (primary) countMap[primary] = (countMap[primary] || 0) + 1;
+      });
+
+      const enriched = cats.map(cat => ({
+        ...cat,
+        bloggerCount: countMap[cat.name] || 0,
+      }));
+
+      setCategories(enriched);
+      setTotalBloggers(bloggers.length); // unique blogerlar soni
     } catch {
       setCategories([]);
     } finally {

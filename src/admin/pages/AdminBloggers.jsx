@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "../../components/ui/toast";
 import { adminBloggersService, adminUsersService } from "../../services/adminService";
 import { FiInstagram, FiYoutube } from "react-icons/fi";
@@ -494,29 +495,24 @@ function PgBtn({ children, onClick, disabled, active }) {
 
 /* ─── MAIN ───────────────────────────────────────────────────────── */
 export default function AdminBloggers() {
-  const [bloggers, setBloggers] = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving]     = useState(false);
   const [search, setSearch]     = useState("");
   const [page, setPage]         = useState(1);
   const [sort, setSort]         = useState("followers_desc");
   const [platFilter, setPlatFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [followerRange, setFollowerRange] = useState(0); // index in FOLLOWER_RANGES
+  const [followerRange, setFollowerRange] = useState(0);
   const [detail, setDetail]     = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [rowSaving, setRowSaving] = useState(null); // blogger._id being saved in row
+  const [rowSaving, setRowSaving] = useState(null);
 
-  const fetchBloggers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await adminBloggersService.getAll({ page: 1, limit: 9999 });
-      setBloggers(res.data || []);
-    } catch { toast.error("Bloggerlarni yuklashda xatolik"); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { fetchBloggers(); }, [fetchBloggers]);
+  const { data: bloggersData, isLoading: loading, refetch: fetchBloggers } = useQuery({
+    queryKey: ["admin-bloggers"],
+    queryFn: () => adminBloggersService.getAll({ page: 1, limit: 9999 }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const bloggers = bloggersData?.data || [];
 
   /* ── Filter & sort ── */
   const filtered = useMemo(() => {
@@ -569,9 +565,9 @@ export default function AdminBloggers() {
 
   /* ── Update single blogger in list (from modal) ── */
   const updateBlogger = useCallback((updated) => {
-    setBloggers(p => p.map(b => b._id === updated._id ? { ...b, ...updated } : b));
+    queryClient.invalidateQueries({ queryKey: ["admin-bloggers"] });
     setDetail(updated);
-  }, []);
+  }, [queryClient]);
 
   /* ── Quick row action (unblock / unfreeze) ── */
   const rowAction = useCallback(async (blogger, patch) => {
@@ -580,13 +576,12 @@ export default function AdminBloggers() {
     setRowSaving(blogger._id);
     try {
       await adminUsersService.update(String(userId), patch);
-      const updated = { ...blogger, ...patch };
-      setBloggers(p => p.map(b => b._id === blogger._id ? updated : b));
+      queryClient.invalidateQueries({ queryKey: ["admin-bloggers"] });
       if (patch.isBlocked === false) toast.success("Bloklash bekor qilindi");
       if (patch.isFrozen  === false) toast.success("Muzlatish bekor qilindi");
     } catch { toast.error("Xatolik yuz berdi"); }
     finally { setRowSaving(null); }
-  }, []);
+  }, [queryClient]);
 
   /* ── Delete ── */
   const confirmDelete = useCallback(async () => {
@@ -594,12 +589,12 @@ export default function AdminBloggers() {
     setSaving(true);
     try {
       await adminBloggersService.remove(deleteTarget._id);
-      setBloggers(p => p.filter(b => b._id !== deleteTarget._id));
+      queryClient.invalidateQueries({ queryKey: ["admin-bloggers"] });
       toast.success("Blogger o'chirildi");
       setDeleteTarget(null);
     } catch { toast.error("O'chirishda xatolik"); }
     finally { setSaving(false); }
-  }, [deleteTarget]);
+  }, [deleteTarget, queryClient]);
 
   return (
     <div style={{ fontFamily:"'Manrope',sans-serif", padding:"28px 28px 60px", minHeight:"100vh" }}>

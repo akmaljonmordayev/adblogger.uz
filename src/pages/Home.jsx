@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import SEO from "../components/SEO";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   LuArrowRight, LuStar, LuZap, LuShield, LuTrendingUp,
   LuUsers, LuAward, LuCircleCheck, LuInstagram, LuYoutube,
@@ -210,15 +211,6 @@ export default function Home() {
   const [hPlat, setHPlat]       = useState(null);
   const [hStep, setHStep]       = useState(null);
 
-  const [bloggers, setBloggers]         = useState([]);
-  const [blogs, setBlogs]               = useState([]);
-  const [allBloggers, setAllBloggers]   = useState([]);
-  const [totalBloggers, setTotalBloggers] = useState(0);
-  const [platformMap, setPlatformMap]   = useState({});
-  const [bloggersLoading, setBloggersLoading] = useState(true);
-  const [blogsLoading, setBlogsLoading]       = useState(true);
-  const [platLoading, setPlatLoading]         = useState(true);
-
   /* rotate testimonials */
   useEffect(() => {
     const t = setInterval(() => setActiveT(v => (v+1) % TESTIMONIALS.length), 5000);
@@ -226,48 +218,39 @@ export default function Home() {
   }, []);
 
   /* fetch all bloggers for platform grouping */
-  const fetchAll = useCallback(async () => {
-    try {
-      const res = await api.get("/bloggers", { params: { limit: 500 } });
-      const data  = res.data.data  || [];
-      const total = res.data.total ?? data.length;
-      setAllBloggers(data);
-      setTotalBloggers(total);
-      const map = {};
-      data.forEach(b => {
-        (b.platforms || []).forEach(p => {
-          if (!map[p]) map[p] = [];
-          map[p].push(b);
-        });
+  const { data: allBloggersRes, isLoading: platLoading } = useQuery({
+    queryKey: ["home-all-bloggers"],
+    queryFn: () => api.get("/bloggers", { params: { limit: 500 } }),
+    staleTime: 10 * 60 * 1000,
+  });
+  const allBloggers   = allBloggersRes?.data?.data  || [];
+  const totalBloggers = allBloggersRes?.data?.total ?? allBloggers.length;
+  const platformMap   = useMemo(() => {
+    const map = {};
+    allBloggers.forEach(b => {
+      (b.platforms || []).forEach(p => {
+        if (!map[p]) map[p] = [];
+        map[p].push(b);
       });
-      setPlatformMap(map);
-    } catch { /* keep empty */ }
-    finally { setPlatLoading(false); }
-  }, []);
+    });
+    return map;
+  }, [allBloggers]);
 
   /* fetch top 4 bloggers for cards */
-  const fetchBloggers = useCallback(async () => {
-    try {
-      const res = await api.get("/bloggers", { params: { limit: 4, sort: "-followers" } });
-      setBloggers((res.data.data || []).map(mapBlogger));
-    } catch { setBloggers([]); }
-    finally { setBloggersLoading(false); }
-  }, []);
+  const { data: topBloggersRes, isLoading: bloggersLoading } = useQuery({
+    queryKey: ["home-top-bloggers"],
+    queryFn: () => api.get("/bloggers", { params: { limit: 4, sort: "-followers" } }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const bloggers = (topBloggersRes?.data?.data || []).map(mapBlogger);
 
   /* fetch latest blogs */
-  const fetchBlogs = useCallback(async () => {
-    try {
-      const res = await api.get("/blogs", { params: { limit: 3, sort: "-createdAt" } });
-      setBlogs((res.data.data || []).map(mapBlog));
-    } catch { setBlogs([]); }
-    finally { setBlogsLoading(false); }
-  }, []);
-
-  useEffect(() => {
-    fetchAll();
-    fetchBloggers();
-    fetchBlogs();
-  }, [fetchAll, fetchBloggers, fetchBlogs]);
+  const { data: latestBlogsRes, isLoading: blogsLoading } = useQuery({
+    queryKey: ["home-blogs"],
+    queryFn: () => api.get("/blogs", { params: { limit: 3, sort: "-createdAt" } }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const blogs = (latestBlogsRes?.data?.data || []).map(mapBlog);
 
   /* platform card click */
   const goToPlatform = (key) => navigate(`/blogerlar?platforms=${key}`);

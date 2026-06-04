@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const pc = require('../controllers/profileController');
 const { protect } = require('../middleware/auth');
+const { uploadAvatar } = require('../config/cloudinary');
+const AppError = require('../utils/appError');
 
 
 /**
@@ -61,6 +63,15 @@ const { protect } = require('../middleware/auth');
 
 router.use(protect);
 router.patch('/', pc.updateProfile);
-router.patch('/avatar', pc.updateAvatar);  // accepts JSON { avatar: base64DataUri }
+router.patch('/avatar', (req, res, next) => {
+  uploadAvatar.single('avatar')(req, res, (err) => {
+    if (err) {
+      console.error('[Avatar upload error]', err.message || err);
+      const msg = err.message || 'Rasm yuklab bo\'lmadi';
+      return next(new AppError(msg, 400));
+    }
+    next();
+  });
+}, pc.updateAvatar);
 
 module.exports = router;

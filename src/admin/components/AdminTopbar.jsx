@@ -14,8 +14,7 @@ const PAGE_META = {
   [ROUTE_PATHS.ADMIN_ADS]:        { title: "E'lonlar",         sub: "Reklama boshqaruvi" },
   [ROUTE_PATHS.ADMIN_BLOGS]:      { title: "Blog",             sub: "Maqolalar boshqaruvi" },
   [ROUTE_PATHS.ADMIN_CATEGORIES]: { title: "Kategoriyalar",    sub: "Kontent turkumlari" },
-  [ROUTE_PATHS.ADMIN_CAREER]:     { title: "Karyera",          sub: "Vakansiyalar" },
-  [ROUTE_PATHS.ADMIN_CONTACT]:    { title: "Xabarlar",         sub: "Kiruvchi xabarlar" },
+[ROUTE_PATHS.ADMIN_CONTACT]:    { title: "Xabarlar",         sub: "Kiruvchi xabarlar" },
   [ROUTE_PATHS.ADMIN_FAQ]:        { title: "FAQ",              sub: "Ko'p so'raladigan savollar" },
   [ROUTE_PATHS.ADMIN_SETTINGS]:   { title: "Sozlamalar",       sub: "Tizim sozlamalari" },
 };

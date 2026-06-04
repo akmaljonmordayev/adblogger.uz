@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { toast } from "../../components/ui/toast";
@@ -6,7 +7,7 @@ import {
   LuUser, LuShield, LuChartBar, LuCamera, LuSave, LuX,
   LuEye, LuEyeOff, LuCheck, LuPencil, LuPhone, LuMail,
   LuCalendar, LuUsers, LuFileText, LuMegaphone, LuActivity,
-  LuTrendingUp, LuLoader, LuRefreshCw, LuCircleCheck,
+  LuTrendingUp, LuLoader, LuRefreshCw, LuCircleCheck, LuUpload,
 } from "react-icons/lu";
 
 /* ── Design tokens (same as all other admin pages) ──────────────────────────── */
@@ -166,6 +167,9 @@ export default function AdminSettings() {
   const [editing, setEditing]   = useState(false);
   const [saving,  setSaving]    = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(null); // blob URL of selected file
+  const [pendingFile,   setPendingFile]   = useState(null); // File object awaiting upload
+  const [dragging,      setDragging]      = useState(false);
   const fileRef = useRef(null);
 
   /* password */
@@ -173,10 +177,6 @@ export default function AdminSettings() {
   const [showPwd, setShowPwd] = useState({ current:false, next:false, confirm:false });
   const [pwdSaving, setPwdSaving] = useState(false);
   const [strength, setStrength]   = useState(0);
-
-  /* system stats */
-  const [stats, setStats]           = useState(null);
-  const [statsLoading, setStatsLoading] = useState(false);
 
   /* load me */
   useEffect(() => {
@@ -191,15 +191,16 @@ export default function AdminSettings() {
     }
   }, []);
 
-  /* load stats on system tab */
-  const loadStats = () => {
-    setStatsLoading(true);
-    api.get("/admin/dashboard")
-      .then(r => setStats(r.data.data?.stats || r.data.stats || null))
-      .catch(() => setStats(null))
-      .finally(() => setStatsLoading(false));
-  };
-  useEffect(() => { if (tab === "system" && !stats) loadStats(); }, [tab]);
+  /* system stats */
+  const { data: stats, isLoading: statsLoading, refetch: loadStats } = useQuery({
+    queryKey: ["admin-stats"],
+    queryFn: async () => {
+      const r = await api.get("/admin/dashboard");
+      return r.data.data?.stats || r.data.stats || null;
+    },
+    enabled: tab === "system",
+    staleTime: 5 * 60 * 1000,
+  });
 
   /* password strength */
   const checkStrength = (v) => {
@@ -230,23 +231,49 @@ export default function AdminSettings() {
     setSaving(false);
   };
 
-  /* avatar */
-  const handleAvatarChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  /* avatar — file select helper */
+  const handleFileSelect = (file) => {
+    if (!file.type.startsWith("image/")) { toast.error("Faqat rasm formatlari qabul qilinadi"); return; }
     if (file.size > 2 * 1024 * 1024) { toast.error("Fayl 2MB dan katta bo'lmasin"); return; }
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setPendingFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileSelect(file);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFileSelect(file);
+  };
+
+  const confirmUpload = async () => {
+    if (!pendingFile) return;
     setAvatarLoading(true);
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      try {
-        const res = await api.patch("/profile/avatar", { avatar: ev.target.result });
-        const updated = res.data.data || res.data.user;
-        if (updated) setUser({ ...storeUser, ...updated });
-        toast.success("Avatar yangilandi");
-      } catch {/* handled by api.js */}
-      setAvatarLoading(false);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const formData = new FormData();
+      formData.append("avatar", pendingFile);
+      const res = await api.patch("/profile/avatar", formData);
+      const updated = res.data.data || res.data.user;
+      if (updated) setUser({ ...storeUser, ...updated });
+      toast.success("Avatar yangilandi");
+      cancelPreview();
+    } catch {
+    cancelPreview(); // clear stale preview so the old avatar shows again
+  }
+    setAvatarLoading(false);
+  };
+
+  const cancelPreview = () => {
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarPreview(null);
+    setPendingFile(null);
   };
 
   /* change password */
@@ -313,15 +340,27 @@ export default function AdminSettings() {
                   <div style={{ position:"relative" }}>
                     <div style={{
                       width:64, height:64, borderRadius:18,
-                      background: storeUser?.avatar
-                        ? `url(${storeUser.avatar}) center/cover`
-                        : `linear-gradient(135deg,${T.indigo},#7C3AED)`,
+                      background: avatarPreview
+                        ? `url(${avatarPreview}) center/cover`
+                        : storeUser?.avatar
+                          ? `url(${storeUser.avatar}) center/cover`
+                          : `linear-gradient(135deg,${T.indigo},#7C3AED)`,
                       display:"flex", alignItems:"center", justifyContent:"center",
                       fontSize:22, fontWeight:800, color:"#fff",
                       border:`3px solid ${T.surface}`,
                       boxShadow:`0 4px 16px ${T.indigo}30`,
+                      overflow:"hidden", position:"relative",
                     }}>
-                      {!storeUser?.avatar && getInitials(storeUser)}
+                      {!storeUser?.avatar && !avatarPreview && getInitials(storeUser)}
+                      {avatarLoading && (
+                        <div style={{
+                          position:"absolute", inset:0,
+                          background:"rgba(0,0,0,0.45)",
+                          display:"flex", alignItems:"center", justifyContent:"center",
+                        }}>
+                          <LuLoader size={14} color="#fff" style={{ animation:"spin 1s linear infinite" }}/>
+                        </div>
+                      )}
                     </div>
                     <button onClick={()=>fileRef.current?.click()} disabled={avatarLoading} style={{
                       position:"absolute", bottom:-3, right:-3,
@@ -405,38 +444,88 @@ export default function AdminSettings() {
                     border:`1px solid ${T.indigoBd}`,
                   }}>
                     <div style={{ display:"flex", alignItems:"center", gap:20, flexWrap:"wrap" }}>
-                      {/* Big avatar */}
-                      <div style={{ position:"relative", flexShrink:0 }}>
-                        <div style={{
-                          width:90, height:90, borderRadius:22,
-                          background: storeUser?.avatar
-                            ? `url(${storeUser.avatar}) center/cover`
-                            : `linear-gradient(135deg,${T.indigo},#7C3AED)`,
-                          display:"flex", alignItems:"center", justifyContent:"center",
-                          fontSize:30, fontWeight:800, color:"#fff",
-                          border:`3px solid ${T.surface}`,
-                          boxShadow:`0 8px 24px ${T.indigo}30`,
-                        }}>
-                          {!storeUser?.avatar && getInitials(storeUser)}
-                          {avatarLoading && (
-                            <div style={{
-                              position:"absolute", inset:0, borderRadius:22,
-                              background:"rgba(0,0,0,0.45)",
+                      {/* Big avatar — drag & drop zone */}
+                      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, flexShrink:0 }}>
+                        <div style={{ position:"relative" }}>
+                          <div
+                            onDragOver={e=>{ e.preventDefault(); setDragging(true); }}
+                            onDragLeave={()=>setDragging(false)}
+                            onDrop={handleDrop}
+                            onClick={()=>{ if (!avatarPreview && !avatarLoading) fileRef.current?.click(); }}
+                            style={{
+                              width:90, height:90, borderRadius:22, position:"relative", overflow:"hidden",
+                              background: avatarPreview
+                                ? `url(${avatarPreview}) center/cover`
+                                : storeUser?.avatar
+                                  ? `url(${storeUser.avatar}) center/cover`
+                                  : `linear-gradient(135deg,${T.indigo},#7C3AED)`,
                               display:"flex", alignItems:"center", justifyContent:"center",
+                              fontSize:30, fontWeight:800, color:"#fff",
+                              border: dragging ? `3px solid ${T.indigo}` : `3px solid ${T.surface}`,
+                              boxShadow: dragging ? `0 0 0 4px ${T.indigoBd}` : `0 8px 24px ${T.indigo}30`,
+                              cursor: avatarPreview || avatarLoading ? "default" : "pointer",
+                              transition:"border 0.15s, box-shadow 0.15s",
+                            }}
+                          >
+                            {!storeUser?.avatar && !avatarPreview && getInitials(storeUser)}
+                            {avatarLoading && (
+                              <div style={{
+                                position:"absolute", inset:0,
+                                background:"rgba(0,0,0,0.45)",
+                                display:"flex", alignItems:"center", justifyContent:"center",
+                              }}>
+                                <LuLoader size={22} color="#fff" style={{ animation:"spin 1s linear infinite" }}/>
+                              </div>
+                            )}
+                            {dragging && !avatarLoading && (
+                              <div style={{
+                                position:"absolute", inset:0,
+                                background:"rgba(79,70,229,0.78)",
+                                display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4,
+                              }}>
+                                <LuUpload size={22} color="#fff"/>
+                                <span style={{ fontSize:10, color:"#fff", fontWeight:700 }}>Tashlang</span>
+                              </div>
+                            )}
+                          </div>
+                          {!avatarPreview && (
+                            <button onClick={()=>fileRef.current?.click()} disabled={avatarLoading} style={{
+                              position:"absolute", bottom:-4, right:-4,
+                              width:30, height:30, borderRadius:"50%",
+                              background:T.indigo, border:`2.5px solid ${T.surface}`,
+                              display:"flex", alignItems:"center", justifyContent:"center",
+                              cursor:"pointer",
                             }}>
-                              <LuLoader size={22} color="#fff" style={{ animation:"spin 1s linear infinite" }}/>
-                            </div>
+                              <LuCamera size={12} color="#fff"/>
+                            </button>
                           )}
                         </div>
-                        <button onClick={()=>fileRef.current?.click()} disabled={avatarLoading} style={{
-                          position:"absolute", bottom:-4, right:-4,
-                          width:30, height:30, borderRadius:"50%",
-                          background:T.indigo, border:`2.5px solid ${T.surface}`,
-                          display:"flex", alignItems:"center", justifyContent:"center",
-                          cursor:"pointer",
-                        }}>
-                          <LuCamera size={12} color="#fff"/>
-                        </button>
+
+                        {/* Confirm / Cancel */}
+                        {avatarPreview && !avatarLoading && (
+                          <div style={{ display:"flex", gap:6 }}>
+                            <button onClick={confirmUpload} style={{
+                              display:"flex", alignItems:"center", gap:5,
+                              padding:"6px 14px", borderRadius:8, border:"none",
+                              background:T.success, color:"#fff",
+                              fontSize:11.5, fontWeight:700, cursor:"pointer", fontFamily:"inherit",
+                            }}>
+                              <LuCheck size={11}/> Yuklash
+                            </button>
+                            <button onClick={cancelPreview} style={{
+                              display:"flex", alignItems:"center", gap:5,
+                              padding:"6px 11px", borderRadius:8,
+                              border:`1px solid ${T.border}`, background:T.surface,
+                              color:T.textMuted, fontSize:11.5, fontWeight:600,
+                              cursor:"pointer", fontFamily:"inherit",
+                            }}>
+                              <LuX size={11}/> Bekor
+                            </button>
+                          </div>
+                        )}
+                        {!avatarPreview && !avatarLoading && (
+                          <span style={{ fontSize:10, color:T.textDim }}>Bosing yoki tashlang</span>
+                        )}
                       </div>
 
                       <div style={{ flex:1 }}>

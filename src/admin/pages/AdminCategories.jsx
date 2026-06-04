@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "../../components/ui/toast";
-import { adminCategoriesService } from "../../services/adminService";
+import { adminCategoriesService, adminBloggersService } from "../../services/adminService";
 import {
   LuLoader, LuSearch, LuPlus, LuPencil, LuTrash2,
   LuTriangleAlert, LuX, LuCheck, LuTag, LuUsers,
@@ -263,41 +264,54 @@ function DeleteConfirm({ cat, onConfirm, onCancel, saving }) {
 
 /* ══════════════════════════════════════════════════════════════════ */
 export default function AdminCategories() {
-  const [categories,    setCategories]    = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [search,        setSearch]        = useState("");
-  const [showCreate,    setShowCreate]    = useState(false);
-  const [editingCat,    setEditingCat]    = useState(null);
-  const [deletingCat,   setDeletingCat]   = useState(null);
-  const [saving,        setSaving]        = useState(false);
-  const [syncing,       setSyncing]       = useState(false);
-  const [lastUpdated,   setLastUpdated]   = useState(null);
-  const [isLive,        setIsLive]        = useState(true);
-  const pollRef = useRef(null);
+  const queryClient = useQueryClient();
+  const [search,      setSearch]    = useState("");
+  const [showCreate,  setShowCreate]= useState(false);
+  const [editingCat,  setEditingCat]= useState(null);
+  const [deletingCat, setDeletingCat]=useState(null);
+  const [saving,      setSaving]    = useState(false);
+  const [syncing,     setSyncing]   = useState(false);
+  const [isLive,      setIsLive]    = useState(true);
 
-  /* ── Fetch (silent = no loading spinner, for background poll) ── */
-  const fetchCategories = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const res = await adminCategoriesService.getAll();
-      setCategories(res.data || []);
-      setLastUpdated(new Date());
-    } catch {
-      if (!silent) toast.error("Kategoriyalarni yuklashda xatolik");
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, []);
+  const { data: categoriesData, isLoading: loadingCats, dataUpdatedAt } = useQuery({
+    queryKey: ["admin-categories"],
+    queryFn: () => adminCategoriesService.getAll(),
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: isLive ? POLL_INTERVAL : false,
+  });
 
-  /* ── Initial load ── */
-  useEffect(() => { fetchCategories(); }, [fetchCategories]);
+  const { data: bloggersData, isLoading: loadingBloggers } = useQuery({
+    queryKey: ["admin-bloggers-for-cats"],
+    queryFn: () => adminBloggersService.getAll({ limit: 9999 }),
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: isLive ? POLL_INTERVAL : false,
+  });
 
-  /* ── 30-soniya polling ── */
-  useEffect(() => {
-    if (!isLive) { clearInterval(pollRef.current); return; }
-    pollRef.current = setInterval(() => fetchCategories(true), POLL_INTERVAL);
-    return () => clearInterval(pollRef.current);
-  }, [isLive, fetchCategories]);
+  const loading = loadingCats || loadingBloggers;
+
+  // Blogerlar API dan har bir kategoriya uchun real sonni hisoblaymiz
+  const { categories, totalBloggers } = useMemo(() => {
+    const rawCats    = categoriesData?.data  || [];
+    const bloggers   = bloggersData?.data    || [];
+
+    // Har bir bloger faqat bir marta — asosiy (birinchi) kategoriyasida hisoblanadi
+    const countMap = {};
+    bloggers.forEach(b => {
+      const primary = (b.categories || [])[0];
+      if (primary) countMap[primary] = (countMap[primary] || 0) + 1;
+    });
+
+    const enriched = rawCats.map(cat => ({
+      ...cat,
+      bloggerCount: countMap[cat.name] || 0,
+    }));
+
+    return { categories: enriched, totalBloggers: bloggers.length };
+  }, [categoriesData, bloggersData]);
+
+  const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt) : null;
+
+  const fetchCategories = () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
 
   /* ── Create ── */
   const handleCreate = async (form) => {
@@ -306,7 +320,7 @@ export default function AdminCategories() {
       await adminCategoriesService.create({ ...form, name: form.name.trim() });
       toast.success("Yangi kategoriya qo'shildi");
       setShowCreate(false);
-      fetchCategories();
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
     } catch {
       toast.error("Xatolik yuz berdi");
     } finally {
@@ -321,7 +335,7 @@ export default function AdminCategories() {
       await adminCategoriesService.update(editingCat._id, { ...form, name: form.name.trim() });
       toast.success("Kategoriya yangilandi");
       setEditingCat(null);
-      fetchCategories();
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
     } catch {
       toast.error("Xatolik yuz berdi");
     } finally {
@@ -335,7 +349,7 @@ export default function AdminCategories() {
     try {
       await adminCategoriesService.syncCounts();
       toast.success("Blogger sonlari yangilandi");
-      fetchCategories();
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
     } catch {
       toast.error("Sync xatoligi");
     } finally {
@@ -350,7 +364,7 @@ export default function AdminCategories() {
       await adminCategoriesService.remove(deletingCat._id);
       toast.success("Kategoriya o'chirildi");
       setDeletingCat(null);
-      fetchCategories();
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
     } catch {
       toast.error("Xatolik yuz berdi");
     } finally {
@@ -362,7 +376,6 @@ export default function AdminCategories() {
   const filtered = categories.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase())
   );
-  const totalBloggers = categories.reduce((s, c) => s + (c.bloggerCount || 0), 0);
   const featuredCount = categories.filter(c => c.isFeatured).length;
 
   /* ── Render ── */

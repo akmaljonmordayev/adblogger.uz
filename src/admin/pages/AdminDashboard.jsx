@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { adminDashboardService } from "../../services/adminService";
 import { motion } from "framer-motion";
 import {
@@ -184,7 +186,7 @@ function RegistrationChart({ data, loading }) {
 }
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
-function StatCard({ icon: Icon, label, value, sub, trend, trendUp, color, loading, delay = 0 }) {
+function StatCard({ icon: Icon, label, value, sub, trend, trendUp, color, loading, delay = 0, onClick }) {
   const colors = {
     red:  { icon: T.redBr,  iconBg: T.redLight,  trend: trendUp ? T.success : T.redBr },
     blue: { icon: "#2563EB", iconBg: "#EFF6FF",   trend: trendUp ? T.success : "#DC2626" },
@@ -200,8 +202,9 @@ function StatCard({ icon: Icon, label, value, sub, trend, trendUp, color, loadin
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-2xl p-5 flex flex-col gap-3 cursor-default"
-      style={{ background: T.surface, border: `1px solid ${T.border}`, transition: "box-shadow .2s, transform .2s" }}
+      onClick={onClick}
+      className="rounded-2xl p-5 flex flex-col gap-3"
+      style={{ background: T.surface, border: `1px solid ${T.border}`, transition: "box-shadow .2s, transform .2s", cursor: onClick ? "pointer" : "default" }}
       onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 24px #00000012"; e.currentTarget.style.transform = "translateY(-2px)"; }}
       onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; }}
     >
@@ -233,23 +236,15 @@ function StatCard({ icon: Icon, label, value, sub, trend, trendUp, color, loadin
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const [apiStats, setApiStats] = useState(null);
-  const [loading,  setLoading]  = useState(true);
-  const [clock,    setClock]    = useState(new Date());
+  const navigate = useNavigate();
+  const [clock, setClock] = useState(new Date());
 
-  const fetchStats = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await adminDashboardService.getStats();
-      setApiStats(res.data);
-    } catch {
-      // silently ignore
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: apiStats, isLoading: loading, refetch: fetchStats } = useQuery({
+    queryKey: ["admin-dashboard"],
+    queryFn: adminDashboardService.getStats,
+    staleTime: 2 * 60 * 1000,
+  });
 
-  useEffect(() => { fetchStats(); }, [fetchStats]);
   useEffect(() => { const t = setInterval(() => setClock(new Date()), 1000); return () => clearInterval(t); }, []);
 
   const s = apiStats?.stats ?? {};
@@ -272,6 +267,7 @@ export default function AdminDashboard() {
         sub:  `${u.role} sifatida ro'yxatdan o'tdi`,
         time: timeSince(u.createdAt),
         _ts:  new Date(u.createdAt).getTime(),
+        href: "/admin/users",
       })),
       ...(apiStats.recentAds ?? []).map(a => ({
         icon: FiLayers, color: T.sky, bg: T.skyBg,
@@ -279,6 +275,7 @@ export default function AdminDashboard() {
         sub:  `Yangi ${a.type === "business" ? "biznes" : "blogger"} e'loni — ${AD_STATUS[a.status]?.label ?? ""}`,
         time: timeSince(a.createdAt),
         _ts:  new Date(a.createdAt).getTime(),
+        href: "/admin/ads",
       })),
     ].sort((a, b) => b._ts - a._ts).slice(0, 8);
   })();
@@ -322,14 +319,14 @@ export default function AdminDashboard() {
   const greeting = hour < 12 ? "Xayrli tong" : hour < 18 ? "Xayrli kun" : "Xayrli kech";
 
   const STATS_CFG = [
-    { icon: FiUsers,      label: "Foydalanuvchilar", value: s.totalUsers,           sub: `${s.pendingApplications ?? 0} ta kutilmoqda`,  color: "red",    trend: null,    trendUp: true  },
-    { icon: FiActivity,   label: "Bloggerlar",        value: s.totalBloggers,        sub: "Faol blogerlar",                               color: "blue",   trend: null,    trendUp: true  },
-    { icon: FiLayers,     label: "E'lonlar",           value: s.totalAds,             sub: `${s.pendingAds ?? 0} ta ko'rib chiqilmoqda`,   color: "sky",    trend: null,    trendUp: true  },
-    { icon: FiCalendar,   label: "Kampaniyalar",       value: s.totalCampaigns,       sub: `${s.completedCampaigns ?? 0} ta yakunlangan`,  color: "green",  trend: null,    trendUp: true  },
-    { icon: FiStar,       label: "Blog postlar",       value: s.totalBlogs,           sub: "Nashr etilgan",                                color: "violet", trend: null,    trendUp: true  },
-    { icon: FiAlertCircle,label: "Kutilayotgan e'lon", value: s.pendingAds,           sub: "Ko'rib chiqish kerak",                          color: "amber",  trend: null,    trendUp: false },
-    { icon: FiMessageSquare,label: "Yangi xabarlar",  value: s.newContacts,          sub: "Javob berilmagan",                             color: "sky",    trend: null,    trendUp: false },
-    { icon: FiCheckCircle,label: "Yakunlangan",        value: s.completedCampaigns,   sub: "Muvaffaqiyatli kampaniyalar",                  color: "green",  trend: null,    trendUp: true  },
+    { icon: FiUsers,        label: "Foydalanuvchilar", value: s.totalUsers,         sub: `${s.pendingApplications ?? 0} ta kutilmoqda`, color: "red",    trendUp: true,  href: "/admin/users"        },
+    { icon: FiActivity,     label: "Bloggerlar",        value: s.totalBloggers,      sub: "Faol blogerlar",                              color: "blue",   trendUp: true,  href: "/admin/bloggers"     },
+    { icon: FiLayers,       label: "E'lonlar",           value: s.totalAds,           sub: `${s.pendingAds ?? 0} ta ko'rib chiqilmoqda`,  color: "sky",    trendUp: true,  href: "/admin/ads"          },
+    { icon: FiCalendar,     label: "Kampaniyalar",       value: s.totalCampaigns,     sub: `${s.completedCampaigns ?? 0} ta yakunlangan`, color: "green",  trendUp: true,  href: "/admin/ads"          },
+    { icon: FiStar,         label: "Blog postlar",       value: s.totalBlogs,         sub: "Nashr etilgan",                               color: "violet", trendUp: true,  href: "/admin/blogs"        },
+    { icon: FiAlertCircle,  label: "Kutilayotgan e'lon", value: s.pendingAds,         sub: "Ko'rib chiqish kerak",                         color: "amber",  trendUp: false, href: "/admin/ads"          },
+    { icon: FiMessageSquare,label: "Yangi xabarlar",    value: s.newContacts,        sub: "Javob berilmagan",                            color: "sky",    trendUp: false, href: "/admin/contact"      },
+    { icon: FiCheckCircle,  label: "Yakunlangan",        value: s.completedCampaigns, sub: "Muvaffaqiyatli kampaniyalar",                 color: "green",  trendUp: true,  href: "/admin/ads"          },
   ];
 
   // Completion rate
@@ -357,22 +354,29 @@ export default function AdminDashboard() {
             <h2 className="text-xl font-black" style={{ color: T.text }}>{greeting}, Admin 👋</h2>
             <p className="text-sm mt-0.5" style={{ color: T.textMuted }}>
               Platformada{" "}
-              <span className="font-bold" style={{ color: T.redBr }}>{s.totalUsers ?? "..."}</span> foydalanuvchi,{" "}
-              <span className="font-bold" style={{ color: T.redBr }}>{s.pendingAds ?? "..."}</span> e'lon ko'rib chiqilmoqda
+              <span onClick={() => navigate("/admin/users")} className="font-bold cursor-pointer hover:underline" style={{ color: T.redBr }}>{s.totalUsers ?? "..."}</span> foydalanuvchi,{" "}
+              <span onClick={() => navigate("/admin/ads")} className="font-bold cursor-pointer hover:underline" style={{ color: T.redBr }}>{s.pendingAds ?? "..."}</span> e'lon ko'rib chiqilmoqda
             </p>
           </div>
-          <div className="hidden sm:block text-right">
+          <div className="hidden sm:flex flex-col items-end gap-2">
             <p className="text-4xl font-black tabular-nums" style={{ color: T.text }}>
               {clock.toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
             </p>
-            <p className="text-xs mt-1" style={{ color: T.textDim }}>Jonli soat</p>
+            <button onClick={() => fetchStats()} style={{
+              display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
+              borderRadius: 8, border: `1px solid ${T.border}`, background: T.surface,
+              color: T.textMuted, cursor: "pointer", fontSize: 11, fontWeight: 600,
+            }}>
+              <FiRefreshCw size={11} style={loading ? { animation: "spin 1s linear infinite" } : {}} />
+              Yangilash
+            </button>
           </div>
         </motion.div>
 
         {/* ── 8 Stat Cards ───────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {STATS_CFG.map((cfg, i) => (
-            <StatCard key={cfg.label} {...cfg} loading={loading} delay={i * 0.05} />
+            <StatCard key={cfg.label} {...cfg} loading={loading} delay={i * 0.05} onClick={() => navigate(cfg.href)} />
           ))}
         </div>
 
@@ -406,6 +410,7 @@ export default function AdminDashboard() {
                 sub: `${s.totalUsers ?? 0} / ${(s.totalUsers ?? 0) + (s.pendingApplications ?? 0)} ariza`,
                 pct: approvalRate,
                 color: T.success,
+                href: "/admin/applications",
               },
               {
                 label: "Kampaniya yakunlash",
@@ -413,6 +418,7 @@ export default function AdminDashboard() {
                 sub: `${s.completedCampaigns ?? 0} / ${s.totalCampaigns ?? 0} kampaniya`,
                 pct: completionRate,
                 color: T.sky,
+                href: "/admin/ads",
               },
               {
                 label: "Kutilayotgan arizalar",
@@ -421,6 +427,7 @@ export default function AdminDashboard() {
                 pct: null,
                 color: T.warn,
                 urgent: (s.pendingApplications ?? 0) > 0,
+                href: "/admin/applications",
               },
               {
                 label: "Javob berilmagan xabarlar",
@@ -429,9 +436,13 @@ export default function AdminDashboard() {
                 pct: null,
                 color: T.redBr,
                 urgent: (s.newContacts ?? 0) > 0,
+                href: "/admin/contact",
               },
             ].map((item, i) => (
-              <div key={i} className="flex flex-col gap-1.5">
+              <div key={i} className="flex flex-col gap-1.5" onClick={() => navigate(item.href)}
+                style={{ cursor: "pointer", padding: "6px 8px", borderRadius: 10, margin: "-6px -8px" }}
+                onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold" style={{ color: T.textMuted }}>{item.label}</span>
                   {loading
@@ -464,7 +475,7 @@ export default function AdminDashboard() {
                 <h3 className="text-base font-bold" style={{ color: T.text }}>So'nggi E'lonlar</h3>
                 <p className="text-xs mt-0.5" style={{ color: T.textMuted }}>Oxirgi qo'shilgan e'lonlar</p>
               </div>
-              <button className="flex items-center gap-1 text-xs font-semibold" style={{ color: T.redBr }}>
+              <button onClick={() => navigate("/admin/ads")} className="flex items-center gap-1 text-xs font-semibold" style={{ color: T.redBr, background: "none", border: "none", cursor: "pointer" }}>
                 Barchasi <FiChevronRight />
               </button>
             </div>
@@ -492,6 +503,7 @@ export default function AdminDashboard() {
                       const PIcon = plt.icon;
                       return (
                         <motion.tr key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
+                          onClick={() => navigate("/admin/ads")}
                           className="border-b cursor-pointer" style={{ borderColor: T.border }}
                           onMouseEnter={e => e.currentTarget.style.background = T.bg}
                           onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -546,6 +558,7 @@ export default function AdminDashboard() {
                   return (
                     <motion.div key={i} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.06 }}
+                      onClick={() => navigate(a.href)}
                       className="flex items-start gap-3 p-2.5 rounded-xl cursor-pointer"
                       onMouseEnter={e => e.currentTarget.style.background = T.bg}
                       onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -575,7 +588,9 @@ export default function AdminDashboard() {
           <div className="rounded-2xl overflow-hidden" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
             <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: T.border }}>
               <h3 className="text-sm font-bold" style={{ color: T.text }}>Top Bloggerlar</h3>
-              <FiAward style={{ color: T.redBr }} />
+              <button onClick={() => navigate("/admin/bloggers")} className="flex items-center gap-1 text-xs font-semibold" style={{ color: T.redBr, background: "none", border: "none", cursor: "pointer" }}>
+                Barchasi <FiChevronRight />
+              </button>
             </div>
             {loading ? (
               <div className="p-4 space-y-3">{Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
@@ -589,6 +604,7 @@ export default function AdminDashboard() {
                   return (
                     <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.06 }}
+                      onClick={() => navigate("/admin/bloggers")}
                       className="flex items-center gap-3 px-5 py-3.5 cursor-pointer"
                       onMouseEnter={e => e.currentTarget.style.background = T.bg}
                       onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -624,7 +640,9 @@ export default function AdminDashboard() {
                 <h3 className="text-sm font-bold" style={{ color: T.text }}>Kategoriya taqsimoti</h3>
                 <p className="text-xs mt-0.5" style={{ color: T.textMuted }}>Blogger niches</p>
               </div>
-              <FiLayers style={{ color: T.redBr }} />
+              <button onClick={() => navigate("/admin/categories")} className="flex items-center gap-1 text-xs font-semibold" style={{ color: T.redBr, background: "none", border: "none", cursor: "pointer" }}>
+                Barchasi <FiChevronRight />
+              </button>
             </div>
             {loading ? (
               <div className="space-y-4">{Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
@@ -663,7 +681,9 @@ export default function AdminDashboard() {
                 <h3 className="text-sm font-bold" style={{ color: T.text }}>Yangi Bizneslar</h3>
                 <p className="text-xs mt-0.5" style={{ color: T.textMuted }}>So'nggi qo'shilganlar</p>
               </div>
-              <FiUserPlus style={{ color: T.redBr }} />
+              <button onClick={() => navigate("/admin/users")} className="flex items-center gap-1 text-xs font-semibold" style={{ color: T.redBr, background: "none", border: "none", cursor: "pointer" }}>
+                Barchasi <FiChevronRight />
+              </button>
             </div>
             {loading ? (
               <div className="space-y-3">{Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
@@ -674,6 +694,7 @@ export default function AdminDashboard() {
                 {newBusinessRows.map((b, i) => (
                   <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.08 }}
+                    onClick={() => navigate("/admin/users")}
                     className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
                     onMouseEnter={e => e.currentTarget.style.background = T.bg}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -694,7 +715,8 @@ export default function AdminDashboard() {
             {/* Pending Applications Alert */}
             {!loading && (s.pendingApplications ?? 0) > 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-                className="mt-4 flex items-center gap-3 p-3 rounded-xl"
+                onClick={() => navigate("/admin/applications")}
+                className="mt-4 flex items-center gap-3 p-3 rounded-xl cursor-pointer"
                 style={{ background: T.warnBg, border: `1px solid ${T.warnBd}` }}>
                 <FiAlertCircle style={{ color: T.warn, flexShrink: 0 }} />
                 <div>

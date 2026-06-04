@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useMemo } from "react";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import api from "../../services/api";
 import { toast } from "../../components/ui/toast";
 import { useAdminSocket } from "../../hooks/useSocket";
@@ -102,72 +103,50 @@ function RejectModal({ user, onConfirm, onClose }) {
 const PER = 15;
 
 export default function AdminApplications() {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("pending");
-  const [applications, setApplications] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [pendingCount, setPendingCount] = useState(0);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
 
-  const fetchApplications = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get("/admin/applications", {
-        params: { status: activeTab, page, limit: PER },
-      });
-      let data = res.data.data || [];
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        data = data.filter(u =>
-          `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
-          u.email?.toLowerCase().includes(q)
-        );
-      }
-      setApplications(data);
-      setTotal(res.data.pagination?.total || data.length);
-    } catch {
-      toast.error("Arizalarni yuklashda xatolik");
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, page, search]);
+  const { data: appsData, isLoading: loading, refetch: fetchApplications } = useQuery({
+    queryKey: ["admin-applications", activeTab, page],
+    queryFn: async () => {
+      const res = await api.get("/admin/applications", { params: { status: activeTab, page, limit: PER } });
+      return res.data;
+    },
+    staleTime: 2 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
 
-  const fetchPendingCount = useCallback(async () => {
-    try {
+  const { data: pendingCount = 0 } = useQuery({
+    queryKey: ["admin-pending-count"],
+    queryFn: async () => {
       const res = await api.get("/admin/applications", { params: { status: "pending", limit: 1 } });
-      setPendingCount(res.data.pagination?.total || 0);
-    } catch {}
-  }, []);
+      return res.data.pagination?.total || 0;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    fetchApplications();
-  }, [fetchApplications]);
+  const allApplications = appsData?.data || [];
+  const total = appsData?.pagination?.total || allApplications.length;
 
-  useEffect(() => {
-    fetchPendingCount();
-  }, [fetchPendingCount]);
+  const applications = useMemo(() => {
+    if (!search.trim()) return allApplications;
+    const q = search.toLowerCase();
+    return allApplications.filter(u =>
+      `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
+      u.email?.toLowerCase().includes(q)
+    );
+  }, [allApplications, search]);
 
   // Real-time: new applications arrive via socket
   useAdminSocket({
-    new_application: (data) => {
-      setPendingCount(c => c + 1);
+    new_application: () => {
+      queryClient.setQueryData(["admin-pending-count"], c => (c || 0) + 1);
       if (activeTab === "pending") {
-        setApplications(prev => [
-          {
-            _id: data.userId,
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            role: data.role,
-            applicationStatus: "pending",
-            createdAt: data.createdAt || new Date().toISOString(),
-          },
-          ...prev,
-        ]);
-        setTotal(t => t + 1);
+        queryClient.invalidateQueries({ queryKey: ["admin-applications"] });
       }
     },
   });
@@ -177,9 +156,8 @@ export default function AdminApplications() {
     try {
       await api.patch(`/admin/applications/${userId}/approve`);
       toast.success("Ariza tasdiqlandi! Foydalanuvchi tizimga kirdi.");
-      setApplications(prev => prev.filter(u => u._id !== userId));
-      setTotal(t => t - 1);
-      if (activeTab === "pending") setPendingCount(c => Math.max(0, c - 1));
+      queryClient.invalidateQueries({ queryKey: ["admin-applications"] });
+      if (activeTab === "pending") queryClient.setQueryData(["admin-pending-count"], c => Math.max(0, (c || 0) - 1));
     } catch {
       toast.error("Xatolik yuz berdi");
     } finally {
@@ -191,9 +169,8 @@ export default function AdminApplications() {
     try {
       await api.patch(`/admin/applications/${userId}/reject`, { reason });
       toast.success("Ariza rad etildi.");
-      setApplications(prev => prev.filter(u => u._id !== userId));
-      setTotal(t => t - 1);
-      if (activeTab === "pending") setPendingCount(c => Math.max(0, c - 1));
+      queryClient.invalidateQueries({ queryKey: ["admin-applications"] });
+      if (activeTab === "pending") queryClient.setQueryData(["admin-pending-count"], c => Math.max(0, (c || 0) - 1));
       setRejectTarget(null);
     } catch {
       toast.error("Xatolik yuz berdi");

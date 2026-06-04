@@ -18,9 +18,7 @@ import Blogs         from "../pages/Blogs";
 import BlogDetail    from "../pages/BlogDetail";
 
 import About         from "../pages/About";
-import Career        from "../pages/Career";
 import BlogerBolish  from "../pages/BlogerBolish";
-
 
 import Privacy       from "../pages/Privacy";
 import Terms         from "../pages/Terms";
@@ -47,7 +45,6 @@ import AdminBloggers    from "../admin/pages/AdminBloggers";
 import AdminAds         from "../admin/pages/AdminAds";
 import AdminBlogs       from "../admin/pages/AdminBlogs";
 import AdminCategories  from "../admin/pages/AdminCategories";
-import AdminCareer      from "../admin/pages/AdminCareer";
 import AdminContact     from "../admin/pages/AdminContact";
 import AdminFAQ         from "../admin/pages/AdminFAQ";
 import AdminSettings      from "../admin/pages/AdminSettings";
@@ -80,7 +77,6 @@ export const router = createBrowserRouter([
 
       // Kompaniya
       { path: ROUTE_PATHS.ABOUT,          element: <About /> },
-      { path: ROUTE_PATHS.CAREER,         element: <Career /> },
       { path: ROUTE_PATHS.BLOGER_BOLISH,  element: <BlogerBolish /> },
 
       // Huquqiy
@@ -109,7 +105,6 @@ export const router = createBrowserRouter([
       { path: ROUTE_PATHS.ADMIN_ADS,                    element: <AdminAds /> },
       { path: ROUTE_PATHS.ADMIN_BLOGS,                  element: <AdminBlogs /> },
       { path: ROUTE_PATHS.ADMIN_CATEGORIES,             element: <AdminCategories /> },
-      { path: ROUTE_PATHS.ADMIN_CAREER,                 element: <AdminCareer /> },
       { path: ROUTE_PATHS.ADMIN_CONTACT,                element: <AdminContact /> },
       { path: ROUTE_PATHS.ADMIN_FAQ,                    element: <AdminFAQ /> },
       { path: ROUTE_PATHS.ADMIN_SETTINGS,               element: <AdminSettings /> },
