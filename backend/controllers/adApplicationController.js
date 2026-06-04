@@ -1,6 +1,7 @@
 const AdApplication = require('../models/AdApplication');
 const ChatMessage   = require('../models/ChatMessage');
 const Ad            = require('../models/Ad');
+const User          = require('../models/User');
 const Notification  = require('../models/Notification');
 const catchAsync    = require('../utils/catchAsync');
 const AppError      = require('../utils/appError');
@@ -107,7 +108,7 @@ exports.getMessages = catchAsync(async (req, res, next) => {
     .sort('createdAt');
 
   // O'qilmagan xabarlarni belgilash
-  await ChatMessage.updateMany(
+  const updateResult = await ChatMessage.updateMany(
     { application: app._id, sender: { $ne: req.user._id }, isRead: false },
     { isRead: true }
   );
@@ -124,7 +125,27 @@ exports.getMessages = catchAsync(async (req, res, next) => {
     await AdApplication.findByIdAndUpdate(app._id, update);
   }
 
-  res.status(200).json({ success: true, results: messages.length, data: messages });
+  // Xabar yuboruvchiga "o'qildi" signali yuborish
+  const otherId = isOwner ? app.applicant : app.adOwner;
+  if (updateResult.modifiedCount > 0) {
+    const io = req.app.get('io');
+    io.to(`user_${otherId}`).emit('messages_read', { applicationId: String(app._id) });
+  }
+
+  // Blok holatini aniqlash
+  const myBlockedUsers = req.user.blockedUsers || [];
+  const iBlockedThem   = myBlockedUsers.some(id => String(id) === String(otherId));
+  const otherUser      = await User.findById(otherId).select('blockedUsers');
+  const theyBlockedMe  = (otherUser?.blockedUsers || []).some(id => String(id) === String(req.user._id));
+
+  res.status(200).json({
+    success: true,
+    results: messages.length,
+    data: messages,
+    iBlockedThem,
+    theyBlockedMe,
+    isBlocked: iBlockedThem || theyBlockedMe,
+  });
 });
 
 /* ── POST /api/v1/ad-applications/:appId/messages ─── xabar yuborish ── */
@@ -142,6 +163,15 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
   if (!isOwner && !isApplicant) {
     return next(new AppError("Ruxsat yo'q", 403));
   }
+
+  // Blok tekshiruvi
+  const otherId2      = isOwner ? app.applicant : app.adOwner;
+  const myBlocked     = req.user.blockedUsers || [];
+  const iBlockedOther = myBlocked.some(id => String(id) === String(otherId2));
+  if (iBlockedOther) return next(new AppError("Siz bu foydalanuvchini bloklagan siz", 403));
+  const otherUser2    = await User.findById(otherId2).select('blockedUsers');
+  const otherBlocked  = (otherUser2?.blockedUsers || []).some(id => String(id) === String(req.user._id));
+  if (otherBlocked)   return next(new AppError("Bu foydalanuvchi sizni bloklagan", 403));
 
   const msg = await ChatMessage.create({
     application: app._id,
@@ -254,6 +284,47 @@ exports.updateStatus = catchAsync(async (req, res, next) => {
     });
     io.to(`user_${app.applicant}`).emit('new_notification', statusNotif);
   }
+
+  res.status(200).json({ success: true });
+});
+
+/* ── POST /api/v1/ad-applications/:appId/block ─── foydalanuvchini bloklash ── */
+exports.blockUser = catchAsync(async (req, res, next) => {
+  const app = await AdApplication.findById(req.params.appId);
+  if (!app) return next(new AppError('Zayavka topilmadi', 404));
+
+  const myId        = String(req.user._id);
+  const isOwner     = myId === String(app.adOwner);
+  const isApplicant = myId === String(app.applicant);
+  if (!isOwner && !isApplicant) return next(new AppError("Ruxsat yo'q", 403));
+
+  const targetId = isOwner ? app.applicant : app.adOwner;
+  if (String(targetId) === myId) return next(new AppError("O'zingizni bloklay olmaysiz", 400));
+
+  await User.findByIdAndUpdate(req.user._id, { $addToSet: { blockedUsers: targetId } });
+
+  const io = req.app.get('io');
+  io.to(`user_${targetId}`).emit('user_blocked', { applicationId: String(app._id) });
+
+  res.status(200).json({ success: true });
+});
+
+/* ── DELETE /api/v1/ad-applications/:appId/block ─── blokdan chiqarish ── */
+exports.unblockUser = catchAsync(async (req, res, next) => {
+  const app = await AdApplication.findById(req.params.appId);
+  if (!app) return next(new AppError('Zayavka topilmadi', 404));
+
+  const myId        = String(req.user._id);
+  const isOwner     = myId === String(app.adOwner);
+  const isApplicant = myId === String(app.applicant);
+  if (!isOwner && !isApplicant) return next(new AppError("Ruxsat yo'q", 403));
+
+  const targetId = isOwner ? app.applicant : app.adOwner;
+
+  await User.findByIdAndUpdate(req.user._id, { $pull: { blockedUsers: targetId } });
+
+  const io = req.app.get('io');
+  io.to(`user_${targetId}`).emit('user_unblocked', { applicationId: String(app._id) });
 
   res.status(200).json({ success: true });
 });
