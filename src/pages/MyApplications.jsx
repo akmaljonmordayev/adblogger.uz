@@ -332,11 +332,16 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
     const onStatus = ({applicationId, status})=>{
       if(String(applicationId)===String(app._id)) onStatusChange(app._id, status);
     };
+    const onRead = ({applicationId})=>{
+      if(String(applicationId)!==String(app._id)) return;
+      setMessages(p=>p.map(m=>String(m.sender?._id||m.sender)===myId?{...m,isRead:true}:m));
+    };
 
     s.on('new_chat_message',          onNewMsg);
     s.on('message_edited',            onEdited);
     s.on('message_deleted',           onDeleted);
     s.on('application_status_changed', onStatus);
+    s.on('messages_read',             onRead);
 
     return ()=>{
       s.emit('leave_chat_room', app._id);
@@ -344,6 +349,7 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
       s.off('message_edited',            onEdited);
       s.off('message_deleted',           onDeleted);
       s.off('application_status_changed', onStatus);
+      s.off('messages_read',             onRead);
     };
   },[app._id, onStatusChange, scrollDown]);
 

@@ -107,7 +107,7 @@ exports.getMessages = catchAsync(async (req, res, next) => {
     .sort('createdAt');
 
   // O'qilmagan xabarlarni belgilash
-  await ChatMessage.updateMany(
+  const updateResult = await ChatMessage.updateMany(
     { application: app._id, sender: { $ne: req.user._id }, isRead: false },
     { isRead: true }
   );
@@ -122,6 +122,13 @@ exports.getMessages = catchAsync(async (req, res, next) => {
   }
   if (Object.keys(update).length) {
     await AdApplication.findByIdAndUpdate(app._id, update);
+  }
+
+  // Xabar yuboruvchiga "o'qildi" signali yuborish
+  if (updateResult.modifiedCount > 0) {
+    const otherId = isOwner ? app.applicant : app.adOwner;
+    const io = req.app.get('io');
+    io.to(`user_${otherId}`).emit('messages_read', { applicationId: String(app._id) });
   }
 
   res.status(200).json({ success: true, results: messages.length, data: messages });
