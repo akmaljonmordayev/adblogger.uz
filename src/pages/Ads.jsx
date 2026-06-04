@@ -194,7 +194,7 @@ function ZayavkaModal({ ad, onClose }) {
     if (!user) {
       onClose();
       toast.error("Zayavka yuborish uchun avval tizimga kiring");
-      navigate("/login");
+      navigate("/kirish");
       return;
     }
     if (sending) return;
@@ -221,7 +221,7 @@ function ZayavkaModal({ ad, onClose }) {
               {ad.name} siz bilan tez orada bog'lanadi. Chat orqali muloqot qilishingiz mumkin.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <button onClick={() => { onClose(); navigate("/my-applications"); }}
+              <button onClick={() => { onClose(); navigate("/mening-zayavkalarim"); }}
                 style={{ padding: "11px 28px", borderRadius: 12, background: "linear-gradient(135deg,#dc2626,#b91c1c)", color: "#fff", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "inherit" }}>
                 Zayavkalarimga o'tish →
               </button>
@@ -387,7 +387,7 @@ function AdCard({ ad, onContact, onZayavka }) {
         >
           <LuSend size={13} /> Zayavka
         </button>
-        <Link to={`/ads/${ad._id}`} style={{ padding: "10px 12px", borderRadius: 10, background: "#f9fafb", border: "1.5px solid #e5e7eb", fontSize: 12, color: "#6b7280", textDecoration: "none", display: "flex", alignItems: "center", gap: 4, transition: "color 0.15s, border-color 0.15s" }}
+        <Link to={`/elonlar/${ad._id}`} style={{ padding: "10px 12px", borderRadius: 10, background: "#f9fafb", border: "1.5px solid #e5e7eb", fontSize: 12, color: "#6b7280", textDecoration: "none", display: "flex", alignItems: "center", gap: 4, transition: "color 0.15s, border-color 0.15s" }}
           onMouseEnter={e => { e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.borderColor = "#fecaca"; }}
           onMouseLeave={e => { e.currentTarget.style.color = "#6b7280"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
           title="Batafsil o'qish"
@@ -459,8 +459,8 @@ export default function Ads() {
       <SEO
         title="E'lonlar — Blogger va Biznes Reklamalari"
         description="O'zbekistondagi blogger va biznes reklamalari. ADBlogger platformasida eng mos hamkorni toping. 500+ faol e'lon, qulay narxlar va ishonchli bloggerlar."
-        canonical="/ads"
-        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "E'lonlar", path: "/ads" }])}
+        canonical="/elonlar"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "E'lonlar", path: "/elonlar" }])}
       />
       {/* ── HERO ── */}
       <div className="ads-hero" style={{ background: "linear-gradient(135deg, #fff 0%, #fef2f2 60%, #fff 100%)", borderRadius: 20, padding: "48px 40px 40px", marginBottom: 24, border: "1px solid #fecaca", position: "relative", overflow: "hidden" }}>
@@ -477,7 +477,7 @@ export default function Ads() {
               Blogerlar xizmatlarini, biznesmenlar esa reklamaga bloger izlash e'lonlarini joylashtirgan.
             </p>
           </div>
-          <Link to="/post-ad" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg,#dc2626,#b91c1c)", color: "#fff", textDecoration: "none", padding: "13px 24px", borderRadius: 12, fontSize: 14, fontWeight: 700, flexShrink: 0, boxShadow: "0 4px 16px rgba(220,38,38,0.35)" }}>
+          <Link to="/elon-berish" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg,#dc2626,#b91c1c)", color: "#fff", textDecoration: "none", padding: "13px 24px", borderRadius: 12, fontSize: 14, fontWeight: 700, flexShrink: 0, boxShadow: "0 4px 16px rgba(220,38,38,0.35)" }}>
             <LuPlus size={16} strokeWidth={2.5} /> E'lon berish
           </Link>
         </div>

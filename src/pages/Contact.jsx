@@ -138,8 +138,8 @@ const Contact = () => {
       <SEO
         title="Bog'lanish — Biz Bilan Muloqot Qiling"
         description="ADBlogger bilan bog'laning. Savol, taklif yoki hamkorlik bo'yicha murojaat uchun formani to'ldiring. Tez orada javob beramiz."
-        canonical="/contact"
-        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Bog'lanish", path: "/contact" }])}
+        canonical="/aloqa"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Bog'lanish", path: "/aloqa" }])}
       />
       <motion.div
         initial={{ opacity: 0, y: 16 }}

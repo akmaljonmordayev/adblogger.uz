@@ -27,6 +27,12 @@ const registerSchema = yup.object({
     .string()
     .min(6, "Parol kamida 6 ta belgi bo'lishi kerak")
     .required("Parol kiritilishi shart"),
+  confirmPassword: yup.string()
+    .oneOf([yup.ref("password")], "Parollar mos kelmadi")
+    .required("Parolni tasdiqlang"),
+  platform:  yup.string().default(''),
+  followers: yup.string().default(''),
+  category:  yup.string().default(''),
 });
 
 // ─── Role config ──────────────────────────────────────────────────────────────
@@ -170,23 +176,29 @@ function RegisterForm() {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: yupResolver(registerSchema),
-    defaultValues: { role: '', firstName: '', lastName: '', email: '', phone: '', password: '' },
+    defaultValues: { role: '', firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '', platform: '', followers: '', category: '' },
   });
 
   const selectedRole = watch('role');
 
   const onSubmit = async (data) => {
     try {
-      const result = await registerFn({
+      const payload = {
         firstName: data.firstName,
         lastName:  data.lastName,
         email:     data.email,
         phone:     data.phone,
         password:  data.password,
         role:      data.role,
-      }, SILENT);
+      };
+      if (data.role === 'blogger') {
+        if (data.platform)  payload.platforms  = [data.platform];
+        if (data.followers) payload.followers  = Number(data.followers);
+        if (data.category)  payload.categories = [data.category];
+      }
+      const result = await registerFn(payload, SILENT);
       if (result?.status === 'pending') {
-        navigate('/pending-approval');
+        navigate('/tasdiqlash-kutilmoqda');
       } else {
         toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!");
         navigate('/');
@@ -290,6 +302,59 @@ function RegisterForm() {
           {...register('password')}
         />
       </Field>
+
+      <Field label="Parolni tasdiqlang" required error={errors.confirmPassword?.message}>
+        <input
+          type="password"
+          placeholder="Parolni qayta kiriting"
+          className={inputCls(!!errors.confirmPassword)}
+          {...register('confirmPassword')}
+        />
+      </Field>
+
+      {/* Blogger-specific fields */}
+      {selectedRole === 'blogger' && (
+        <>
+          <div style={{ borderTop: '1px dashed #E5E7EB', paddingTop: 4 }}>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+              Blogger ma'lumotlari
+            </p>
+            <div className="space-y-3">
+              <Field label="Asosiy platforma" error={errors.platform?.message}>
+                <select className={inputCls(!!errors.platform)} {...register('platform')}>
+                  <option value="">Platformani tanlang</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="telegram">Telegram</option>
+                </select>
+              </Field>
+              <Field label="Obunachilar soni" error={errors.followers?.message}>
+                <input
+                  type="number"
+                  placeholder="Masalan: 50000"
+                  className={inputCls(!!errors.followers)}
+                  {...register('followers')}
+                />
+              </Field>
+              <Field label="Kategoriya" error={errors.category?.message}>
+                <select className={inputCls(!!errors.category)} {...register('category')}>
+                  <option value="">Kategoriyani tanlang</option>
+                  <option value="Tech">Texnologiya</option>
+                  <option value="Lifestyle">Lifestyle</option>
+                  <option value="Food">Ovqat</option>
+                  <option value="Sports">Sport</option>
+                  <option value="Travel">Sayohat</option>
+                  <option value="Business">Biznes</option>
+                  <option value="Beauty">Go'zallik</option>
+                  <option value="Music">Musiqa</option>
+                  <option value="Other">Boshqa</option>
+                </select>
+              </Field>
+            </div>
+          </div>
+        </>
+      )}
 
       {errors.root && (
         <div className="flex items-start gap-2 px-3.5 py-3 rounded-xl bg-red-50 border border-red-200">

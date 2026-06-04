@@ -66,13 +66,13 @@ export default function PendingApproval() {
   // Redirect if no pendingUserId in store
   useEffect(() => {
     if (!pendingUserId) {
-      navigate("/login");
+      navigate("/kirish");
     }
   }, [pendingUserId, navigate]);
 
   const handleGoBack = () => {
     clearPending();
-    navigate("/login");
+    navigate("/kirish");
   };
 
   // ── APPROVED screen ──────────────────────────────────────────────────────

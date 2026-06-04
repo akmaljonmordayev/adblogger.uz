@@ -113,10 +113,10 @@ export default function CategoriesPage() {
       <SEO
         title="Kategoriyalar — Blogger Reklama Yo'nalishlari"
         description="Moda, oziq-ovqat, sport, texnologiya, go'zallik va 20+ kategoriyada bloggerni toping. ADBlogger platformasida yo'nalishingizga mos influencerni tanlang."
-        canonical="/categories"
+        canonical="/kategoriyalar"
         schema={breadcrumbSchema([
           { name: "Bosh sahifa", path: "/" },
-          { name: "Kategoriyalar", path: "/categories" },
+          { name: "Kategoriyalar", path: "/kategoriyalar" },
         ])}
       />
 

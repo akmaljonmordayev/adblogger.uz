@@ -20,7 +20,7 @@ const Login = () => {
         <button type="submit" className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98] transition transform">Kirish</button>
       </form>
       <p className="mt-8 text-center text-gray-500">
-        Hisobingiz yo'qmi? <Link to="/auth/register" className="text-blue-600 font-semibold hover:underline">Ro'yxatdan o'ting</Link>
+        Hisobingiz yo'qmi? <Link to="/royxatdan-otish" className="text-blue-600 font-semibold hover:underline">Ro'yxatdan o'ting</Link>
       </p>
     </div>
   );

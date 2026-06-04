@@ -201,7 +201,7 @@ export default function Profile() {
   const logoRef    = useRef(null);
 
   // Redirect
-  useEffect(() => { if (!user && !showLogout) navigate("/login", { replace: true }); }, [user, showLogout]);
+  useEffect(() => { if (!user && !showLogout) navigate("/kirish", { replace: true }); }, [user, showLogout]);
 
   // Sync personal form
   useEffect(() => {
@@ -829,14 +829,14 @@ export default function Profile() {
             ))}
 
             <div style={{ borderTop:"1px solid #f1f5f9", marginTop:4, paddingTop:4 }}>
-              <Link to="/notifications" onClick={()=>setMenuOpen(false)} style={{
+              <Link to="/bildirishnomalar" onClick={()=>setMenuOpen(false)} style={{
                 display:"flex", alignItems:"center", gap:10,
                 padding:"10px 12px", borderRadius:10, color:"#374151",
                 fontSize:13, fontWeight:500, textDecoration:"none",
               }}>
                 <LuBell size={15} style={{ color:"#9ca3af" }}/> Bildirishnomalar
               </Link>
-              <Link to="/wishlist" onClick={()=>setMenuOpen(false)} style={{
+              <Link to="/sevimlilar" onClick={()=>setMenuOpen(false)} style={{
                 display:"flex", alignItems:"center", gap:10,
                 padding:"10px 12px", borderRadius:10, color:"#374151",
                 fontSize:13, fontWeight:500, textDecoration:"none",
@@ -887,7 +887,7 @@ export default function Profile() {
           ))}
 
           <div style={{ marginTop:8, paddingTop:8, borderTop:"1px solid #f1f5f9" }}>
-            <Link to="/notifications" style={{
+            <Link to="/bildirishnomalar" style={{
               display:"flex", alignItems:"center", gap:10,
               padding:"10px 12px", borderRadius:10, color:"#374151",
               fontSize:13, fontWeight:500, textDecoration:"none",
@@ -897,7 +897,7 @@ export default function Profile() {
             >
               <LuBell size={15} style={{ color:"#9ca3af" }}/> Bildirishnomalar
             </Link>
-            <Link to="/wishlist" style={{
+            <Link to="/sevimlilar" style={{
               display:"flex", alignItems:"center", gap:10,
               padding:"10px 12px", borderRadius:10, color:"#374151",
               fontSize:13, fontWeight:500, textDecoration:"none",
@@ -1480,7 +1480,7 @@ export default function Profile() {
             <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:22 }}>
                 <SectionTitle sub={`${myAds.length} ta e'lon`}>Mening e'lonlarim</SectionTitle>
-                <Link to="/post-ad" style={{
+                <Link to="/elon-berish" style={{
                   display:"flex", alignItems:"center", gap:6,
                   padding:"9px 18px", background:"linear-gradient(135deg,#dc2626,#b91c1c)",
                   color:"#fff", borderRadius:10, textDecoration:"none", fontSize:13, fontWeight:700,
@@ -1494,7 +1494,7 @@ export default function Profile() {
                 <div style={{ textAlign:"center", padding:"60px 20px" }}>
                   <div style={{ fontSize:52, marginBottom:12 }}>📢</div>
                   <p style={{ color:"#94a3b8", marginBottom:20 }}>Hali e'lon bergansiz</p>
-                  <Link to="/post-ad" style={{ padding:"10px 22px", background:"linear-gradient(135deg,#dc2626,#b91c1c)", color:"#fff", borderRadius:10, textDecoration:"none", fontSize:13, fontWeight:700 }}>
+                  <Link to="/elon-berish" style={{ padding:"10px 22px", background:"linear-gradient(135deg,#dc2626,#b91c1c)", color:"#fff", borderRadius:10, textDecoration:"none", fontSize:13, fontWeight:700 }}>
                     Birinchi e'lon berish
                   </Link>
                 </div>
@@ -1533,7 +1533,7 @@ export default function Profile() {
                       </div>
                       <div style={{ display:"flex", gap:8, flexShrink:0 }}>
                         {(ad.status==="approved"||ad.status==="active") && (
-                          <Link to={`/ads/${ad._id}`} style={{ padding:"7px 12px", border:"1.5px solid #e2e8f0", borderRadius:8, textDecoration:"none", color:"#374151", fontSize:12, fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
+                          <Link to={`/elonlar/${ad._id}`} style={{ padding:"7px 12px", border:"1.5px solid #e2e8f0", borderRadius:8, textDecoration:"none", color:"#374151", fontSize:12, fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
                             <LuEye size={12}/> Ko'rish
                           </Link>
                         )}
@@ -1647,7 +1647,7 @@ export default function Profile() {
                 <div style={{ textAlign:"center", padding:"60px 20px" }}>
                   <div style={{ fontSize:52, marginBottom:12 }}>💾</div>
                   <p style={{ color:"#94a3b8", marginBottom:20 }}>Hali hech narsa saqlanmagan</p>
-                  <Link to="/bloggers" style={{ padding:"10px 22px", background:"linear-gradient(135deg,#dc2626,#b91c1c)", color:"#fff", borderRadius:10, textDecoration:"none", fontSize:13, fontWeight:700 }}>
+                  <Link to="/blogerlar" style={{ padding:"10px 22px", background:"linear-gradient(135deg,#dc2626,#b91c1c)", color:"#fff", borderRadius:10, textDecoration:"none", fontSize:13, fontWeight:700 }}>
                     Bloggerlarni ko'rish
                   </Link>
                 </div>
@@ -1888,7 +1888,7 @@ export default function Profile() {
                 <div style={{ textAlign:"center", padding:"60px 20px" }}>
                   <div style={{ fontSize:52, marginBottom:12 }}>🤝</div>
                   <p style={{ color:"#94a3b8", marginBottom:20 }}>Hali aktiv kampaniya yo'q</p>
-                  <Link to="/bloggers" style={{ padding:"10px 22px", background:"linear-gradient(135deg,#dc2626,#b91c1c)", color:"#fff", borderRadius:10, textDecoration:"none", fontSize:13, fontWeight:700 }}>
+                  <Link to="/blogerlar" style={{ padding:"10px 22px", background:"linear-gradient(135deg,#dc2626,#b91c1c)", color:"#fff", borderRadius:10, textDecoration:"none", fontSize:13, fontWeight:700 }}>
                     Blogger topish
                   </Link>
                 </div>

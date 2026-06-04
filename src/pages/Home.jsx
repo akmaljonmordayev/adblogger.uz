@@ -270,7 +270,7 @@ export default function Home() {
   }, [fetchAll, fetchBloggers, fetchBlogs]);
 
   /* platform card click */
-  const goToPlatform = (key) => navigate(`/bloggers?platforms=${key}`);
+  const goToPlatform = (key) => navigate(`/blogerlar?platforms=${key}`);
 
   return (
     <div style={{ fontFamily:"'Inter',sans-serif", background:"#f9fafb", overflowX:"hidden" }}>
@@ -572,7 +572,7 @@ export default function Home() {
                           : <div style={{ ...S, fontWeight:600, fontSize:13, color:"#94a3b8", marginTop:2 }}>Kelishiladi</div>
                         }
                       </div>
-                      <Link to={`/bloggers/${b.id}`} style={{ background:`linear-gradient(135deg,#dc2626,#b91c1c)`, color:"#fff", fontSize:13, fontWeight:700, padding:"9px 18px", borderRadius:12, textDecoration:"none", boxShadow:"0 4px 14px rgba(220,38,38,0.3)", transition:"all .2s" }}
+                      <Link to={`/blogerlar/${b.id}`} style={{ background:`linear-gradient(135deg,#dc2626,#b91c1c)`, color:"#fff", fontSize:13, fontWeight:700, padding:"9px 18px", borderRadius:12, textDecoration:"none", boxShadow:"0 4px 14px rgba(220,38,38,0.3)", transition:"all .2s" }}
                         onMouseEnter={e => { e.currentTarget.style.boxShadow="0 8px 24px rgba(220,38,38,0.45)"; e.currentTarget.style.transform="translateY(-1px)"; }}
                         onMouseLeave={e => { e.currentTarget.style.boxShadow="0 4px 14px rgba(220,38,38,0.3)"; e.currentTarget.style.transform="none"; }}
                       >Ko'rish</Link>

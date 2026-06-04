@@ -66,8 +66,8 @@ export default function Pricing() {
       <SEO
         title="Narxlar — Reklama Xizmatlari Tariflar"
         description="O'zbekistondagi blogger reklama narxlari. Shaffof va qulay tariflar: boshlang'ich, professional va premium paketlar. Bugun reklamangizni joylashtiring!"
-        canonical="/pricing"
-        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Narxlar", path: "/pricing" }])}
+        canonical="/narxlar"
+        schema={breadcrumbSchema([{ name: "Bosh sahifa", path: "/" }, { name: "Narxlar", path: "/narxlar" }])}
       />
       {/* Hero */}
       <div style={{ textAlign: "center", padding: "40px 20px 48px", maxWidth: 640, margin: "0 auto" }}>

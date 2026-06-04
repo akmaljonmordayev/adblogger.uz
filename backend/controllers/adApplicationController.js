@@ -208,7 +208,6 @@ exports.deleteMessage = catchAsync(async (req, res, next) => {
 
   // Softdelete — "Xabar o'chirildi" ko'rsatish uchun
   msg.deleted = true;
-  msg.text    = '';
   await msg.save();
 
   const io = req.app.get('io');

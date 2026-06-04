@@ -212,7 +212,7 @@ export default function BlogDetail() {
   /* ── like ── */
   const handleLike = async () => {
     if (!currentUserId) {
-      navigate("/login");
+      navigate("/kirish");
       return;
     }
     if (likeLoading) return;
@@ -236,7 +236,7 @@ export default function BlogDetail() {
   /* ── add comment ── */
   const handleAddComment = async (e) => {
     e.preventDefault();
-    if (!currentUserId) { navigate("/login"); return; }
+    if (!currentUserId) { navigate("/kirish"); return; }
     if (!commentText.trim() || commentLoading) return;
     setCommentLoading(true);
     try {
@@ -259,7 +259,7 @@ export default function BlogDetail() {
 
   /* ── like comment ── */
   const handleLikeComment = async (commentId) => {
-    if (!currentUserId) { navigate("/login"); return; }
+    if (!currentUserId) { navigate("/kirish"); return; }
     try {
       const res = await api.post(`/blogs/${post._id}/comments/${commentId}/like`);
       setComments(prev => prev.map(c =>
@@ -649,7 +649,7 @@ export default function BlogDetail() {
                 <LuUser size={20} style={{ color: "#94a3b8" }} />
                 <span style={{ fontSize: 14, color: "#64748b" }}>
                   Izoh qoldirish uchun{" "}
-                  <Link to="/login" style={{ color: "#dc2626", fontWeight: 700, textDecoration: "none" }}>kiring</Link>
+                  <Link to="/kirish" style={{ color: "#dc2626", fontWeight: 700, textDecoration: "none" }}>kiring</Link>
                 </span>
               </div>
             )}

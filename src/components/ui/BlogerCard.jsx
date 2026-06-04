@@ -44,7 +44,7 @@ const BloggerCard = ({
 
   return (
     <Link
-      to={_id ? `/bloggers/${_id}` : "#"}
+      to={_id ? `/blogerlar/${_id}` : "#"}
       style={{ textDecoration: "none", display: "block" , width: "290px" }}
     >
     <div className="group relative bg-white rounded-2xl w-full border border-gray-100 overflow-hidden flex flex-col h-200px shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_48px_rgba(220,38,38,0.18)] hover:-translate-y-2 transition-all duration-300 cursor-pointer" width="200px">

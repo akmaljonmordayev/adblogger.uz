@@ -57,8 +57,8 @@ export default function CategorySection() {
     const el = scrollRef.current;
     const btn = el?.querySelector(`[data-id="${id}"]`);
     if (btn) btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-    if (id === "all") navigate("/bloggers");
-    else navigate(`/bloggers?category=${encodeURIComponent(label)}`);
+    if (id === "all") navigate("/blogerlar");
+    else navigate(`/blogerlar?category=${encodeURIComponent(label)}`);
   };
 
   const activeItem = CATEGORIES.find(c => c.id === active);

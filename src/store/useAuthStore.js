@@ -25,9 +25,9 @@ export const useAuthStore = create(
       },
 
       // ── Register ─────────────────────────────────────────────────────────
-      register: async ({ firstName, lastName, email, phone, password, role }, axiosConfig = {}) => {
+      register: async ({ firstName, lastName, email, phone, password, role, platforms, followers, categories }, axiosConfig = {}) => {
         const res = await api.post("/auth/register", {
-          firstName, lastName, email, phone, password, role,
+          firstName, lastName, email, phone, password, role, platforms, followers, categories,
         }, axiosConfig);
         const { status, userId } = res.data;
         if (status === "pending") {

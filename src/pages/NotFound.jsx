@@ -93,11 +93,11 @@ const CSS = `
 
 const LINKS = [
   { to: "/",           emoji: "🏠", label: "Bosh sahifa" },
-  { to: "/bloggers",   emoji: "👥", label: "Blogerlar" },
-  { to: "/pricing",    emoji: "💎", label: "Narxlar" },
-  { to: "/contact",    emoji: "📩", label: "Bog'lanish" },
-  { to: "/post-ad",    emoji: "✏️", label: "E'lon berish" },
-  { to: "/about",      emoji: "ℹ️", label: "Biz haqimizda" },
+  { to: "/blogerlar",   emoji: "👥", label: "Blogerlar" },
+  { to: "/narxlar",    emoji: "💎", label: "Narxlar" },
+  { to: "/aloqa",    emoji: "📩", label: "Bog'lanish" },
+  { to: "/elon-berish",    emoji: "✏️", label: "E'lon berish" },
+  { to: "/haqida",      emoji: "ℹ️", label: "Biz haqimizda" },
 ];
 
 const STARS = [
@@ -344,7 +344,7 @@ export default function NotFound() {
               </button>
             </Link>
 
-            <Link to="/bloggers" style={{ textDecoration: "none" }}>
+            <Link to="/blogerlar" style={{ textDecoration: "none" }}>
               <button className="nf-btn-secondary" style={{
                 padding: "13px 24px", borderRadius: 12,
                 fontSize: 14, fontWeight: 600,
