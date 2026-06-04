@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -79,7 +79,7 @@ const registerSchema = yup.object({
 });
 
 /* ─── UI components ──────────────────────────────────────────────── */
-function InputField({ label, type = "text", placeholder, error, ...inputProps }) {
+const InputField = forwardRef(function InputField({ label, type = "text", placeholder, error, ...inputProps }, ref) {
   const [show, setShow] = useState(false);
   const isPassword = type === "password";
   const actualType = isPassword && show ? "text" : type;
@@ -89,6 +89,7 @@ function InputField({ label, type = "text", placeholder, error, ...inputProps })
       <label style={S.label}>{label}</label>
       <div style={{ position: "relative" }}>
         <input
+          ref={ref}
           type={actualType}
           placeholder={placeholder}
           style={{ ...S.input(!!error), paddingRight: isPassword ? 42 : 14 }}
@@ -116,16 +117,16 @@ function InputField({ label, type = "text", placeholder, error, ...inputProps })
       {error && <p style={S.errMsg}>{error}</p>}
     </div>
   );
-}
+});
 
-function SelectField({ label, error, children, ...selectProps }) {
+const SelectField = forwardRef(function SelectField({ label, error, children, ...selectProps }, ref) {
   return (
     <div>
       <label style={S.label}>{label}</label>
       <select
+        ref={ref}
         style={{
           ...S.input(!!error),
-          color: selectProps.value ? "#0f172a" : "#94a3b8",
           cursor: "pointer", appearance: "none",
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
           backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", paddingRight: 36,
@@ -146,7 +147,7 @@ function SelectField({ label, error, children, ...selectProps }) {
       {error && <p style={S.errMsg}>{error}</p>}
     </div>
   );
-}
+});
 
 /* ─── LoginForm ──────────────────────────────────────────────────── */
 function LoginForm({ onSwitchTab }) {
@@ -155,6 +156,7 @@ function LoginForm({ onSwitchTab }) {
 
   const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: yupResolver(loginSchema),
+    mode: "onChange",
   });
 
   const onSubmit = async (data) => {
@@ -218,6 +220,7 @@ function RegisterForm({ onSwitchTab }) {
 
   const { register, handleSubmit, setValue, watch, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: yupResolver(registerSchema),
+    mode: "onChange",
     defaultValues: {
       role: "", firstName: "", lastName: "", email: "",
       phone: "", password: "", confirmPassword: "",
