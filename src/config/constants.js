@@ -24,7 +24,6 @@ export const ROUTE_PATHS = {
 
   // Kompaniya
   ABOUT:          "/haqida",
-  CAREER:         "/martaba",
   BLOGER_BOLISH:  "/blogger-bolish",
 
   // Huquqiy
@@ -50,7 +49,6 @@ export const ROUTE_PATHS = {
   ADMIN_ADS:            "/admin/ads",
   ADMIN_BLOGS:          "/admin/blogs",
   ADMIN_CATEGORIES:     "/admin/categories",
-  ADMIN_CAREER:         "/admin/career",
   ADMIN_CONTACT:        "/admin/contact",
   ADMIN_FAQ:            "/admin/faq",
   ADMIN_SETTINGS:       "/admin/settings",

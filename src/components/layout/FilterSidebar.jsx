@@ -30,6 +30,7 @@ const CATEGORIES = [
   { id: "Ta'lim",     emoji: "📚" },
   { id: "Musiqa",     emoji: "🎵" },
   { id: "Biznes",     emoji: "💼" },
+  { id: "Boshqa",     emoji: "🏷️" },
 ];
 
 const PLATFORMS = [

@@ -8,8 +8,7 @@ import {
   PiMegaphoneSimpleDuotone,
   PiArticleDuotone,
   PiTagDuotone,
-  PiBriefcaseDuotone,
-  PiEnvelopeOpenDuotone,
+PiEnvelopeOpenDuotone,
   PiSealQuestionDuotone,
   PiGearSixDuotone,
   PiSignOutDuotone,
@@ -54,7 +53,6 @@ const NAV_GROUPS = [
   {
     label: "Boshqa",
     items: [
-      { label: "Karyera",          path: ROUTE_PATHS.ADMIN_CAREER,     Icon: PiBriefcaseDuotone       },
       { label: "Xabarlar",         path: ROUTE_PATHS.ADMIN_CONTACT,    Icon: PiEnvelopeOpenDuotone    },
       { label: "FAQ",              path: ROUTE_PATHS.ADMIN_FAQ,        Icon: PiSealQuestionDuotone    },
       { label: "Sozlamalar",       path: ROUTE_PATHS.ADMIN_SETTINGS,   Icon: PiGearSixDuotone         },

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import SEO, { breadcrumbSchema } from "../components/SEO";
 import api from "../services/api";
@@ -243,10 +244,6 @@ function BlogCard({ post, view = "grid" }) {
 export default function Blogs() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [posts, setPosts]         = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [total, setTotal]         = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
   const [perPage, setPerPage]     = useState(getPerPage);
 
   const [search, setSearch]           = useState(searchParams.get("search") || "");
@@ -273,25 +270,22 @@ export default function Blogs() {
   }, []);
 
   /* ── fetch ── */
-  const fetchBlogs = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { data: blogsData, isLoading: loading } = useQuery({
+    queryKey: ["blogs", { page, sort, search, category, perPage }],
+    queryFn: async () => {
       const params = { page, limit: perPage, sort };
       if (search)   params.search   = search;
       if (category) params.category = category;
-
       const res = await api.get("/blogs", { params });
-      setPosts(res.data.data || []);
-      setTotal(res.data.total || 0);
-      setTotalPages(res.data.totalPages || 1);
-    } catch {
-      setPosts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, sort, search, category, perPage]);
+      return res.data;
+    },
+    staleTime: 2 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
 
-  useEffect(() => { fetchBlogs(); }, [fetchBlogs]);
+  const posts      = blogsData?.data       || [];
+  const total      = blogsData?.total      || 0;
+  const totalPages = blogsData?.totalPages || 1;
 
   /* ── sync URL ── */
   useEffect(() => {

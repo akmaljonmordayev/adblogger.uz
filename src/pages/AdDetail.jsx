@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import SEO from "../components/SEO";
 import {
@@ -143,18 +144,19 @@ function InfoChip({ Icon, text }) {
 export default function AdDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [ad, setAd]           = useState(null);
-  const [loading, setLoading] = useState(true);
   const [zayavka, setZayavka] = useState(false);
   const [copied,  setCopied]  = useState(false);
 
+  const { data: ad, isLoading: loading, isError } = useQuery({
+    queryKey: ["ad", id],
+    queryFn: () => api.get(`/ads/${id}`).then(r => r.data.data),
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+
   useEffect(() => {
-    setLoading(true);
-    api.get(`/ads/${id}`)
-      .then(r => setAd(r.data.data))
-      .catch(() => { toast.error("E'lon topilmadi"); navigate("/elonlar"); })
-      .finally(() => setLoading(false));
-  }, [id]);
+    if (isError) { toast.error("E'lon topilmadi"); navigate("/elonlar"); }
+  }, [isError]);
 
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useRef } from "react";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import {
   LuSearch, LuEye, LuTrash2, LuCheck, LuX, LuLoader,
   LuChevronLeft, LuChevronRight, LuRefreshCw,
@@ -358,10 +359,7 @@ function DeleteConfirm({ adTitle, onConfirm, onCancel }) {
 
 /* ══════════════════════════════════════════════════════════════════ */
 export default function AdminAds() {
-  const [ads,        setAds]        = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [total,      setTotal]      = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  const queryClient = useQueryClient();
   const [counts,     setCounts]     = useState({ all: 0, pending: 0, approved: 0, active: 0, rejected: 0, completed: 0 });
 
   const [statusTab,   setStatusTab]   = useState("");
@@ -371,33 +369,29 @@ export default function AdminAds() {
   const [page,        setPage]        = useState(1);
 
   const [viewAd,        setViewAd]        = useState(null);
-  const [deleteTarget,  setDeleteTarget]  = useState(null); // { id, title }
+  const [deleteTarget,  setDeleteTarget]  = useState(null);
   const [actionLoading, setActionLoading] = useState({});
 
   const debRef = useRef(null);
 
   /* ── Fetch ── */
-  const fetchAds = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { data: adsData, isLoading: loading, refetch: fetchAds } = useQuery({
+    queryKey: ["admin-ads", page, statusTab, typeFilter, search],
+    queryFn: async () => {
       const params = { page, limit: PER_PAGE, sort: "-createdAt" };
       if (statusTab)  params.status = statusTab;
       if (typeFilter) params.type   = typeFilter;
       if (search)     params.search = search;
-
       const res = await adminAdsService.getAll(params);
-      setAds(res.data || []);
-      setTotal(res.total || 0);
-      setTotalPages(Math.ceil((res.total || 0) / PER_PAGE) || 1);
       if (res.counts) setCounts(res.counts);
-    } catch {
-      setAds([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, statusTab, typeFilter, search]);
-
-  useEffect(() => { fetchAds(); }, [fetchAds]);
+      return res;
+    },
+    staleTime: 2 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
+  const ads       = adsData?.data  || [];
+  const total     = adsData?.total || 0;
+  const totalPages = Math.ceil(total / PER_PAGE) || 1;
 
   /* ── Search debounce ── */
   const handleSearchInput = (val) => {
@@ -411,11 +405,7 @@ export default function AdminAds() {
     setActionLoading(p => ({ ...p, [id]: true }));
     try {
       await adminAdsService.changeStatus(id, status);
-      setAds(prev => prev.map(a => a._id === id ? { ...a, status } : a));
-      setCounts(p => {
-        const old = ads.find(a => a._id === id)?.status || "pending";
-        return { ...p, [old]: Math.max(0, (p[old] || 0) - 1), [status]: (p[status] || 0) + 1 };
-      });
+      queryClient.invalidateQueries({ queryKey: ["admin-ads"] });
       const msgs = { approved: "Tasdiqlandi", rejected: "Rad etildi", active: "Faollashtirildi" };
       toast.success(msgs[status] || "Status yangilandi");
       if (viewAd?._id === id) setViewAd(prev => ({ ...prev, status }));
@@ -431,8 +421,7 @@ export default function AdminAds() {
     const id = deleteTarget?.id;
     try {
       await adminAdsService.remove(id);
-      setAds(prev => prev.filter(a => a._id !== id));
-      setTotal(p => p - 1);
+      queryClient.invalidateQueries({ queryKey: ["admin-ads"] });
       toast.success("E'lon o'chirildi");
     } catch {
       toast.error("O'chirishda xatolik");

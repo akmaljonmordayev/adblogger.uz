@@ -248,10 +248,7 @@ export default function Footer() {
           <ul className="space-y-0.5">
             <NavItem href={ROUTE_PATHS.ABOUT}>Biz haqimizda</NavItem>
             <NavItem href={ROUTE_PATHS.BLOGS}>Blog</NavItem>
-            <NavItem href={ROUTE_PATHS.CAREER} badge="OCHIQ" badgeType="red">
-              Karriera
-            </NavItem>
-            <NavItem href={ROUTE_PATHS.FAQ}>Ko'p so'raladigan savollar</NavItem>
+<NavItem href={ROUTE_PATHS.FAQ}>Ko'p so'raladigan savollar</NavItem>
             <NavItem href={ROUTE_PATHS.CONTACT}>Bog'lanish</NavItem>
             <NavItem href={ROUTE_PATHS.LOGIN}>Kirish</NavItem>
             <NavItem href={ROUTE_PATHS.REGISTER}>Ro'yxatdan o'tish</NavItem>

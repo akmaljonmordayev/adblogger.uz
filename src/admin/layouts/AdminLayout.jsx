@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Outlet, Navigate } from "react-router-dom";
 import AdminSidebar from "../components/AdminSidebar";
 import AdminTopbar from "../components/AdminTopbar";
@@ -6,17 +6,60 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { ROUTE_PATHS } from "../../config/constants";
 import { useAdminSocket } from "../../hooks/useSocket";
 import { toast } from "../../components/ui/toast";
+import {
+  soundNewApplication,
+  soundNewUser,
+  soundNewAd,
+  soundNewContact,
+} from "../../utils/adminNotifySound";
 
 const AdminLayout = () => {
   const { token, user } = useAuthStore();
-  const [collapsed, setCollapsed]       = useState(false);
-  const [mobileOpen, setMobileOpen]     = useState(false);
+  const [collapsed, setCollapsed]   = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Listen for new registration applications via socket
+  // Unlock AudioContext on first user interaction (browser requirement)
+  const unlocked = useRef(false);
+  useEffect(() => {
+    const unlock = () => { if (!unlocked.current) { unlocked.current = true; } };
+    window.addEventListener("click", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return () => {
+      window.removeEventListener("click", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
+
   useAdminSocket({
+    // Yangi ro'yxatdan o'tish arizasi
     new_application: (data) => {
+      soundNewApplication();
+      toast.warning(
+        `📋 Yangi ariza: ${data.firstName ?? ""} ${data.lastName ?? ""} (${data.email ?? ""})`,
+        { duration: 7000 }
+      );
+    },
+    // Yangi foydalanuvchi
+    new_user: (data) => {
+      soundNewUser();
       toast.success(
-        `Yangi ariza: ${data.firstName} ${data.lastName} (${data.email})`,
+        `👤 Yangi foydalanuvchi: ${data.firstName ?? ""} ${data.lastName ?? ""}`,
+        { duration: 6000 }
+      );
+    },
+    // Yangi e'lon
+    new_ad: (data) => {
+      soundNewAd();
+      toast.info(
+        `📢 Yangi e'lon: ${data.title ?? data.companyName ?? "E'lon qo'shildi"}`,
+        { duration: 6000 }
+      );
+    },
+    // Yangi xabar (contact)
+    new_contact: (data) => {
+      soundNewContact();
+      toast.info(
+        `✉️ Yangi xabar: ${data.name ?? "Mehmon"} — ${data.subject ?? "Murojaat"}`,
         { duration: 6000 }
       );
     },

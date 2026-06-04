@@ -18,8 +18,8 @@ const DEFAULT_ICONS = {
 /* shared helper — recalculate all category blogger counts at once */
 async function recalcAllCounts() {
   const counts = await Blogger.aggregate([
-    { $unwind: '$categories' },
-    { $group: { _id: '$categories', count: { $sum: 1 } } },
+    { $match: { 'categories.0': { $exists: true } } },
+    { $group: { _id: { $arrayElemAt: ['$categories', 0] }, count: { $sum: 1 } } },
   ]);
   const countMap = {};
   counts.forEach(({ _id, count }) => { countMap[_id] = count; });
@@ -35,29 +35,34 @@ async function recalcAllCounts() {
 
 /* blogger enum dagi barcha kategoriyalarni DB ga avtomatik yaratish */
 async function ensureDefaultCategories() {
-  for (let i = 0; i < BLOGGER_CATEGORY_ENUM.length; i++) {
-    const name = BLOGGER_CATEGORY_ENUM[i];
-    const exists = await Category.findOne({ name });
-    if (!exists) {
-      await Category.create({
-        name,
-        slug: name.toLowerCase(),
-        icon: DEFAULT_ICONS[name] || '',
-        order: i,
-        bloggerCount: 0,
-      });
-    }
+  const existing = await Category.find({ name: { $in: BLOGGER_CATEGORY_ENUM } }).select('name');
+  const existingNames = new Set(existing.map(c => c.name));
+  const toCreate = BLOGGER_CATEGORY_ENUM
+    .filter(name => !existingNames.has(name))
+    .map((name, i) => ({
+      name,
+      slug: name.toLowerCase(),
+      icon: DEFAULT_ICONS[name] || '',
+      order: BLOGGER_CATEGORY_ENUM.indexOf(name),
+      bloggerCount: 0,
+    }));
+  if (toCreate.length > 0) {
+    await Category.insertMany(toCreate);
   }
 }
 
 // GET /api/v1/categories  (ham admin, ham public ishlatadi)
 exports.getAllCategories = catchAsync(async (req, res) => {
-  const [categories, bloggerCounts] = await Promise.all([
+  // Barcha default kategoriyalar DB da mavjud bo'lishini kafolatlash
+  await ensureDefaultCategories();
+
+  const [categories, bloggerCounts, totalBloggers] = await Promise.all([
     Category.find().sort('order name'),
     Blogger.aggregate([
-      { $unwind: '$categories' },
-      { $group: { _id: '$categories', count: { $sum: 1 } } },
+      { $match: { 'categories.0': { $exists: true } } },
+      { $group: { _id: { $arrayElemAt: ['$categories', 0] }, count: { $sum: 1 } } },
     ]),
+    Blogger.countDocuments(),
   ]);
 
   const countMap = {};
@@ -93,7 +98,7 @@ exports.getAllCategories = catchAsync(async (req, res) => {
     };
   }).sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || a.name.localeCompare(b.name));
 
-  res.status(200).json({ success: true, results: data.length, data });
+  res.status(200).json({ success: true, results: data.length, totalBloggers, data });
 });
 
 // POST /api/v1/admin/categories/sync-counts  — resync + missing kategoriyalarni avtomatik yaratish

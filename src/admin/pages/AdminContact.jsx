@@ -1,62 +1,46 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   LuMail, LuMessageSquare, LuCircleCheck, LuTrash2,
   LuSearch, LuRefreshCw, LuSend, LuX, LuInbox,
-  LuClock, LuEye, LuPhone, LuUser, LuBriefcase,
-  LuTriangleAlert, LuLoader, LuReply,
-  LuStickyNote, LuCalendar,
+  LuPhone, LuTriangleAlert, LuLoader, LuReply,
+  LuStickyNote, LuCalendar, LuEye, LuFilter,
 } from "react-icons/lu";
 import api from "../../services/api";
 import { toast } from "../../components/ui/toast";
 
-/* ── Design Tokens ─────────────────────────────────────────────── */
+/* ── Tokens ────────────────────────────────────────────────────────── */
 const T = {
-  red:       "#C62828",
-  redMid:    "#E53935",
-  redLight:  "#FFEBEE",
-  redBorder: "#FFCDD2",
-  bg:        "#F1F5F9",
-  surface:   "#FFFFFF",
-  surfaceUp: "#F8FAFC",
-  border:    "#E2E8F0",
-  text:      "#0F172A",
-  textMuted: "#475569",
-  textDim:   "#94A3B8",
-  success:   "#16A34A",
-  successBg: "#F0FDF4",
-  successBd: "#BBF7D0",
-  warn:      "#D97706",
-  warnBg:    "#FFFBEB",
-  warnBd:    "#FDE68A",
-  info:      "#0284C7",
-  infoBg:    "#F0F9FF",
-  infoBd:    "#BAE6FD",
-  purple:    "#7C3AED",
-  purpleBg:  "#F5F3FF",
-  purpleBd:  "#DDD6FE",
+  red:"#C62828", redMid:"#E53935", redLight:"#FFEBEE", redBorder:"#FFCDD2",
+  bg:"#F1F5F9", surface:"#FFFFFF", surfaceUp:"#F8FAFC", border:"#E2E8F0",
+  text:"#0F172A", textMuted:"#475569", textDim:"#94A3B8",
+  success:"#16A34A", successBg:"#F0FDF4", successBd:"#BBF7D0",
+  warn:"#D97706", warnBg:"#FFFBEB", warnBd:"#FDE68A",
+  info:"#0284C7", infoBg:"#F0F9FF", infoBd:"#BAE6FD",
+  purple:"#7C3AED", purpleBg:"#F5F3FF", purpleBd:"#DDD6FE",
 };
 
-/* ── Status config ─────────────────────────────────────────────── */
+/* ── Status / Role config ──────────────────────────────────────────── */
 const STATUS = {
-  new:       { label: "Yangi",      dot: T.red,     bg: T.redLight,   border: T.redBorder, color: T.red     },
-  read:      { label: "Ko'rildi",   dot: T.textDim, bg: T.surfaceUp,  border: T.border,    color: T.textDim },
-  responded: { label: "Javob b.",   dot: T.success, bg: T.successBg,  border: T.successBd, color: T.success },
+  new:       { label:"Yangi",     dot:T.red,     bg:T.redLight,  border:T.redBorder, color:T.red     },
+  read:      { label:"Ko'rildi",  dot:T.textDim, bg:T.surfaceUp, border:T.border,    color:T.textDim },
+  responded: { label:"Javob b.",  dot:T.success, bg:T.successBg, border:T.successBd, color:T.success },
 };
 
-const STATUS_TABS = [
-  { value: "all",       label: "Barchasi"  },
-  { value: "new",       label: "Yangi"     },
-  { value: "read",      label: "Ko'rildi"  },
-  { value: "responded", label: "Javob b." },
+const FILTERS = [
+  { value:"all",       label:"Barchasi", color:T.purple, bg:T.purpleBg, border:T.purpleBd },
+  { value:"new",       label:"Yangi",    color:T.red,    bg:T.redLight, border:T.redBorder },
+  { value:"read",      label:"Ko'rildi", color:T.textDim,bg:T.surfaceUp,border:T.border    },
+  { value:"responded", label:"Javob b.", color:T.success,bg:T.successBg,border:T.successBd },
 ];
 
 const ROLE_META = {
-  blogger:  { label: "Blogger",   color: T.red,    bg: T.redLight,  border: T.redBorder },
-  business: { label: "Biznes",    color: T.warn,   bg: T.warnBg,    border: T.warnBd    },
-  other:    { label: "Boshqa",    color: T.textDim,bg: T.surfaceUp, border: T.border     },
+  blogger:  { label:"Blogger", color:T.red,    bg:T.redLight, border:T.redBorder },
+  business: { label:"Biznes",  color:T.warn,   bg:T.warnBg,   border:T.warnBd   },
+  user:     { label:"User",    color:T.info,   bg:T.infoBg,   border:T.infoBd   },
 };
 
-/* ── Helpers ───────────────────────────────────────────────────── */
+/* ── Helpers ───────────────────────────────────────────────────────── */
 const getInitials = (name = "") =>
   name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() || "??";
 
@@ -66,93 +50,69 @@ const avaColor = (name = "") => {
 };
 
 const fmtShort = (iso) => {
+  if (!iso) return "";
   const diff = Date.now() - new Date(iso);
   const h = Math.floor(diff / 3_600_000);
-  if (h < 1) return "hozirgina";
+  if (h < 1)  return "hozirgina";
   if (h < 24) return `${h}s oldin`;
   const d = Math.floor(diff / 86_400_000);
-  if (d < 7) return `${d}k oldin`;
-  return new Date(iso).toLocaleDateString("uz-UZ", { day: "2-digit", month: "short" });
+  if (d < 7)  return `${d}k oldin`;
+  return new Date(iso).toLocaleDateString("uz-UZ", { day:"2-digit", month:"short" });
 };
 
 const fmtFull = (iso) =>
-  new Date(iso).toLocaleString("uz-UZ", {
-    day: "2-digit", month: "long", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
+  iso ? new Date(iso).toLocaleString("uz-UZ", {
+    day:"2-digit", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit",
+  }) : "—";
 
-/* ── Avatar ─────────────────────────────────────────────────────── */
+/* ── Avatar ────────────────────────────────────────────────────────── */
 function Avatar({ name, size = 38 }) {
-  const color = avaColor(name);
+  const c = avaColor(name);
   return (
     <div style={{
-      width: size, height: size, borderRadius: size * 0.28, flexShrink: 0,
-      background: color + "22", border: `1.5px solid ${color}44`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.32, fontWeight: 800, color,
+      width:size, height:size, borderRadius:size * 0.28, flexShrink:0,
+      background:`${c}1a`, border:`1.5px solid ${c}33`,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      fontSize:size * 0.32, fontWeight:800, color:c, letterSpacing:"-0.5px",
     }}>
       {getInitials(name)}
     </div>
   );
 }
 
-/* ── StatusBadge ────────────────────────────────────────────────── */
+/* ── StatusBadge ───────────────────────────────────────────────────── */
 function StatusBadge({ status }) {
   const s = STATUS[status] || STATUS.new;
   return (
     <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5,
-      padding: "3px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700,
-      background: s.bg, color: s.color, border: `1px solid ${s.border}`,
+      display:"inline-flex", alignItems:"center", gap:5,
+      padding:"2px 9px", borderRadius:99, fontSize:11, fontWeight:700,
+      background:s.bg, color:s.color, border:`1px solid ${s.border}`,
     }}>
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, flexShrink: 0 }} />
+      <span style={{ width:5, height:5, borderRadius:"50%", background:s.dot }} />
       {s.label}
     </span>
   );
 }
 
-/* ── RoleBadge ──────────────────────────────────────────────────── */
+/* ── RoleBadge ─────────────────────────────────────────────────────── */
 function RoleBadge({ role }) {
-  const r = ROLE_META[role] || ROLE_META.other;
+  const r = ROLE_META[role];
+  if (!r) return null;
   return (
     <span style={{
-      display: "inline-flex", alignItems: "center", gap: 4,
-      padding: "3px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700,
-      background: r.bg, color: r.color, border: `1px solid ${r.border}`,
+      display:"inline-flex", alignItems:"center",
+      padding:"2px 8px", borderRadius:99, fontSize:10.5, fontWeight:700,
+      background:r.bg, color:r.color, border:`1px solid ${r.border}`,
     }}>
       {r.label}
     </span>
   );
 }
 
-/* ── StatCard ───────────────────────────────────────────────────── */
-function StatCard({ label, value, icon: Icon, color, bg, border, active, onClick }) {
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        background: active ? bg : T.surface,
-        borderRadius: 14, border: `1.5px solid ${active ? color + "44" : T.border}`,
-        padding: "16px 18px", display: "flex", alignItems: "center",
-        gap: 12, boxShadow: "0 1px 3px rgba(0,0,0,.04)",
-        cursor: onClick ? "pointer" : "default",
-        transition: "all .15s",
-      }}
-    >
-      <div style={{ width: 38, height: 38, borderRadius: 10, background: bg, border: `1.5px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <Icon size={16} style={{ color }} />
-      </div>
-      <div>
-        <p style={{ fontSize: 22, fontWeight: 800, color: T.text, margin: 0, lineHeight: 1 }}>{value ?? 0}</p>
-        <p style={{ fontSize: 11.5, fontWeight: 600, color: T.textDim, margin: "3px 0 0", textTransform: "uppercase", letterSpacing: "0.4px" }}>{label}</p>
-      </div>
-    </div>
-  );
-}
-
-/* ── Reply Modal ────────────────────────────────────────────────── */
+/* ── Reply Modal ───────────────────────────────────────────────────── */
 function ReplyModal({ contact, onClose, onReplied }) {
-  const [text, setText] = useState("");
+  const [text, setText]       = useState("");
   const [loading, setLoading] = useState(false);
 
   const send = async () => {
@@ -173,63 +133,109 @@ function ReplyModal({ contact, onClose, onReplied }) {
   return (
     <div
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-      style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.6)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      style={{
+        position:"fixed", inset:0,
+        background:"rgba(15,23,42,.55)", backdropFilter:"blur(5px)",
+        zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:20,
+      }}
     >
-      <div style={{ background: T.surface, borderRadius: 24, width: "100%", maxWidth: 540, boxShadow: "0 32px 80px rgba(0,0,0,.25)", border: `1px solid ${T.border}` }}>
-
+      <div style={{
+        background:T.surface, borderRadius:20, width:"100%", maxWidth:520,
+        boxShadow:"0 24px 80px rgba(0,0,0,.22)", border:`1px solid ${T.border}`,
+        overflow:"hidden",
+      }}>
         {/* Header */}
-        <div style={{ padding: "20px 26px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: "24px 24px 0 0" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: T.redLight, border: `1.5px solid ${T.redBorder}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <LuReply size={15} style={{ color: T.red }} />
+        <div style={{
+          padding:"18px 22px", borderBottom:`1px solid ${T.border}`,
+          display:"flex", justifyContent:"space-between", alignItems:"center",
+          background:T.surfaceUp,
+        }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{
+              width:32, height:32, borderRadius:9, flexShrink:0,
+              background:T.redLight, border:`1px solid ${T.redBorder}`,
+              display:"flex", alignItems:"center", justifyContent:"center",
+            }}>
+              <LuReply size={14} style={{ color:T.red }} />
             </div>
             <div>
-              <p style={{ fontSize: 15, fontWeight: 800, color: T.text, margin: 0 }}>Javob yozish</p>
-              <p style={{ fontSize: 12, color: T.textDim, margin: 0 }}>{contact.name} — {contact.email}</p>
+              <p style={{ fontSize:14, fontWeight:800, color:T.text, margin:0 }}>Javob yozish</p>
+              <p style={{ fontSize:11.5, color:T.textDim, margin:0 }}>{contact.email}</p>
             </div>
           </div>
-          <button onClick={onClose} style={{ width: 34, height: 34, border: `1.5px solid ${T.border}`, borderRadius: 10, background: T.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
-            <LuX size={15} />
+          <button onClick={onClose} style={{
+            width:30, height:30, border:`1px solid ${T.border}`, borderRadius:8,
+            background:T.surface, cursor:"pointer",
+            display:"flex", alignItems:"center", justifyContent:"center", color:T.textMuted,
+          }}>
+            <LuX size={14} />
           </button>
         </div>
 
-        <div style={{ padding: "22px 26px 26px" }}>
-          {/* Original message */}
-          <div style={{ padding: "12px 14px", borderRadius: 12, background: T.surfaceUp, border: `1px solid ${T.border}`, marginBottom: 18 }}>
-            <p style={{ fontSize: 10.5, fontWeight: 700, color: T.textDim, textTransform: "uppercase", letterSpacing: "0.5px", margin: "0 0 6px" }}>Asl xabar</p>
-            <p style={{ fontSize: 13, color: T.textMuted, lineHeight: 1.65, margin: 0, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+        <div style={{ padding:"20px 22px 22px" }}>
+          {/* Original */}
+          <div style={{
+            padding:"10px 13px", borderRadius:10,
+            background:T.surfaceUp, border:`1px solid ${T.border}`, marginBottom:16,
+          }}>
+            <p style={{ fontSize:10, fontWeight:700, color:T.textDim, textTransform:"uppercase", letterSpacing:"0.5px", margin:"0 0 5px" }}>
+              Asl xabar — {contact.name}
+            </p>
+            <p style={{
+              fontSize:12.5, color:T.textMuted, lineHeight:1.6, margin:0,
+              display:"-webkit-box", WebkitLineClamp:3, WebkitBoxOrient:"vertical", overflow:"hidden",
+            }}>
               {contact.message}
             </p>
           </div>
 
-          {/* Reply input */}
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 12.5, fontWeight: 700, color: T.textMuted, display: "block", marginBottom: 6 }}>Javobingiz</label>
-            <textarea
-              value={text}
-              onChange={e => setText(e.target.value)}
-              rows={5}
-              placeholder="Javob yozing..."
-              autoFocus
-              style={{ width: "100%", padding: "12px 14px", border: `1.5px solid ${T.border}`, borderRadius: 12, fontSize: 13.5, outline: "none", resize: "vertical", fontFamily: "inherit", color: T.text, background: T.surfaceUp, boxSizing: "border-box" }}
-            />
-            <p style={{ fontSize: 11.5, color: T.textDim, margin: "5px 0 0" }}>
-              {contact.userId
-                ? "Bildirishnoma sifatida foydalanuvchiga va email orqali yuboriladi"
-                : "Faqat email orqali yuboriladi"}
-            </p>
-          </div>
+          {/* Textarea */}
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value)}
+            rows={5}
+            placeholder="Javob yozing..."
+            autoFocus
+            style={{
+              width:"100%", padding:"11px 13px",
+              border:`1.5px solid ${T.border}`, borderRadius:10,
+              fontSize:13, outline:"none", resize:"vertical",
+              fontFamily:"inherit", color:T.text, background:T.surfaceUp,
+              boxSizing:"border-box", marginBottom:6, lineHeight:1.65,
+            }}
+            onFocus={e => e.target.style.borderColor = T.red}
+            onBlur={e  => e.target.style.borderColor = T.border}
+          />
+          <p style={{ fontSize:11, color:T.textDim, margin:"0 0 16px" }}>
+            {contact.userId
+              ? "Foydalanuvchiga bildirishnoma + email orqali yuboriladi"
+              : "Faqat email orqali yuboriladi"}
+          </p>
 
-          <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={onClose} style={{ flex: 1, padding: "11px", border: `1.5px solid ${T.border}`, borderRadius: 12, background: T.surface, fontSize: 13.5, fontWeight: 700, cursor: "pointer", color: T.textMuted }}>
-              Bekor qilish
+          <div style={{ display:"flex", gap:10 }}>
+            <button onClick={onClose} style={{
+              flex:1, padding:"10px", border:`1.5px solid ${T.border}`, borderRadius:10,
+              background:T.surface, fontSize:13, fontWeight:600, cursor:"pointer", color:T.textMuted,
+            }}>
+              Bekor
             </button>
             <button
               onClick={send}
               disabled={!text.trim() || loading}
-              style={{ flex: 1, padding: "11px", background: `linear-gradient(135deg,${T.red},#B91C1C)`, color: "#fff", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, cursor: (!text.trim() || loading) ? "not-allowed" : "pointer", opacity: (!text.trim() || loading) ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}
+              style={{
+                flex:2, padding:"10px",
+                background:`linear-gradient(135deg,${T.red},#B91C1C)`,
+                color:"#fff", border:"none", borderRadius:10,
+                fontSize:13, fontWeight:700,
+                cursor:(!text.trim() || loading) ? "not-allowed" : "pointer",
+                opacity:(!text.trim() || loading) ? 0.65 : 1,
+                display:"flex", alignItems:"center", justifyContent:"center", gap:7,
+              }}
             >
-              {loading ? <LuLoader size={14} className="spin" /> : <LuSend size={14} />}
+              {loading
+                ? <LuLoader size={13} style={{ animation:"spin .8s linear infinite" }} />
+                : <LuSend size={13} />
+              }
               {loading ? "Yuborilmoqda..." : "Yuborish"}
             </button>
           </div>
@@ -239,23 +245,49 @@ function ReplyModal({ contact, onClose, onReplied }) {
   );
 }
 
-/* ── Delete Confirm ─────────────────────────────────────────────── */
+/* ── Delete Confirm ────────────────────────────────────────────────── */
 function DeleteConfirm({ contact, onConfirm, onCancel, loading }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.6)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div style={{ background: T.surface, borderRadius: 22, padding: "34px 30px", maxWidth: 400, width: "100%", textAlign: "center", boxShadow: "0 24px 64px rgba(0,0,0,.2)", border: `1px solid ${T.border}` }}>
-        <div style={{ width: 56, height: 56, borderRadius: "50%", background: T.redLight, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", border: `1.5px solid ${T.redBorder}` }}>
-          <LuTriangleAlert size={24} style={{ color: T.red }} />
+    <div style={{
+      position:"fixed", inset:0,
+      background:"rgba(15,23,42,.55)", backdropFilter:"blur(5px)",
+      zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:20,
+    }}>
+      <div style={{
+        background:T.surface, borderRadius:18, padding:"30px 26px",
+        maxWidth:380, width:"100%", textAlign:"center",
+        boxShadow:"0 24px 64px rgba(0,0,0,.2)", border:`1px solid ${T.border}`,
+      }}>
+        <div style={{
+          width:52, height:52, borderRadius:"50%", background:T.redLight,
+          display:"flex", alignItems:"center", justifyContent:"center",
+          margin:"0 auto 14px", border:`1.5px solid ${T.redBorder}`,
+        }}>
+          <LuTriangleAlert size={22} style={{ color:T.red }} />
         </div>
-        <h3 style={{ fontSize: 17, fontWeight: 800, color: T.text, margin: "0 0 8px" }}>O'chirishni tasdiqlang</h3>
+        <h3 style={{ fontSize:16, fontWeight:800, color:T.text, margin:"0 0 8px" }}>
+          O'chirishni tasdiqlang
+        </h3>
         {contact && (
-          <p style={{ fontSize: 13, color: T.textMuted, margin: "0 0 22px", lineHeight: 1.6 }}>
-            <strong style={{ color: T.text }}>{contact.name}</strong> xabarini o'chirasizmi?
+          <p style={{ fontSize:13, color:T.textMuted, margin:"0 0 20px", lineHeight:1.6 }}>
+            <strong style={{ color:T.text }}>{contact.name}</strong> xabarini o'chirasizmi?
+            Bu amalni qaytarib bo'lmaydi.
           </p>
         )}
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onCancel} style={{ flex: 1, padding: "11px", border: `1.5px solid ${T.border}`, borderRadius: 12, background: T.surface, fontSize: 13.5, fontWeight: 700, cursor: "pointer", color: T.textMuted }}>Bekor</button>
-          <button onClick={onConfirm} disabled={loading} style={{ flex: 1, padding: "11px", background: `linear-gradient(135deg,${T.redMid},#B91C1C)`, color: "#fff", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1 }}>
+        <div style={{ display:"flex", gap:10 }}>
+          <button onClick={onCancel} style={{
+            flex:1, padding:"10px", border:`1.5px solid ${T.border}`, borderRadius:10,
+            background:T.surface, fontSize:13, fontWeight:600, cursor:"pointer", color:T.textMuted,
+          }}>
+            Bekor
+          </button>
+          <button onClick={onConfirm} disabled={loading} style={{
+            flex:1, padding:"10px",
+            background:`linear-gradient(135deg,${T.redMid},#B91C1C)`,
+            color:"#fff", border:"none", borderRadius:10,
+            fontSize:13, fontWeight:700,
+            cursor:loading ? "not-allowed" : "pointer", opacity:loading ? 0.7 : 1,
+          }}>
             {loading ? "..." : "O'chirish"}
           </button>
         </div>
@@ -264,10 +296,9 @@ function DeleteConfirm({ contact, onConfirm, onCancel, loading }) {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════ */
 export default function AdminContact() {
-  const [contacts,     setContacts]     = useState([]);
-  const [loading,      setLoading]      = useState(true);
+  const queryClient = useQueryClient();
   const [search,       setSearch]       = useState("");
   const [searchInp,    setSearchInp]    = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -275,40 +306,36 @@ export default function AdminContact() {
   const [replyTarget,  setReplyTarget]  = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [delLoading,   setDelLoading]   = useState(false);
-
   const debRef = useRef(null);
 
   /* ── Fetch ── */
-  const fetchContacts = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { data: contacts = [], isLoading: loading, refetch: fetchContacts } = useQuery({
+    queryKey: ["admin-contacts", statusFilter],
+    queryFn: async () => {
       const params = statusFilter !== "all" ? `?status=${statusFilter}` : "";
       const res = await api.get(`/admin/contacts${params}`);
-      setContacts(res.data.data || []);
-    } catch {
-      toast.error("Xabarlarni yuklashda xatolik");
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter]);
+      return res.data.data || [];
+    },
+    staleTime: 2 * 60 * 1000,
+  });
 
-  useEffect(() => { fetchContacts(); }, [fetchContacts]);
-
-  /* ── Search debounce ── */
+  /* ── Debounced search ── */
   const handleSearch = (val) => {
     setSearchInp(val);
     clearTimeout(debRef.current);
     debRef.current = setTimeout(() => setSearch(val), 300);
   };
 
-  /* ── Open contact (marks as read) ── */
+  /* ── Open (marks as read) ── */
   const openContact = async (c) => {
     setSelected(c);
     if (c.status === "new") {
       try {
         const res = await api.get(`/admin/contacts/${c._id}`);
         const updated = res.data.data;
-        setContacts(prev => prev.map(x => x._id === c._id ? updated : x));
+        queryClient.setQueryData(["admin-contacts", statusFilter], prev =>
+          prev?.map(x => x._id === c._id ? updated : x)
+        );
         setSelected(updated);
       } catch { /* ignore */ }
     }
@@ -319,9 +346,9 @@ export default function AdminContact() {
     setDelLoading(true);
     try {
       await api.delete(`/admin/contacts/${deleteTarget._id}`);
-      setContacts(prev => prev.filter(c => c._id !== deleteTarget._id));
       if (selected?._id === deleteTarget._id) setSelected(null);
-      toast.success("O'chirildi");
+      queryClient.invalidateQueries({ queryKey: ["admin-contacts"] });
+      toast.success("Xabar o'chirildi");
       setDeleteTarget(null);
     } catch {
       toast.error("O'chirishda xatolik");
@@ -332,7 +359,7 @@ export default function AdminContact() {
 
   /* ── Derived ── */
   const stats = {
-    total:     contacts.length,
+    all:       contacts.length,
     new:       contacts.filter(c => c.status === "new").length,
     read:      contacts.filter(c => c.status === "read").length,
     responded: contacts.filter(c => c.status === "responded").length,
@@ -342,241 +369,419 @@ export default function AdminContact() {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (
-      c.name.toLowerCase().includes(q) ||
-      c.email.toLowerCase().includes(q) ||
+      c.name?.toLowerCase().includes(q) ||
+      c.email?.toLowerCase().includes(q) ||
       c.subject?.toLowerCase().includes(q) ||
       c.message?.toLowerCase().includes(q)
     );
   });
 
-  /* ── Render ── */
+  /* ══════════ RENDER ══════════ */
   return (
-    <div style={{ fontFamily: "'Inter',sans-serif", padding: "28px 32px", background: T.bg, minHeight: "100vh", display: "flex", flexDirection: "column", gap: 22 }}>
+    <>
+      <style>{`
+        @keyframes spin { to { transform:rotate(360deg) } }
+        @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
+        .clist::-webkit-scrollbar { width:5px }
+        .clist::-webkit-scrollbar-track { background:transparent }
+        .clist::-webkit-scrollbar-thumb { background:#E2E8F0; border-radius:99px }
+        .clist::-webkit-scrollbar-thumb:hover { background:#CBD5E1 }
+      `}</style>
 
-      {/* ── Page Header ── */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: T.redLight, border: `1.5px solid ${T.redBorder}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <LuInbox size={18} style={{ color: T.red }} />
-            </div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: T.text, margin: 0 }}>Xabarlar boshqaruvi</h1>
+      <div style={{
+        fontFamily:"'Manrope',sans-serif",
+        display:"flex", flexDirection:"column", gap:18,
+        height:"calc(100vh - 130px)", overflow:"hidden",
+      }}>
+
+        {/* ─── Header ─── */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0 }}>
+          <div>
+            <h1 style={{ fontSize:22, fontWeight:800, color:T.text, margin:"0 0 3px", letterSpacing:"-0.3px" }}>
+              Xabarlar
+            </h1>
+            <p style={{ fontSize:12.5, color:T.textDim, margin:0 }}>
+              Foydalanuvchilardan kelgan murojaatlar
+            </p>
           </div>
-          <p style={{ fontSize: 13, color: T.textDim, margin: 0 }}>Foydalanuvchilardan kelgan xabarlar va javoblar</p>
+          <button
+            onClick={fetchContacts}
+            disabled={loading}
+            style={{
+              display:"flex", alignItems:"center", gap:6,
+              padding:"9px 16px", border:`1.5px solid ${T.border}`,
+              borderRadius:10, background:T.surface, color:T.textMuted,
+              fontSize:12.5, fontWeight:600, cursor:"pointer", opacity:loading ? 0.6 : 1,
+            }}
+          >
+            <LuRefreshCw size={13} style={loading ? { animation:"spin .8s linear infinite" } : {}} />
+            Yangilash
+          </button>
         </div>
-        <button
-          onClick={fetchContacts}
-          disabled={loading}
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", border: `1.5px solid ${T.border}`, borderRadius: 12, background: T.surface, color: T.textMuted, fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: loading ? 0.6 : 1 }}
-        >
-          <LuRefreshCw size={14} className={loading ? "spin" : ""} /> Yangilash
-        </button>
-      </div>
 
-      {/* ── Stat Cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12 }}>
-        <StatCard label="Jami"      value={stats.total}     icon={LuInbox}        color={T.purple}  bg={T.purpleBg}   border={T.purpleBd}  active={statusFilter==="all"}       onClick={() => setStatusFilter("all")}       />
-        <StatCard label="Yangi"     value={stats.new}       icon={LuMail}         color={T.red}     bg={T.redLight}   border={T.redBorder} active={statusFilter==="new"}       onClick={() => setStatusFilter("new")}       />
-        <StatCard label="Ko'rildi"  value={stats.read}      icon={LuEye}          color={T.textDim} bg={T.surfaceUp}  border={T.border}    active={statusFilter==="read"}      onClick={() => setStatusFilter("read")}      />
-        <StatCard label="Javob b."  value={stats.responded} icon={LuCircleCheck}  color={T.success} bg={T.successBg}  border={T.successBd} active={statusFilter==="responded"} onClick={() => setStatusFilter("responded")} />
-      </div>
-
-      {/* ── Search + filter bar ── */}
-      <div style={{ background: T.surface, borderRadius: 14, border: `1.5px solid ${T.border}`, padding: "13px 18px", display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
-          <LuSearch size={14} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: T.textDim, pointerEvents: "none" }} />
-          <input
-            type="text"
-            value={searchInp}
-            onChange={e => handleSearch(e.target.value)}
-            placeholder="Ism, email yoki mavzu bo'yicha qidirish..."
-            style={{ width: "100%", padding: "9px 12px 9px 36px", border: `1.5px solid ${T.border}`, borderRadius: 10, fontSize: 13, outline: "none", boxSizing: "border-box", color: T.text, background: T.surfaceUp }}
-          />
-        </div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {STATUS_TABS.map(s => {
-            const st = STATUS[s.value] || {};
-            const active = statusFilter === s.value;
+        {/* ─── Filter Pills ─── */}
+        <div style={{ display:"flex", gap:10, flexShrink:0, flexWrap:"wrap" }}>
+          {FILTERS.map(f => {
+            const active = statusFilter === f.value;
             return (
               <button
-                key={s.value}
-                onClick={() => setStatusFilter(s.value)}
+                key={f.value}
+                onClick={() => setStatusFilter(f.value)}
                 style={{
-                  padding: "7px 14px", borderRadius: 10, fontSize: 12.5, fontWeight: 600, cursor: "pointer", transition: "all .15s",
-                  border: active ? `1.5px solid ${(st.color || T.purple) + "55"}` : `1.5px solid ${T.border}`,
-                  background: active ? (st.bg || T.purpleBg) : T.surface,
-                  color: active ? (st.color || T.purple) : T.textMuted,
+                  display:"flex", alignItems:"center", gap:8,
+                  padding:"8px 16px", borderRadius:99,
+                  border:`1.5px solid ${active ? f.color + "44" : T.border}`,
+                  background:active ? f.bg : T.surface,
+                  color:active ? f.color : T.textMuted,
+                  fontSize:12.5, fontWeight:700, cursor:"pointer",
+                  transition:"all .14s",
                 }}
               >
-                {s.label}
+                <span style={{
+                  minWidth:20, height:20, borderRadius:99, display:"flex",
+                  alignItems:"center", justifyContent:"center",
+                  background:active ? f.color + "22" : T.surfaceUp,
+                  fontSize:11, fontWeight:800, color:active ? f.color : T.textDim,
+                  padding:"0 5px",
+                }}>
+                  {stats[f.value]}
+                </span>
+                {f.label}
               </button>
             );
           })}
         </div>
-        <div style={{ marginLeft: "auto", fontSize: 12.5, color: T.textDim, fontWeight: 600, background: T.surfaceUp, padding: "6px 12px", borderRadius: 8, border: `1px solid ${T.border}` }}>
-          {filtered.length} ta xabar
-        </div>
-      </div>
 
-      {/* ── Main content: list + detail ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "360px 1fr", gap: 16, flex: 1, minHeight: 0 }}>
+        {/* ─── Body: List + Detail ─── */}
+        <div style={{ flex:1, display:"flex", gap:14, minHeight:0, overflow:"hidden" }}>
 
-        {/* ── Contact List ── */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, overflowY: "auto", maxHeight: "calc(100vh - 340px)" }}>
-          {loading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} style={{ height: 78, borderRadius: 12, background: T.border, opacity: 0.5, animation: "pulse 1.5s ease-in-out infinite" }} />
-            ))
-          ) : filtered.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "52px 20px", background: T.surface, borderRadius: 16, border: `1.5px solid ${T.border}` }}>
-              <LuInbox size={36} style={{ color: T.textDim, marginBottom: 12, opacity: 0.5 }} />
-              <p style={{ color: T.textMuted, fontSize: 14, fontWeight: 600, margin: "0 0 4px" }}>Xabar topilmadi</p>
-              <p style={{ color: T.textDim, fontSize: 12.5, margin: 0 }}>
-                {search ? "Qidiruvni o'zgartiring" : "Hech qanday xabar yo'q"}
-              </p>
-            </div>
-          ) : filtered.map(c => {
-            const isActive = selected?._id === c._id;
-            const isNew = c.status === "new";
-            return (
-              <div
-                key={c._id}
-                onClick={() => openContact(c)}
-                style={{
-                  padding: "13px 16px", borderRadius: 13, cursor: "pointer",
-                  border: `1.5px solid ${isActive ? T.red + "55" : T.border}`,
-                  background: isActive ? T.redLight : T.surface,
-                  transition: "all .14s",
-                  position: "relative",
-                }}
-                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.borderColor = T.redBorder; e.currentTarget.style.background = T.surfaceUp; } }}
-                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.background = T.surface; } }}
-              >
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <Avatar name={c.name} size={36} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-                      <p style={{ fontSize: 13.5, fontWeight: isNew ? 800 : 600, color: T.text, margin: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", maxWidth: "65%" }}>
-                        {c.name}
-                      </p>
-                      <span style={{ fontSize: 11, color: T.textDim, flexShrink: 0 }}>{fmtShort(c.createdAt)}</span>
-                    </div>
-                    <p style={{ fontSize: 12.5, fontWeight: isNew ? 700 : 500, color: isNew ? T.textMuted : T.textDim, margin: "0 0 6px", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-                      {c.subject}
-                    </p>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      <StatusBadge status={c.status} />
-                      {c.role && c.role !== "other" && <RoleBadge role={c.role} />}
-                    </div>
-                  </div>
-                </div>
-
-                {/* New indicator dot */}
-                {isNew && (
-                  <span style={{ position: "absolute", top: 10, right: 10, width: 8, height: 8, borderRadius: "50%", background: T.red, border: `2px solid ${isActive ? T.redLight : T.surface}` }} />
+          {/* ══ LEFT: Message List ══ */}
+          <div style={{
+            width:340, flexShrink:0,
+            background:T.surface, borderRadius:16, border:`1px solid ${T.border}`,
+            display:"flex", flexDirection:"column", overflow:"hidden",
+            boxShadow:"0 1px 4px rgba(0,0,0,.04)",
+          }}>
+            {/* Search */}
+            <div style={{ padding:"12px 14px", borderBottom:`1px solid ${T.border}`, flexShrink:0 }}>
+              <div style={{ position:"relative" }}>
+                <LuSearch size={13} style={{
+                  position:"absolute", left:11, top:"50%", transform:"translateY(-50%)",
+                  color:T.textDim, pointerEvents:"none",
+                }} />
+                <input
+                  value={searchInp}
+                  onChange={e => handleSearch(e.target.value)}
+                  placeholder="Qidirish..."
+                  style={{
+                    width:"100%", padding:"8px 11px 8px 32px",
+                    border:`1.5px solid ${T.border}`, borderRadius:9,
+                    fontSize:12.5, outline:"none", boxSizing:"border-box",
+                    color:T.text, background:T.surfaceUp, fontFamily:"inherit",
+                  }}
+                  onFocus={e  => e.target.style.borderColor = T.red + "88"}
+                  onBlur={e   => e.target.style.borderColor = T.border}
+                />
+                {searchInp && (
+                  <button
+                    onClick={() => { setSearchInp(""); setSearch(""); }}
+                    style={{
+                      position:"absolute", right:8, top:"50%", transform:"translateY(-50%)",
+                      background:"none", border:"none", cursor:"pointer", color:T.textDim,
+                      display:"flex", padding:2,
+                    }}
+                  >
+                    <LuX size={12} />
+                  </button>
                 )}
               </div>
-            );
-          })}
-        </div>
-
-        {/* ── Detail Panel ── */}
-        <div style={{ overflowY: "auto", maxHeight: "calc(100vh - 340px)" }}>
-          {!selected ? (
-            <div style={{ height: "100%", minHeight: 300, background: T.surface, borderRadius: 16, border: `1.5px solid ${T.border}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
-              <div style={{ width: 60, height: 60, borderRadius: "50%", background: T.surfaceUp, border: `1.5px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <LuMessageSquare size={26} style={{ color: T.textDim }} />
-              </div>
-              <p style={{ color: T.textMuted, fontSize: 14, fontWeight: 600, margin: 0 }}>Xabarni tanlang</p>
-              <p style={{ color: T.textDim, fontSize: 13, margin: 0 }}>Chap tomondan xabarni bosing</p>
             </div>
-          ) : (
-            <div style={{ background: T.surface, borderRadius: 16, border: `1.5px solid ${T.border}`, overflow: "hidden" }}>
 
-              {/* Detail header */}
-              <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                  <Avatar name={selected.name} size={46} />
+            {/* Count row */}
+            <div style={{
+              padding:"8px 14px", borderBottom:`1px solid ${T.border}`,
+              display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0,
+            }}>
+              <span style={{ fontSize:11.5, color:T.textDim, fontWeight:600 }}>
+                {filtered.length} xabar
+              </span>
+              {stats.new > 0 && (
+                <span style={{
+                  fontSize:11, fontWeight:700, color:T.red,
+                  background:T.redLight, padding:"2px 8px", borderRadius:99,
+                  border:`1px solid ${T.redBorder}`,
+                }}>
+                  {stats.new} yangi
+                </span>
+              )}
+            </div>
+
+            {/* List */}
+            <div className="clist" style={{ flex:1, overflowY:"auto" }}>
+              {loading ? (
+                Array.from({ length: 7 }).map((_, i) => (
+                  <div key={i} style={{
+                    margin:"8px 10px", height:68, borderRadius:10,
+                    background:T.border, animation:"pulse 1.5s ease-in-out infinite",
+                    animationDelay:`${i * 0.1}s`,
+                  }} />
+                ))
+              ) : filtered.length === 0 ? (
+                <div style={{
+                  padding:"48px 20px", textAlign:"center",
+                  display:"flex", flexDirection:"column", alignItems:"center", gap:10,
+                }}>
+                  <LuInbox size={32} style={{ color:T.textDim, opacity:0.5 }} />
                   <div>
-                    <p style={{ fontSize: 16, fontWeight: 800, color: T.text, margin: "0 0 3px" }}>{selected.name}</p>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: T.textDim }}>
-                        <LuMail size={11} /> {selected.email}
-                      </span>
-                      {selected.phone && (
-                        <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: T.textDim }}>
-                          <LuPhone size={11} /> {selected.phone}
-                        </span>
-                      )}
+                    <p style={{ fontSize:13.5, fontWeight:700, color:T.textMuted, margin:"0 0 3px" }}>
+                      Xabar topilmadi
+                    </p>
+                    <p style={{ fontSize:12, color:T.textDim, margin:0 }}>
+                      {search ? "Qidiruvni o'zgartiring" : "Hali xabar yo'q"}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding:"6px 8px", display:"flex", flexDirection:"column", gap:2 }}>
+                  {filtered.map(c => {
+                    const isActive = selected?._id === c._id;
+                    const isNew    = c.status === "new";
+                    return (
+                      <div
+                        key={c._id}
+                        onClick={() => openContact(c)}
+                        style={{
+                          padding:"10px 12px", borderRadius:10, cursor:"pointer",
+                          border:`1.5px solid ${isActive ? T.red + "55" : "transparent"}`,
+                          background:isActive ? T.redLight : "transparent",
+                          transition:"all .12s", position:"relative",
+                        }}
+                        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = T.surfaceUp; }}
+                        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                      >
+                        <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                          <Avatar name={c.name} size={34} />
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:2 }}>
+                              <span style={{
+                                fontSize:13, fontWeight:isNew ? 800 : 600, color:T.text,
+                                overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis", maxWidth:"68%",
+                              }}>
+                                {c.name}
+                              </span>
+                              <span style={{ fontSize:10.5, color:T.textDim, flexShrink:0 }}>
+                                {fmtShort(c.createdAt)}
+                              </span>
+                            </div>
+                            <p style={{
+                              fontSize:12, color:isNew ? T.textMuted : T.textDim,
+                              fontWeight:isNew ? 600 : 400,
+                              margin:"0 0 5px", overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis",
+                            }}>
+                              {c.subject || c.message?.slice(0, 50)}
+                            </p>
+                            <div style={{ display:"flex", gap:5, alignItems:"center" }}>
+                              <StatusBadge status={c.status} />
+                              {c.role && ROLE_META[c.role] && <RoleBadge role={c.role} />}
+                            </div>
+                          </div>
+                        </div>
+                        {isNew && (
+                          <span style={{
+                            position:"absolute", top:10, right:10,
+                            width:7, height:7, borderRadius:"50%", background:T.red,
+                            border:`2px solid ${isActive ? T.redLight : T.surface}`,
+                          }} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ══ RIGHT: Detail ══ */}
+          <div style={{
+            flex:1, minWidth:0,
+            background:T.surface, borderRadius:16, border:`1px solid ${T.border}`,
+            display:"flex", flexDirection:"column", overflow:"hidden",
+            boxShadow:"0 1px 4px rgba(0,0,0,.04)",
+          }}>
+            {!selected ? (
+              /* Empty state */
+              <div style={{
+                flex:1, display:"flex", flexDirection:"column",
+                alignItems:"center", justifyContent:"center", gap:14,
+              }}>
+                <div style={{
+                  width:64, height:64, borderRadius:18,
+                  background:T.surfaceUp, border:`1.5px solid ${T.border}`,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                }}>
+                  <LuMessageSquare size={28} style={{ color:T.textDim }} />
+                </div>
+                <div style={{ textAlign:"center" }}>
+                  <p style={{ fontSize:15, fontWeight:700, color:T.textMuted, margin:"0 0 5px" }}>
+                    Xabar tanlanmagan
+                  </p>
+                  <p style={{ fontSize:12.5, color:T.textDim, margin:0 }}>
+                    Chap paneldan xabarni bosing
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Detail Header */}
+                <div style={{
+                  padding:"18px 22px", borderBottom:`1px solid ${T.border}`,
+                  flexShrink:0, background:T.surfaceUp,
+                }}>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+                    <div style={{ display:"flex", gap:14, alignItems:"center", minWidth:0 }}>
+                      <Avatar name={selected.name} size={44} />
+                      <div style={{ minWidth:0 }}>
+                        <p style={{ fontSize:16, fontWeight:800, color:T.text, margin:"0 0 4px" }}>
+                          {selected.name}
+                        </p>
+                        <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                          <span style={{ display:"flex", alignItems:"center", gap:4, fontSize:12, color:T.textDim }}>
+                            <LuMail size={11} /> {selected.email}
+                          </span>
+                          {selected.phone && (
+                            <span style={{ display:"flex", alignItems:"center", gap:4, fontSize:12, color:T.textDim }}>
+                              <LuPhone size={11} /> {selected.phone}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display:"flex", gap:7, alignItems:"center", flexShrink:0 }}>
+                      {selected.role && ROLE_META[selected.role] && <RoleBadge role={selected.role} />}
+                      <StatusBadge status={selected.status} />
                     </div>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-                  {selected.role && <RoleBadge role={selected.role} />}
-                  <StatusBadge status={selected.status} />
-                </div>
-              </div>
 
-              {/* Subject + date */}
-              <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, background: T.surfaceUp }}>
-                <p style={{ fontSize: 15, fontWeight: 800, color: T.text, margin: "0 0 5px" }}>{selected.subject}</p>
-                <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: T.textDim }}>
-                  <LuCalendar size={11} /> {fmtFull(selected.createdAt)}
-                </span>
-              </div>
+                {/* Detail Body */}
+                <div className="clist" style={{ flex:1, overflowY:"auto", padding:"20px 22px", display:"flex", flexDirection:"column", gap:16 }}>
 
-              {/* Message */}
-              <div style={{ padding: "20px 24px" }}>
-                <p style={{ fontSize: 10.5, fontWeight: 700, color: T.textDim, textTransform: "uppercase", letterSpacing: "0.5px", margin: "0 0 10px" }}>Xabar</p>
-                <p style={{ fontSize: 14, color: T.textMuted, lineHeight: 1.8, margin: 0, whiteSpace: "pre-wrap", padding: "14px 16px", background: T.surfaceUp, borderRadius: 12, border: `1px solid ${T.border}` }}>
-                  {selected.message}
-                </p>
-              </div>
-
-              {/* Existing reply */}
-              {selected.reply && (
-                <div style={{ margin: "0 24px 20px", padding: "14px 16px", background: T.successBg, border: `1px solid ${T.successBd}`, borderRadius: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                    <LuCircleCheck size={13} style={{ color: T.success }} />
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: T.success, textTransform: "uppercase", letterSpacing: "0.4px" }}>Javob yuborildi</span>
-                    {selected.repliedAt && (
-                      <span style={{ fontSize: 11, color: T.success, marginLeft: "auto", opacity: 0.7 }}>{fmtFull(selected.repliedAt)}</span>
-                    )}
+                  {/* Subject + date */}
+                  <div>
+                    <p style={{ fontSize:17, fontWeight:800, color:T.text, margin:"0 0 6px", lineHeight:1.3 }}>
+                      {selected.subject}
+                    </p>
+                    <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:11.5, color:T.textDim }}>
+                      <LuCalendar size={11} /> {fmtFull(selected.createdAt)}
+                    </span>
                   </div>
-                  <p style={{ fontSize: 13.5, color: "#14532D", lineHeight: 1.75, margin: 0, whiteSpace: "pre-wrap" }}>{selected.reply}</p>
-                </div>
-              )}
 
-              {/* Admin note */}
-              {selected.adminNote && (
-                <div style={{ margin: "0 24px 20px", padding: "12px 14px", background: T.warnBg, border: `1px solid ${T.warnBd}`, borderRadius: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                    <LuStickyNote size={12} style={{ color: T.warn }} />
-                    <span style={{ fontSize: 11, fontWeight: 700, color: T.warn, textTransform: "uppercase", letterSpacing: "0.4px" }}>Admin eslatma</span>
+                  {/* Message */}
+                  <div style={{
+                    padding:"16px 18px", background:T.surfaceUp,
+                    border:`1px solid ${T.border}`, borderRadius:12,
+                  }}>
+                    <p style={{
+                      fontSize:10, fontWeight:700, color:T.textDim,
+                      textTransform:"uppercase", letterSpacing:"0.6px", margin:"0 0 10px",
+                    }}>
+                      Xabar
+                    </p>
+                    <p style={{ fontSize:13.5, color:T.textMuted, lineHeight:1.8, margin:0, whiteSpace:"pre-wrap" }}>
+                      {selected.message}
+                    </p>
                   </div>
-                  <p style={{ fontSize: 13, color: "#78350F", margin: 0 }}>{selected.adminNote}</p>
-                </div>
-              )}
 
-              {/* Actions */}
-              <div style={{ padding: "0 24px 22px", display: "flex", gap: 10 }}>
-                <button
-                  onClick={() => setReplyTarget(selected)}
-                  style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", background: `linear-gradient(135deg,${T.red},#B91C1C)`, color: "#fff", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}
-                >
-                  <LuSend size={14} /> {selected.reply ? "Yana javob" : "Javob yozish"}
-                </button>
-                <button
-                  onClick={() => setDeleteTarget(selected)}
-                  style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", border: `1.5px solid ${T.border}`, borderRadius: 12, background: T.surface, color: T.textMuted, fontSize: 13.5, fontWeight: 600, cursor: "pointer", transition: "all .12s" }}
-                  onMouseEnter={e => { e.currentTarget.style.background = T.redLight; e.currentTarget.style.borderColor = T.redBorder; e.currentTarget.style.color = T.red; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = T.surface; e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textMuted; }}
-                >
-                  <LuTrash2 size={14} /> O'chirish
-                </button>
-              </div>
-            </div>
-          )}
+                  {/* Existing reply */}
+                  {selected.reply && (
+                    <div style={{
+                      padding:"14px 16px",
+                      background:T.successBg, border:`1px solid ${T.successBd}`, borderRadius:12,
+                    }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                        <LuCircleCheck size={13} style={{ color:T.success }} />
+                        <span style={{
+                          fontSize:10.5, fontWeight:700, color:T.success,
+                          textTransform:"uppercase", letterSpacing:"0.4px",
+                        }}>
+                          Yuborilgan javob
+                        </span>
+                        {selected.repliedAt && (
+                          <span style={{ fontSize:10.5, color:T.success, marginLeft:"auto", opacity:0.7 }}>
+                            {fmtFull(selected.repliedAt)}
+                          </span>
+                        )}
+                      </div>
+                      <p style={{ fontSize:13, color:"#14532D", lineHeight:1.75, margin:0, whiteSpace:"pre-wrap" }}>
+                        {selected.reply}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Admin note */}
+                  {selected.adminNote && (
+                    <div style={{
+                      padding:"12px 14px",
+                      background:T.warnBg, border:`1px solid ${T.warnBd}`, borderRadius:12,
+                    }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}>
+                        <LuStickyNote size={12} style={{ color:T.warn }} />
+                        <span style={{ fontSize:10.5, fontWeight:700, color:T.warn, textTransform:"uppercase", letterSpacing:"0.4px" }}>
+                          Admin eslatma
+                        </span>
+                      </div>
+                      <p style={{ fontSize:13, color:"#78350F", margin:0 }}>
+                        {selected.adminNote}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Footer */}
+                <div style={{
+                  padding:"14px 22px", borderTop:`1px solid ${T.border}`,
+                  flexShrink:0, display:"flex", gap:10, background:T.surfaceUp,
+                }}>
+                  <button
+                    onClick={() => setReplyTarget(selected)}
+                    style={{
+                      display:"flex", alignItems:"center", gap:7,
+                      padding:"9px 20px",
+                      background:`linear-gradient(135deg,${T.red},#B91C1C)`,
+                      color:"#fff", border:"none", borderRadius:10,
+                      fontSize:13, fontWeight:700, cursor:"pointer",
+                      boxShadow:`0 2px 8px ${T.red}44`,
+                    }}
+                  >
+                    <LuSend size={13} />
+                    {selected.reply ? "Yana javob" : "Javob yozish"}
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(selected)}
+                    style={{
+                      display:"flex", alignItems:"center", gap:7,
+                      padding:"9px 16px",
+                      border:`1.5px solid ${T.border}`, borderRadius:10,
+                      background:T.surface, color:T.textMuted,
+                      fontSize:13, fontWeight:600, cursor:"pointer", transition:"all .12s",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = T.redLight;
+                      e.currentTarget.style.borderColor = T.redBorder;
+                      e.currentTarget.style.color = T.red;
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = T.surface;
+                      e.currentTarget.style.borderColor = T.border;
+                      e.currentTarget.style.color = T.textMuted;
+                    }}
+                  >
+                    <LuTrash2 size={13} /> O'chirish
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -585,10 +790,9 @@ export default function AdminContact() {
         <ReplyModal
           contact={replyTarget}
           onClose={() => setReplyTarget(null)}
-          onReplied={fetchContacts}
+          onReplied={() => queryClient.invalidateQueries({ queryKey: ["admin-contacts"] })}
         />
       )}
-
       {deleteTarget && (
         <DeleteConfirm
           contact={deleteTarget}
@@ -597,12 +801,6 @@ export default function AdminContact() {
           loading={delLoading}
         />
       )}
-
-      <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .spin { animation: spin 0.8s linear infinite; }
-        @keyframes pulse { 0%,100% { opacity:.5 } 50% { opacity:1 } }
-      `}</style>
-    </div>
+    </>
   );
 }
