@@ -282,16 +282,20 @@ function Bubble({ msg, myId, appId, onEdited, onDeleted }) {
 /* ─── ChatPanel ───────────────────────────────────────────────── */
 function ChatPanel({ app, myId, onStatusChange, onBack }) {
   const { user } = useAuthStore();
-  const [messages,  setMessages]  = useState([]);
-  const [text,      setText]      = useState("");
-  const [loading,   setLoading]   = useState(true);
-  const [sending,   setSending]   = useState(false);
-  const [showStk,   setShowStk]   = useState(false);
+  const [messages,      setMessages]      = useState([]);
+  const [text,          setText]          = useState("");
+  const [loading,       setLoading]       = useState(true);
+  const [sending,       setSending]       = useState(false);
+  const [showStk,       setShowStk]       = useState(false);
+  const [iBlockedThem,  setIBlockedThem]  = useState(false);
+  const [theyBlockedMe, setTheyBlockedMe] = useState(false);
+  const [blockLoading,  setBlockLoading]  = useState(false);
   const msgsRef  = useRef(null);
   const inputRef = useRef(null);
   const isOwner  = String(app.adOwner?._id||app.adOwner) === myId;
   const other    = otherUser(app, myId);
   const st       = ST[app.status] || ST.read;
+  const isBlocked = iBlockedThem || theyBlockedMe;
 
   /* scroll to bottom — only within the messages container */
   const scrollDown = useCallback((instant=false) => {
@@ -304,9 +308,28 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
     try {
       const res = await applicationService.messages(app._id);
       setMessages(res.data||[]);
+      setIBlockedThem(res.iBlockedThem||false);
+      setTheyBlockedMe(res.theyBlockedMe||false);
     } catch { toast.error("Xabarlarni yuklashda xatolik"); }
     finally { setLoading(false); }
   },[app._id]);
+
+  /* block / unblock */
+  const handleBlock = useCallback(async () => {
+    setBlockLoading(true);
+    try {
+      if (iBlockedThem) {
+        await applicationService.unblock(app._id);
+        setIBlockedThem(false);
+        toast.success("Blokdan chiqarildi");
+      } else {
+        await applicationService.block(app._id);
+        setIBlockedThem(true);
+        toast.success(`${other?.firstName} bloklandi`);
+      }
+    } catch { toast.error("Xatolik"); }
+    setBlockLoading(false);
+  }, [app._id, iBlockedThem, other?.firstName]);
 
   useEffect(()=>{ setLoading(true); fetchMessages(); },[fetchMessages]);
   useEffect(()=>{ if(!loading) scrollDown(); },[loading, scrollDown]);
@@ -336,12 +359,20 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
       if(String(applicationId)!==String(app._id)) return;
       setMessages(p=>p.map(m=>String(m.sender?._id||m.sender)===myId?{...m,isRead:true}:m));
     };
+    const onUserBlocked = ({applicationId})=>{
+      if(String(applicationId)===String(app._id)) setTheyBlockedMe(true);
+    };
+    const onUserUnblocked = ({applicationId})=>{
+      if(String(applicationId)===String(app._id)) setTheyBlockedMe(false);
+    };
 
     s.on('new_chat_message',          onNewMsg);
     s.on('message_edited',            onEdited);
     s.on('message_deleted',           onDeleted);
     s.on('application_status_changed', onStatus);
     s.on('messages_read',             onRead);
+    s.on('user_blocked',              onUserBlocked);
+    s.on('user_unblocked',            onUserUnblocked);
 
     return ()=>{
       s.emit('leave_chat_room', app._id);
@@ -350,6 +381,8 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
       s.off('message_deleted',           onDeleted);
       s.off('application_status_changed', onStatus);
       s.off('messages_read',             onRead);
+      s.off('user_blocked',              onUserBlocked);
+      s.off('user_unblocked',            onUserUnblocked);
     };
   },[app._id, onStatusChange, scrollDown]);
 
@@ -437,6 +470,24 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
               </button>
             </div>
           )}
+          {/* Block / Unblock tugmasi */}
+          <button
+            onClick={handleBlock}
+            disabled={blockLoading || theyBlockedMe}
+            title={iBlockedThem ? "Blokdan chiqarish" : "Bloklash"}
+            style={{
+              width:32, height:32, borderRadius:8, border:"none", cursor: theyBlockedMe ? "not-allowed" : "pointer",
+              background: iBlockedThem ? "#FFF3E0" : theyBlockedMe ? "#F5F5F5" : C.redLight,
+              color: iBlockedThem ? "#E65100" : theyBlockedMe ? C.dim : C.red,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              opacity: blockLoading ? 0.6 : 1, flexShrink:0, transition:"all .15s",
+            }}
+          >
+            {blockLoading
+              ? <LuLoader size={14} style={{animation:"spin .8s linear infinite"}}/>
+              : <LuBan size={14}/>
+            }
+          </button>
         </div>
       </div>
 
@@ -511,8 +562,31 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
         </div>
       )}
 
+      {/* ── Blocked banner ── */}
+      {isBlocked && (
+        <div style={{
+          padding:"10px 16px", borderTop:`1px solid ${C.border}`,
+          background: iBlockedThem ? "#FFF3E0" : "#FAFAFA",
+          display:"flex", alignItems:"center", justifyContent:"center", gap:8, flexShrink:0,
+        }}>
+          <LuBan size={15} style={{color: iBlockedThem ? "#E65100" : C.dim, flexShrink:0}}/>
+          <span style={{fontSize:12.5, fontWeight:600, color: iBlockedThem ? "#E65100" : C.muted}}>
+            {iBlockedThem
+              ? `Siz ${other?.firstName}ni bloklagan siz. Xabar yubora olmaysiz.`
+              : `${other?.firstName} sizni bloklagan. Xabar yubora olmaysiz.`
+            }
+          </span>
+          {iBlockedThem && (
+            <button onClick={handleBlock} disabled={blockLoading}
+              style={{padding:"4px 10px",fontSize:11.5,fontWeight:700,borderRadius:8,border:"1.5px solid #E65100",background:"#FFF3E0",color:"#E65100",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+              Blokdan chiqar
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ── Input ── */}
-      <div style={{
+      {!isBlocked && <div style={{
         padding:"10px 14px", borderTop:`1px solid ${C.border}`,
         display:"flex", gap:8, alignItems:"flex-end", flexShrink:0,
         background:C.surface, zIndex:2,
@@ -572,7 +646,7 @@ function ChatPanel({ app, myId, onStatusChange, onBack }) {
         >
           <LuSend size={16}/>
         </button>
-      </div>
+      </div>}
     </div>
   );
 }

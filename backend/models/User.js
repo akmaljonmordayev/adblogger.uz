@@ -37,6 +37,7 @@ const userSchema = new mongoose.Schema(
       default: 'pending',
     },
     rejectionReason: { type: String, default: '' },
+    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     passwordResetToken: String,
     passwordResetExpires: Date,
     passwordChangedAt: Date,
