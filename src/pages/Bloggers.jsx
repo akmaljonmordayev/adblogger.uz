@@ -5,7 +5,7 @@ import BloggerCard from "../components/ui/BlogerCard";
 import FilterSidebar from '../components/layout/FilterSidebar';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTE_PATHS } from "../config/constants";
-import { LuSlidersHorizontal, LuX, LuUsers, LuLoader, LuArrowUpDown } from "react-icons/lu";
+import { LuSlidersHorizontal, LuX, LuUsers, LuLoader, LuArrowUpDown, LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import api from "../services/api";
 
 /* ── Kategoriya nomi (uz) ─────────────────────────────────── */
@@ -89,8 +89,12 @@ export default function Blogger() {
   const [bloggers, setBloggers]         = useState([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortBy, setSortBy]             = useState("default");
-  const allRef = useRef([]);
+  const [currentPage, setCurrentPage]   = useState(0);
+  const [slideDir, setSlideDir]         = useState("next"); // "next" | "prev"
+  const allRef      = useRef([]);
   const filteredRef = useRef([]);
+
+  const CARDS_PER_PAGE = 6; // 3 ustun × 2 qator
 
   const { data: bloggersRaw, isLoading: loading, isError: error } = useQuery({
     queryKey: ["bloggers"],
@@ -134,6 +138,15 @@ export default function Blogger() {
     setSortBy(newSort);
     setBloggers(applySort(filteredRef.current.length ? filteredRef.current : allRef.current, newSort));
   };
+
+  /* ── Reset page on results change ── */
+  useEffect(() => { setCurrentPage(0); }, [bloggers]);
+
+  const totalPages = Math.ceil(bloggers.length / CARDS_PER_PAGE);
+  const pageBloggers = bloggers.slice(currentPage * CARDS_PER_PAGE, (currentPage + 1) * CARDS_PER_PAGE);
+
+  const goPrev = () => { setSlideDir("prev"); setCurrentPage(p => Math.max(0, p - 1)); };
+  const goNext = () => { setSlideDir("next"); setCurrentPage(p => Math.min(totalPages - 1, p + 1)); };
 
   const handleBron = (id) => {
     const path = ROUTE_PATHS.BLOGGER_DETAIL.replace(":id", id);
@@ -199,6 +212,16 @@ export default function Blogger() {
         .bl-sidebar::-webkit-scrollbar-track { background: transparent; }
         .bl-sidebar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
         .bl-main { flex: 1; min-width: 0; height: 100%; overflow-y: auto; padding-right: 2px; }
+        @keyframes slideInNext { from { opacity:0; transform:translateX(48px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes slideInPrev { from { opacity:0; transform:translateX(-48px); } to { opacity:1; transform:translateX(0); } }
+        .bl-page-next { animation: slideInNext 0.32s cubic-bezier(.4,0,.2,1); }
+        .bl-page-prev { animation: slideInPrev 0.32s cubic-bezier(.4,0,.2,1); }
+        .bl-cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+        .bl-nav-btn { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #fff; cursor: pointer; color: #374151; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.15s; }
+        .bl-nav-btn:hover:not(:disabled) { background: #dc2626; color: #fff; border-color: #dc2626; box-shadow: 0 4px 14px rgba(220,38,38,0.25); }
+        .bl-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .bl-dot { width: 7px; height: 7px; border-radius: 50%; background: #e2e8f0; border: none; cursor: pointer; padding: 0; transition: all 0.2s; flex-shrink: 0; }
+        .bl-dot.active { background: #dc2626; width: 22px; border-radius: 4px; }
         @media (min-width: 1025px) { .bl-mobile-drawer { display: none !important; } }
         @media (max-width: 1024px) {
           .bl-sidebar    { display: none; }
@@ -207,7 +230,9 @@ export default function Blogger() {
           .bl-main       { height: auto; overflow: visible; }
           .bl-cards-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
-        @media (max-width: 540px) { .bl-cards-grid { grid-template-columns: minmax(260px, 340px) !important; justify-content: center; } }
+        @media (max-width: 560px) {
+          .bl-cards-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {/* Mobile drawer overlay */}
@@ -246,7 +271,7 @@ export default function Blogger() {
         <div style={{ padding: 12 }}>
           <FilterSidebar
             onApplyFilter={(f, u) => { applyFilters(f, u); setIsFilterOpen(false); }}
-            usersList={allBloggers}
+            usersList={allRef.current}
             initialCategory={categoryFromQS}
           />
         </div>
@@ -259,7 +284,7 @@ export default function Blogger() {
         <div className="bl-sidebar bl-scroll">
           <FilterSidebar
             onApplyFilter={applyFilters}
-            usersList={allBloggers}
+            usersList={allRef.current}
             initialCategory={categoryFromQS}
           />
         </div>
@@ -340,18 +365,58 @@ export default function Blogger() {
             </div>
           )}
 
-          {/* Cards */}
+          {/* Paged grid */}
           {!loading && !error && (
             bloggers.length > 0 ? (
-              <div className="bl-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 320px))", gap: 18, paddingBottom: 24, justifyContent: "center" }}>
-                {bloggers.map(blogger => (
-                  <BloggerCard
-                    key={blogger._id}
-                    {...blogger}
-                    headerGradient={blogger.gradient}
-                    onBronClick={() => handleBron(blogger._id)}
-                  />
-                ))}
+              <div>
+                {/* Cards grid — animatsiya key bilan qayta render qiladi */}
+                <div
+                  key={`page-${currentPage}`}
+                  className={`bl-cards-grid ${slideDir === "next" ? "bl-page-next" : "bl-page-prev"}`}
+                >
+                  {pageBloggers.map(blogger => (
+                    <BloggerCard
+                      key={blogger._id}
+                      {...blogger}
+                      headerGradient={blogger.gradient}
+                      onBronClick={() => handleBron(blogger._id)}
+                    />
+                  ))}
+                </div>
+
+                {/* Navigation */}
+                {totalPages > 1 && (
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    gap: 10, marginTop: 20, paddingBottom: 16,
+                  }}>
+                    <button className="bl-nav-btn" onClick={goPrev} disabled={currentPage === 0}>
+                      <LuChevronLeft size={16} />
+                    </button>
+
+                    {/* Dots */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {Array.from({ length: totalPages }).map((_, i) => (
+                        <button
+                          key={i}
+                          className={`bl-dot${i === currentPage ? " active" : ""}`}
+                          onClick={() => { setSlideDir(i > currentPage ? "next" : "prev"); setCurrentPage(i); }}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Counter */}
+                    <span style={{ fontSize: 11.5, color: "#94a3b8", fontWeight: 600, minWidth: 52, textAlign: "center" }}>
+                      <span style={{ color: "#dc2626", fontWeight: 800 }}>{currentPage + 1}</span>
+                      {" / "}
+                      {totalPages}
+                    </span>
+
+                    <button className="bl-nav-btn" onClick={goNext} disabled={currentPage >= totalPages - 1}>
+                      <LuChevronRight size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{

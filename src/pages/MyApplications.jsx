@@ -693,7 +693,10 @@ export default function MyApplications() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const defaultTab = new URLSearchParams(location.search).get("tab") === "orders" ? "orders" : "received";
+  const searchParams   = new URLSearchParams(location.search);
+  const defaultTab     = searchParams.get("tab") === "orders" ? "orders" : "received";
+  const initialOrderId = searchParams.get("orderId") || null;
+
   const [tab,      setTab]      = useState(defaultTab);
   const [received, setReceived] = useState([]);
   const [sent,     setSent]     = useState([]);
@@ -702,6 +705,7 @@ export default function MyApplications() {
   const [selected, setSelected] = useState(null);
   const [selectedType, setSelectedType] = useState("application"); // "application" | "order"
   const [showChat, setShowChat] = useState(false);
+  const autoSelectedRef = useRef(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 640);
 
   useEffect(()=>{
@@ -798,6 +802,18 @@ export default function MyApplications() {
     setReceived(p=>p.map(f)); setSent(p=>p.map(f)); setOrders(p=>p.map(f));
     setSelected(p=>p?._id===id?{...p,status}:p);
   },[]);
+
+  /* ── Auto-select order from URL ?orderId=... ── */
+  useEffect(()=>{
+    if (!initialOrderId || autoSelectedRef.current || orders.length === 0) return;
+    const order = orders.find(o => o._id === initialOrderId);
+    if (order) {
+      autoSelectedRef.current = true;
+      setTab("orders");
+      handleSelectOrder(order);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[orders, initialOrderId]);
 
   const myId = String(user?._id||"");
   const ordersUnread = orders.reduce((s,o)=>{

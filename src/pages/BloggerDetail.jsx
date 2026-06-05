@@ -916,7 +916,15 @@ export default function BloggerDetail() {
           navigate={navigate}
         />
       )}
-      {isMsgOpen  && <MessageModal onClose={() => setIsMsgOpen(false)} bloggerName={fullName} />}
+      {isMsgOpen && (
+        <QuickChatModal
+          onClose={() => setIsMsgOpen(false)}
+          bloggerName={fullName}
+          bloggerId={blogger?.user?._id || id}
+          isLoggedIn={!!user}
+          navigate={navigate}
+        />
+      )}
     </>
   );
 }
@@ -1046,24 +1054,75 @@ function OrderModal({ onClose, bloggerName, bloggerId, packages, isLoggedIn, nav
   );
 }
 
-/* ─── Message Modal ──────────────────────────────────────── */
-function MessageModal({ onClose, bloggerName }) {
+/* ─── Quick Chat Modal ───────────────────────────────────── */
+function QuickChatModal({ onClose, bloggerName, bloggerId, isLoggedIn, navigate }) {
+  const [text,    setText]    = useState("");
+  const [sending, setSending] = useState(false);
+
+  const handleSend = async () => {
+    if (!isLoggedIn) {
+      toast.error("Xabar yuborish uchun tizimga kiring");
+      navigate(ROUTE_PATHS.LOGIN);
+      return;
+    }
+    if (!text.trim()) { toast.error("Xabar bo'sh bo'lishi mumkin emas"); return; }
+
+    setSending(true);
+    try {
+      const result = await orderService.create(bloggerId, {
+        projectName: "To'g'ridan-to'g'ri muloqot",
+        services:    [],
+        brief:       text.trim(),
+        budget:      0,
+      });
+      const orderId = result?.data?._id || result?._id;
+      toast.success("Chat ochildi!");
+      onClose();
+      navigate(`${ROUTE_PATHS.MY_APPLICATIONS}?tab=orders${orderId ? `&orderId=${orderId}` : ""}`);
+    } catch (err) {
+      if (err?.response?.status === 409) {
+        // Order already exists — just navigate to orders list
+        onClose();
+        navigate(`${ROUTE_PATHS.MY_APPLICATIONS}?tab=orders`);
+      } else {
+        toast.error(err?.response?.data?.message || "Xatolik yuz berdi");
+      }
+    }
+    setSending(false);
+  };
+
   return (
-    <div style={ov}>
+    <div style={ov} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={mc}>
         <div style={mh}>
-          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#0f172a" }}>{bloggerName}ga xabar</h3>
+          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#0f172a" }}>
+            {bloggerName}ga xabar
+          </h3>
           <button onClick={onClose} style={cb}><LuX size={20} /></button>
         </div>
-        <div style={{ marginTop: 20 }}>
-          <p style={{ fontSize: 13.5, color: "#64748b", marginBottom: 16, lineHeight: 1.6 }}>
-            Savollaringiz bo'lsa to'g'ridan-to'g'ri blogerga yozishingiz mumkin.
-          </p>
-          <textarea placeholder="Xabaringizni yozing..." style={{ ...inp, height: 140, resize: "none" }} />
-          <button type="button" onClick={() => { toast.success("Xabar yuborildi!"); onClose(); }} style={{ ...pbtn, marginTop: 16 }}>
-            Xabarni jo'natish
-          </button>
-        </div>
+        <p style={{ margin: "8px 0 20px", fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
+          Xabaringizni yozing — bloger bilan to'g'ridan-to'g'ri chat ochiladi.
+        </p>
+        <textarea
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSend(); }}
+          placeholder="Salom! Reklamangiz haqida gaplashmoqchiman..."
+          style={{ ...inp, height: 130, resize: "none" }}
+          autoFocus
+        />
+        <p style={{ fontSize: 11, color: "#94a3b8", margin: "6px 0 0", textAlign: "right" }}>
+          Ctrl + Enter — yuborish
+        </p>
+        <button
+          type="button"
+          onClick={handleSend}
+          disabled={sending || !text.trim()}
+          style={{ ...pbtn, marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: (sending || !text.trim()) ? 0.55 : 1, cursor: (sending || !text.trim()) ? "not-allowed" : "pointer" }}
+        >
+          <LuMessageCircle size={16} />
+          {sending ? "Ochilmoqda..." : "Chatni ochish"}
+        </button>
       </div>
     </div>
   );
