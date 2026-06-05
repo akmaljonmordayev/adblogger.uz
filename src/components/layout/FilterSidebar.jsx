@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   LuSlidersHorizontal, LuRotateCcw, LuCheck, LuChevronDown,
-  LuSearch, LuX, LuArrowRight,
+  LuSearch, LuX,
 } from "react-icons/lu";
 
 /* ── Scrollbar style ── */
@@ -354,33 +354,56 @@ export default function FilterSidebar({ onApplyFilter, usersList = [], initialCa
     status: [],
     price: { min: PRICE_MIN, max: PRICE_MAX },
   });
-  const [applied, setApplied] = useState(false);
+  const priceTimer = useRef(null);
+  const latestUser = useRef(null);
+  const latestFilters = useRef(filters);
+
+  // sync refs for use inside debounced callbacks
+  latestFilters.current = filters;
+  latestUser.current = selectedUser;
 
   useEffect(() => {
-    if (initialCategory) {
-      setFilters(p => ({ ...p, category: [initialCategory] }));
-    } else {
-      setFilters(p => ({ ...p, category: [] }));
-    }
+    const newFilters = initialCategory
+      ? { ...latestFilters.current, category: [initialCategory] }
+      : { ...latestFilters.current, category: [] };
+    setFilters(newFilters);
+    onApplyFilter(newFilters, latestUser.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialCategory]);
 
   const toggle = (type, value) => {
-    setApplied(false);
-    setFilters((p) => {
-      const has = p[type].includes(value);
-      return { ...p, [type]: has ? p[type].filter((v) => v !== value) : [...p[type], value] };
+    setFilters((prev) => {
+      const has = prev[type].includes(value);
+      const next = { ...prev, [type]: has ? prev[type].filter((v) => v !== value) : [...prev[type], value] };
+      onApplyFilter(next, latestUser.current);
+      return next;
+    });
+  };
+
+  const handleSelectUser = (user) => {
+    setSelectedUser(user);
+    latestUser.current = user;
+    onApplyFilter(latestFilters.current, user);
+  };
+
+  const handlePrice = ({ min, max }) => {
+    setFilters((prev) => {
+      const next = { ...prev, price: { min, max } };
+      latestFilters.current = next;
+      clearTimeout(priceTimer.current);
+      priceTimer.current = setTimeout(() => {
+        onApplyFilter(next, latestUser.current);
+      }, 300);
+      return next;
     });
   };
 
   const reset = () => {
-    setFilters({ category: [], platform: [], subscribers: [], status: [], price: { min: PRICE_MIN, max: PRICE_MAX } });
+    const empty = { category: [], platform: [], subscribers: [], status: [], price: { min: PRICE_MIN, max: PRICE_MAX } };
+    setFilters(empty);
     setSelectedUser(null);
-    setApplied(false);
-  };
-
-  const apply = () => {
-    onApplyFilter(filters, selectedUser);
-    setApplied(true);
+    latestUser.current = null;
+    onApplyFilter(empty, null);
   };
 
   const activeCount =
@@ -453,12 +476,12 @@ export default function FilterSidebar({ onApplyFilter, usersList = [], initialCa
 
         {/* ── Body ── */}
         <div>
-          <div style={{ padding: "18px 18px 8px" }}>
+          <div style={{ padding: "18px 18px 18px" }}>
 
             {/* Bloger qidirish */}
             <div style={{ marginBottom: 20 }}>
               <SectionLabel>Bloger qidirish</SectionLabel>
-              <UserSelector users={usersList} selectedUser={selectedUser} onSelect={setSelectedUser} />
+              <UserSelector users={usersList} selectedUser={selectedUser} onSelect={handleSelectUser} />
             </div>
 
             {/* Kategoriya */}
@@ -499,10 +522,7 @@ export default function FilterSidebar({ onApplyFilter, usersList = [], initialCa
               <PriceSlider
                 minVal={filters.price.min}
                 maxVal={filters.price.max}
-                onChange={({ min, max }) => {
-                  setApplied(false);
-                  setFilters((p) => ({ ...p, price: { min, max } }));
-                }}
+                onChange={handlePrice}
               />
             </div>
 
@@ -565,42 +585,6 @@ export default function FilterSidebar({ onApplyFilter, usersList = [], initialCa
           </div>
         </div>
 
-        {/* ── Footer (sticky bottom so apply is always visible) ── */}
-        <div style={{
-          padding: "14px 18px",
-          borderTop: "1px solid #f1f5f9",
-          background: "#fff",
-          borderRadius: "0 0 18px 18px",
-          position: "sticky", bottom: 0, zIndex: 5,
-        }}>
-          {applied && (
-            <div style={{
-              marginBottom: 10, padding: "8px 12px",
-              background: "#f0fdf4", border: "1px solid #bbf7d0",
-              borderRadius: 8, fontSize: 12, fontWeight: 600,
-              color: "#16a34a", textAlign: "center",
-            }}>
-              ✓ Filtrlar qo'llanildi
-            </div>
-          )}
-          <button
-            onClick={apply}
-            style={{
-              width: "100%", padding: "13px",
-              borderRadius: 12, border: "none", cursor: "pointer",
-              background: "linear-gradient(135deg, #dc2626, #b91c1c)",
-              color: "#fff", fontSize: 14, fontWeight: 700,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              boxShadow: "0 4px 16px rgba(220,38,38,0.3)",
-              transition: "opacity 0.2s, transform 0.15s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = "0.9"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "none"; }}
-          >
-            Natijalarni ko'rsatish
-            <LuArrowRight size={15} strokeWidth={2.5} />
-          </button>
-        </div>
 
       </div>
     </div>
