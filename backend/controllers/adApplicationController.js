@@ -280,7 +280,7 @@ exports.updateStatus = catchAsync(async (req, res, next) => {
       body:  status === 'accepted'
         ? "E'lon egasi zayavkangizni qabul qildi. Chat orqali muloqot qilishingiz mumkin."
         : "Afsuski, zayavkangiz rad etildi.",
-      link:  '/my-applications',
+      link:  `/mening-zayavkalarim?tab=sent&appId=${app._id}`,
     });
     io.to(`user_${app.applicant}`).emit('new_notification', statusNotif);
   }
