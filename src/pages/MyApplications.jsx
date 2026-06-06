@@ -5,7 +5,7 @@ import {
   LuMessageCircle, LuCheck, LuCheckCheck, LuX,
   LuChevronLeft, LuRefreshCw, LuSmile, LuPencil,
   LuTrash2, LuBan, LuBriefcase, LuSearch,
-  LuPhone, LuUser, LuFileText, LuLock, LuCheckCircle, LuCircleX,
+  LuPhone, LuUser, LuFileText, LuLock, LuCircleCheck, LuCircleX,
 } from "react-icons/lu";
 import { useAuthStore } from "../store/useAuthStore";
 import { toast } from "../components/ui/toast";
@@ -438,7 +438,7 @@ function ApplicationCard({ app, myId, onStatusChange, service }) {
             >
               {acting==="accepted"
                 ? <LuLoader size={14} style={{animation:"spin .8s linear infinite"}}/>
-                : <LuCheckCircle size={15}/>
+                : <LuCircleCheck size={15}/>
               }
               Qabul qilish
             </button>
@@ -466,7 +466,7 @@ function ApplicationCard({ app, myId, onStatusChange, service }) {
         {/* Accepted info */}
         {app.status==="accepted" && (
           <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:12,background:"#F0FDF4",border:"1px solid #BBF7D0"}}>
-            <LuCheckCircle size={16} style={{color:"#16A34A",flexShrink:0}}/>
+            <LuCircleCheck size={16} style={{color:"#16A34A",flexShrink:0}}/>
             <span style={{fontSize:13,fontWeight:600,color:"#15803D"}}>Zayavka qabul qilindi — endi chat ochiq!</span>
           </div>
         )}
