@@ -58,7 +58,7 @@ exports.applyToAd = catchAsync(async (req, res, next) => {
     type:  'new_application',
     title: '📩 Yangi zayavka keldi!',
     body:  `${req.user.firstName} ${req.user.lastName} sizning e'loningizga zayavka yubordi`,
-    link:  '/my-applications',
+    link:  '/mening-zayavkalarim',
   });
 
   // Notification ni ham socket orqali yuborish (real-time badge + list update)
@@ -280,7 +280,7 @@ exports.updateStatus = catchAsync(async (req, res, next) => {
       body:  status === 'accepted'
         ? "E'lon egasi zayavkangizni qabul qildi. Chat orqali muloqot qilishingiz mumkin."
         : "Afsuski, zayavkangiz rad etildi.",
-      link:  '/my-applications',
+      link:  `/mening-zayavkalarim?tab=sent&appId=${app._id}`,
     });
     io.to(`user_${app.applicant}`).emit('new_notification', statusNotif);
   }

@@ -195,7 +195,7 @@ export default function Notifications() {
             return (
               <Link
                 key={n._id}
-                to={n.link || "/bildirishnomalar"}
+                to={(n.link || "/bildirishnomalar").replace("/my-applications", "/mening-zayavkalarim")}
                 onClick={() => !n.read && markRead(n._id)}
                 style={{
                   display: "flex", gap: 14, padding: "16px 18px",

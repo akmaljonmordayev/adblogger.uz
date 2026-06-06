@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const User = require('../models/User');
 const Blogger = require('../models/Blogger');
+const Notification = require('../models/Notification');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const { sendTokenResponse, generateToken } = require('../utils/generateToken');
@@ -169,6 +170,57 @@ exports.checkApplicationStatus = catchAsync(async (req, res, next) => {
     applicationStatus: user.applicationStatus,
     rejectionReason: user.rejectionReason || '',
   });
+});
+
+// PATCH /api/v1/auth/complete-onboarding — Step 2 → Step 3
+exports.completeOnboarding = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.user._id);
+  if (!user) return next(new AppError('Foydalanuvchi topilmadi.', 404));
+  if (user.onboardingStep === 3) return next(new AppError('Profil allaqachon to\'ldirilgan.', 400));
+
+  if (user.role === 'blogger') {
+    const { bio, platforms, socialLinks, categories, services, followers, followersRange, pricing, location, website } = req.body;
+    const blogger = await Blogger.findOne({ user: user._id });
+    if (!blogger) return next(new AppError('Blogger profili topilmadi.', 404));
+
+    if (bio)             blogger.bio           = String(bio).trim().slice(0, 500);
+    if (platforms)       blogger.platforms     = Array.isArray(platforms) ? platforms : [platforms];
+    if (socialLinks)     blogger.socialLinks   = { ...blogger.socialLinks.toObject?.() || blogger.socialLinks, ...socialLinks };
+    if (categories)      blogger.categories    = Array.isArray(categories) ? categories : [categories];
+    if (services)        blogger.services      = Array.isArray(services) ? services : [services];
+    if (followers !== undefined) blogger.followers = Number(followers) || 0;
+    if (followersRange)  blogger.followersRange = followersRange;
+    if (pricing)         blogger.pricing       = { ...blogger.pricing?.toObject?.() || blogger.pricing, ...pricing };
+    if (location)        blogger.location      = location;
+    if (website)         blogger.website       = website;
+    await blogger.save();
+  } else if (user.role === 'business') {
+    const { bio, companyName, phone } = req.body;
+    if (bio)          user.bio         = String(bio).trim().slice(0, 500);
+    if (companyName)  user.companyName = String(companyName).trim();
+    if (phone)        user.phone       = phone;
+  }
+
+  user.onboardingStep = 3;
+  await user.save({ validateBeforeSave: false });
+
+  // Send "account activated" notification
+  const notif = await Notification.create({
+    user:  user._id,
+    type:  'verify',
+    title: '🎉 Akkauntingiz to\'liq faollashdi!',
+    body:  'Profilingiz muvaffaqiyatli to\'ldirildi. Platformadan to\'liq foydalanishingiz mumkin.',
+    link:  '/profil',
+  });
+
+  const io = req.app.get('io');
+  if (io) {
+    io.to(`user_${user._id}`).emit('new_notification', notif);
+    io.to('admin_room').emit('user_onboarding_step', { userId: String(user._id), step: 3, name: `${user.firstName} ${user.lastName}` });
+  }
+
+  const updatedUser = await User.findById(user._id);
+  res.status(200).json({ success: true, data: updatedUser });
 });
 
 // PATCH /api/v1/auth/reset-password/:token

@@ -32,6 +32,7 @@ const Profile       = lazy(() => import("../pages/Profile"));
 const Wishlist      = lazy(() => import("../pages/Wishlist"));
 const Notifications    = lazy(() => import("../pages/Notifications"));
 const MyApplications  = lazy(() => import("../pages/MyApplications"));
+const CompleteProfile = lazy(() => import("../pages/CompleteProfile"));
 
 const NotFound      = lazy(() => import("../pages/NotFound"));
 
@@ -122,6 +123,10 @@ export const router = createBrowserRouter([
   {
     path: "/tasdiqlash-kutilmoqda",
     element: wrap(<PendingApproval />),
+  },
+  {
+    path: "/profil-toldirish",
+    element: wrap(<CompleteProfile />),
   },
   {
     path: "*",

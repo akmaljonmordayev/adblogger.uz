@@ -891,8 +891,9 @@ export default function MyApplications() {
   const location = useLocation();
 
   const searchParams   = new URLSearchParams(location.search);
-  const defaultTab     = searchParams.get("tab")==="orders" ? "orders" : "received";
+  const defaultTab     = searchParams.get("tab")==="orders" ? "orders" : searchParams.get("tab")==="sent" ? "sent" : "received";
   const initialOrderId = searchParams.get("orderId") || null;
+  const initialAppId   = searchParams.get("appId")   || null;
 
   const [tab,      setTab]      = useState(defaultTab);
   const [received, setReceived] = useState([]);
@@ -970,6 +971,14 @@ export default function MyApplications() {
     if(order){ autoSelectedRef.current=true; setTab("orders"); handleSelectOrder(order); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[orders,initialOrderId]);
+
+  const autoAppRef = useRef(false);
+  useEffect(()=>{
+    if(!initialAppId||autoAppRef.current) return;
+    const app = sent.find(a=>a._id===initialAppId) || received.find(a=>a._id===initialAppId);
+    if(app){ autoAppRef.current=true; handleSelect(app); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[sent,received,initialAppId]);
 
   const myId = String(user?._id||"");
   const receivedUnread = received.reduce((s,a)=>s+(a.ownerUnread||0),0);

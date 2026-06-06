@@ -182,5 +182,6 @@ router.get('/me', authController.getMe);
  *         description: Parol yangilandi
  */
 router.patch('/update-password', authController.updatePassword);
+router.patch('/complete-onboarding', authController.completeOnboarding);
 
 module.exports = router;

@@ -54,8 +54,8 @@ export default function PendingApproval() {
       // Auto-login instantly via token from socket
       loginFromApproval({ token, user });
       setStatus(STATUS.APPROVED);
-      // Show approved screen briefly, then redirect
-      setTimeout(() => navigate("/"), 2800);
+      // Redirect to profile completion (step 2)
+      setTimeout(() => navigate("/profil-toldirish"), 2000);
     },
     application_rejected: ({ reason }) => {
       setRejectionReason(reason || "");
@@ -89,10 +89,10 @@ export default function PendingApproval() {
           </div>
           <h2 className="text-2xl font-bold mb-3" style={{ color: "#111827" }}>Tabriklaymiz!</h2>
           <p className="mb-2" style={{ color: "#4b5563" }}>
-            Arizangiz <span style={{ color: "#16a34a", fontWeight: 700 }}>tasdiqlandi</span>.
+            Arizangiz <span style={{ color: "#16a34a", fontWeight: 700 }}>tasdiqlandi</span>!
           </p>
           <p className="text-sm mb-6" style={{ color: "#9ca3af" }}>
-            Tizimga kirish amalga oshirilmoqda{dots}
+            Profil to'ldirish sahifasiga o'tilmoqda{dots}
           </p>
           {/* Progress bar */}
           <div className="w-full rounded-full overflow-hidden" style={{ height: 4, background: "#e5e7eb" }}>

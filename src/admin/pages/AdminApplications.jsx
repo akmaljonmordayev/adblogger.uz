@@ -109,6 +109,7 @@ export default function AdminApplications() {
   const [search, setSearch] = useState("");
   const [rejectTarget, setRejectTarget] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
+  const [liveSteps, setLiveSteps] = useState({}); // { userId: step } — real-time tracking
 
   const { data: appsData, isLoading: loading, refetch: fetchApplications } = useQuery({
     queryKey: ["admin-applications", activeTab, page],
@@ -141,13 +142,18 @@ export default function AdminApplications() {
     );
   }, [allApplications, search]);
 
-  // Real-time: new applications arrive via socket
+  // Real-time: new applications + onboarding step updates
   useAdminSocket({
     new_application: () => {
       queryClient.setQueryData(["admin-pending-count"], c => (c || 0) + 1);
       if (activeTab === "pending") {
         queryClient.invalidateQueries({ queryKey: ["admin-applications"] });
       }
+    },
+    user_onboarding_step: ({ userId, step, name }) => {
+      setLiveSteps(prev => ({ ...prev, [userId]: step }));
+      const stepLabel = step === 2 ? "Profil to'ldirmoqda" : "Profil to'ldirildi ✅";
+      toast.success(`${name}: ${stepLabel}`, { duration: 4000 });
     },
   });
 
@@ -257,6 +263,7 @@ export default function AdminApplications() {
                 <tr>
                   {["Foydalanuvchi", "Email", "Telefon", "Rol", "Ariza sanasi",
                     ...(activeTab === "rejected" ? ["Sabab"] : []),
+                    ...(activeTab === "approved" ? ["Onboarding"] : []),
                     ...(activeTab === "pending" ? ["Amallar"] : [])
                   ].map(h => (
                     <th key={h} style={TH}>{h}</th>
@@ -316,6 +323,22 @@ export default function AdminApplications() {
                         {u.rejectionReason || <span style={{ color: "#d1d5db", fontStyle: "italic" }}>Ko'rsatilmagan</span>}
                       </td>
                     )}
+
+                    {/* Onboarding step column (approved tab) */}
+                    {activeTab === "approved" && (() => {
+                      const step = liveSteps[String(u._id)] ?? u.onboardingStep ?? 2;
+                      const cfg = step >= 3
+                        ? { label: "Profil to'ldirildi", bg: "#f0fdf4", color: "#166534", dot: "#22c55e" }
+                        : { label: "Profil kutilmoqda", bg: "#fffbeb", color: "#92400e", dot: "#f59e0b", pulse: true };
+                      return (
+                        <td style={TD}>
+                          <div style={{ display:"flex", alignItems:"center", gap:6, padding:"4px 10px", borderRadius:8, background:cfg.bg, width:"fit-content" }}>
+                            <span style={{ width:7, height:7, borderRadius:"50%", background:cfg.dot, flexShrink:0, animation: cfg.pulse ? "pulse 2s infinite" : "none" }} />
+                            <span style={{ fontSize:11, fontWeight:700, color:cfg.color, whiteSpace:"nowrap" }}>{cfg.label}</span>
+                          </div>
+                        </td>
+                      );
+                    })()}
 
                     {/* Actions for pending */}
                     {activeTab === "pending" && (
@@ -394,6 +417,7 @@ export default function AdminApplications() {
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.4 } }
       `}</style>
     </div>
   );
