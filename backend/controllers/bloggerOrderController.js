@@ -9,7 +9,8 @@ const AppError     = require('../utils/appError');
 /* ── helpers ── */
 const isParticipant = (order, userId) => {
   const uid = String(userId);
-  return uid === String(order.blogger) || uid === String(order.business);
+  return uid === String(order.blogger?._id || order.blogger) ||
+         uid === String(order.business?._id || order.business);
 };
 
 /* ── POST /api/v1/blogger-orders/:bloggerId ── buyurtma yaratish ── */
@@ -93,9 +94,10 @@ exports.getMessages = catchAsync(async (req, res, next) => {
   if (!order) return next(new AppError('Buyurtma topilmadi', 404));
   if (!isParticipant(order, req.user._id)) return next(new AppError("Ruxsat yo'q", 403));
 
-  const myId     = String(req.user._id);
-  const isBlogger = myId === String(order.blogger._id || order.blogger);
-  const otherId   = isBlogger ? order.business : order.blogger;
+  const myId      = String(req.user._id);
+  const isBlogger = myId === String(order.blogger?._id || order.blogger);
+  const otherDoc  = isBlogger ? order.business : order.blogger;
+  const otherId   = otherDoc?._id || otherDoc; // always an ObjectId
 
   const messages = await ChatMessage
     .find({ order: order._id })
