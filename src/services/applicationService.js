@@ -9,8 +9,9 @@ const applicationService = {
   editMsg:  (appId, msgId, text) => api.patch(`/ad-applications/${appId}/messages/${msgId}`, { text }).then(r => r.data),
   deleteMsg:(appId, msgId)       => api.delete(`/ad-applications/${appId}/messages/${msgId}`).then(r => r.data),
   status:   (appId, status)      => api.patch(`/ad-applications/${appId}/status`, { status }).then(r => r.data),
-  block:    (appId)              => api.post(`/ad-applications/${appId}/block`).then(r => r.data),
-  unblock:  (appId)              => api.delete(`/ad-applications/${appId}/block`).then(r => r.data),
+  block:     (appId)             => api.post(`/ad-applications/${appId}/block`).then(r => r.data),
+  unblock:   (appId)             => api.delete(`/ad-applications/${appId}/block`).then(r => r.data),
+  deleteApp: (appId)             => api.delete(`/ad-applications/${appId}`).then(r => r.data),
 };
 
 export default applicationService;

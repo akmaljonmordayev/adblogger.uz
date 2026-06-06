@@ -70,7 +70,7 @@ exports.applyToAd = catchAsync(async (req, res, next) => {
 /* ── GET /api/v1/ad-applications/received  ─── kelgan zayavkalar ── */
 exports.getReceivedApplications = catchAsync(async (req, res) => {
   const applications = await AdApplication
-    .find({ adOwner: req.user._id })
+    .find({ adOwner: req.user._id, deletedForOwner: { $ne: true } })
     .populate('ad', 'title companyName type productName')
     .populate('applicant', 'firstName lastName avatar email phone')
     .sort('-updatedAt');
@@ -81,7 +81,7 @@ exports.getReceivedApplications = catchAsync(async (req, res) => {
 /* ── GET /api/v1/ad-applications/sent  ─── yuborgan zayavkalar ── */
 exports.getSentApplications = catchAsync(async (req, res) => {
   const applications = await AdApplication
-    .find({ applicant: req.user._id })
+    .find({ applicant: req.user._id, deletedForApplicant: { $ne: true } })
     .populate('ad', 'title companyName type productName')
     .populate('adOwner', 'firstName lastName avatar email phone')
     .sort('-updatedAt');
@@ -283,6 +283,29 @@ exports.updateStatus = catchAsync(async (req, res, next) => {
       link:  `/mening-zayavkalarim?tab=sent&appId=${app._id}`,
     });
     io.to(`user_${app.applicant}`).emit('new_notification', statusNotif);
+  }
+
+  res.status(200).json({ success: true });
+});
+
+/* ── DELETE /api/v1/ad-applications/:appId ─── zayavkani o'chirish ── */
+exports.deleteApplication = catchAsync(async (req, res, next) => {
+  const app = await AdApplication.findById(req.params.appId);
+  if (!app) return next(new AppError('Zayavka topilmadi', 404));
+
+  const myId        = String(req.user._id);
+  const isOwner     = myId === String(app.adOwner);
+  const isApplicant = myId === String(app.applicant);
+  if (!isOwner && !isApplicant) return next(new AppError("Ruxsat yo'q", 403));
+
+  if (isOwner)     app.deletedForOwner     = true;
+  if (isApplicant) app.deletedForApplicant = true;
+
+  if (app.deletedForOwner && app.deletedForApplicant) {
+    await ChatMessage.deleteMany({ application: app._id });
+    await AdApplication.findByIdAndDelete(app._id);
+  } else {
+    await app.save();
   }
 
   res.status(200).json({ success: true });
