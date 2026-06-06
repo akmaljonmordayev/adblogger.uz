@@ -210,20 +210,7 @@ function Bubble({ msg, myId, appId, onEdited, onDeleted, service=applicationServ
     } catch { toast.error("O'chirishda xatolik"); }
   };
 
-  if (msg.deleted) {
-    return (
-      <div style={{display:"flex", justifyContent:isMine?"flex-end":"flex-start", padding:"2px 0"}}>
-        <span style={{
-          fontSize:12, color:C.dim, fontStyle:"italic",
-          padding:"6px 14px", borderRadius:20,
-          background:"#F3F4F6", border:"1px dashed #DDD",
-          display:"flex", alignItems:"center", gap:5,
-        }}>
-          <LuBan size={11}/> Xabar o'chirildi
-        </span>
-      </div>
-    );
-  }
+  if (msg.deleted) return null;
 
   const isSticker = /^[\u{1F300}-\u{1FAFF}]{1,3}$/u.test((msg.text||"").trim());
 
@@ -966,6 +953,16 @@ export default function MyApplications() {
     setSelected(p=>p?._id===id?{...p,status}:p);
   },[]);
 
+  const handleDeleteOrder = useCallback(async(orderId, e)=>{
+    e.stopPropagation();
+    try {
+      await orderService.deleteOrder(orderId);
+      setOrders(p=>p.filter(o=>o._id!==orderId));
+      if(selected?._id===orderId){ setSelected(null); setShowChat(false); }
+      toast.success("Buyurtma o'chirildi");
+    } catch { toast.error("O'chirishda xatolik"); }
+  },[selected]);
+
   useEffect(()=>{
     if(!initialOrderId||autoSelectedRef.current||orders.length===0) return;
     const order=orders.find(o=>o._id===initialOrderId);
@@ -1149,12 +1146,31 @@ export default function MyApplications() {
                   const isBlogger=String(order.blogger?._id||order.blogger)===myId;
                   const unread=isBlogger?(order.bloggerUnread||0):(order.businessUnread||0);
                   return (
-                    <ConvRow key={order._id}
-                      app={{...norm,ownerUnread:isBlogger?unread:0,applicantUnread:!isBlogger?unread:0}}
-                      myId={myId}
-                      isActive={selected?._id===order._id}
-                      onClick={()=>handleSelectOrder(order)}
-                    />
+                    <div key={order._id} style={{position:"relative"}}
+                      onMouseEnter={e=>{ const btn=e.currentTarget.querySelector('.order-del-btn'); if(btn) btn.style.opacity="1"; }}
+                      onMouseLeave={e=>{ const btn=e.currentTarget.querySelector('.order-del-btn'); if(btn) btn.style.opacity="0"; }}
+                    >
+                      <ConvRow
+                        app={{...norm,ownerUnread:isBlogger?unread:0,applicantUnread:!isBlogger?unread:0}}
+                        myId={myId}
+                        isActive={selected?._id===order._id}
+                        onClick={()=>handleSelectOrder(order)}
+                      />
+                      <button
+                        className="order-del-btn"
+                        onClick={e=>handleDeleteOrder(order._id, e)}
+                        title="O'chirish"
+                        style={{
+                          position:"absolute",top:10,right:10,
+                          width:26,height:26,borderRadius:7,border:"none",
+                          background:"#FEF2F2",color:C.red,cursor:"pointer",
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          opacity:0,transition:"opacity .15s",zIndex:2,
+                        }}
+                      >
+                        <LuTrash2 size={12}/>
+                      </button>
+                    </div>
                   );
                 })
             ) : (

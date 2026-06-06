@@ -77,7 +77,10 @@ exports.createOrder = catchAsync(async (req, res, next) => {
 exports.getMyOrders = catchAsync(async (req, res) => {
   const myId = String(req.user._id);
   const orders = await BloggerOrder.find({
-    $or: [{ blogger: myId }, { business: myId }],
+    $or: [
+      { blogger:  myId, deletedForBlogger:  { $ne: true } },
+      { business: myId, deletedForBusiness: { $ne: true } },
+    ],
   })
     .populate('blogger',  'firstName lastName avatar')
     .populate('business', 'firstName lastName avatar')
@@ -277,6 +280,33 @@ exports.blockUser = catchAsync(async (req, res, next) => {
 
   const io = req.app.get('io');
   io.to(`user_${targetId}`).emit('user_blocked', { orderId: String(order._id) });
+
+  res.status(200).json({ success: true });
+});
+
+/* ── DELETE /api/v1/blogger-orders/:orderId ── buyurtmani o'chirish ── */
+exports.deleteOrder = catchAsync(async (req, res, next) => {
+  const order = await BloggerOrder.findById(req.params.orderId);
+  if (!order) return next(new AppError('Buyurtma topilmadi', 404));
+  if (!isParticipant(order, req.user._id)) return next(new AppError("Ruxsat yo'q", 403));
+
+  const myId      = String(req.user._id);
+  const isBlogger = myId === String(order.blogger?._id || order.blogger);
+
+  // Har bir tomon o'z tomonidan o'chiradi (soft-delete)
+  if (isBlogger) {
+    order.deletedForBlogger = true;
+  } else {
+    order.deletedForBusiness = true;
+  }
+
+  // Ikkalasi ham o'chirgan bo'lsa — bazadan o'chirib yuboramiz
+  if (order.deletedForBlogger && order.deletedForBusiness) {
+    await ChatMessage.deleteMany({ order: order._id });
+    await BloggerOrder.findByIdAndDelete(order._id);
+  } else {
+    await order.save();
+  }
 
   res.status(200).json({ success: true });
 });

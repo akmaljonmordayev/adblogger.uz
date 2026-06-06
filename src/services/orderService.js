@@ -8,8 +8,9 @@ const orderService = {
   editMsg:   (orderId, msgId, text)   => api.patch(`/blogger-orders/${orderId}/messages/${msgId}`, { text }).then(r => r.data),
   deleteMsg: (orderId, msgId)         => api.delete(`/blogger-orders/${orderId}/messages/${msgId}`).then(r => r.data),
   status:    (orderId, status)        => api.patch(`/blogger-orders/${orderId}/status`, { status }).then(r => r.data),
-  block:     (orderId)                => api.post(`/blogger-orders/${orderId}/block`).then(r => r.data),
-  unblock:   (orderId)                => api.delete(`/blogger-orders/${orderId}/block`).then(r => r.data),
+  block:       (orderId)              => api.post(`/blogger-orders/${orderId}/block`).then(r => r.data),
+  unblock:     (orderId)              => api.delete(`/blogger-orders/${orderId}/block`).then(r => r.data),
+  deleteOrder: (orderId)              => api.delete(`/blogger-orders/${orderId}`).then(r => r.data),
 };
 
 export default orderService;
