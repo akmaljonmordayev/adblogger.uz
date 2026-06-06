@@ -17,8 +17,10 @@ const bloggerOrderSchema = new mongoose.Schema(
     },
     lastMessage:    { type: String, default: '' },
     lastMessageAt:  { type: Date },
-    bloggerUnread:  { type: Number, default: 0 },
-    businessUnread: { type: Number, default: 0 },
+    bloggerUnread:      { type: Number, default: 0 },
+    businessUnread:     { type: Number, default: 0 },
+    deletedForBlogger:  { type: Boolean, default: false },
+    deletedForBusiness: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
