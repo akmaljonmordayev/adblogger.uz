@@ -58,7 +58,7 @@ exports.applyToAd = catchAsync(async (req, res, next) => {
     type:  'new_application',
     title: '📩 Yangi zayavka keldi!',
     body:  `${req.user.firstName} ${req.user.lastName} sizning e'loningizga zayavka yubordi`,
-    link:  '/my-applications',
+    link:  '/mening-zayavkalarim',
   });
 
   // Notification ni ham socket orqali yuborish (real-time badge + list update)
