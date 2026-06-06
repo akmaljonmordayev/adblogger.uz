@@ -106,7 +106,7 @@ exports.getPendingApplications = catchAsync(async (req, res) => {
       .sort('-createdAt')
       .skip(skip)
       .limit(Number(limit))
-      .select('firstName lastName email phone role applicationStatus rejectionReason createdAt avatar'),
+      .select('firstName lastName email phone role applicationStatus rejectionReason onboardingStep createdAt avatar'),
     User.countDocuments(filter),
   ]);
 
@@ -129,26 +129,30 @@ exports.approveApplication = catchAsync(async (req, res, next) => {
 
   user.applicationStatus = 'approved';
   user.rejectionReason = '';
+  user.onboardingStep = 2;
   await user.save({ validateBeforeSave: false });
 
   // Generate auth token for instant login via socket
   const token = generateToken(user._id);
 
   const userObj = {
-    _id:       user._id,
-    firstName: user.firstName,
-    lastName:  user.lastName,
-    email:     user.email,
-    phone:     user.phone,
-    role:      user.role,
-    avatar:    user.avatar,
-    isVerified: user.isVerified,
+    _id:           user._id,
+    firstName:     user.firstName,
+    lastName:      user.lastName,
+    email:         user.email,
+    phone:         user.phone,
+    role:          user.role,
+    avatar:        user.avatar,
+    isVerified:    user.isVerified,
+    onboardingStep: user.onboardingStep,
   };
 
   // Emit to user's socket room — they get logged in instantly
   const io = req.app.get('io');
   if (io) {
     io.to(`user_${user._id}`).emit('application_approved', { token, user: userObj });
+    // Notify admin room of step change
+    io.to('admin_room').emit('user_onboarding_step', { userId: String(user._id), step: 2, name: `${user.firstName} ${user.lastName}` });
   }
 
   res.status(200).json({

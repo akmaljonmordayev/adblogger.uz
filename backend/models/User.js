@@ -37,6 +37,9 @@ const userSchema = new mongoose.Schema(
       default: 'pending',
     },
     rejectionReason: { type: String, default: '' },
+    onboardingStep: { type: Number, default: 1 }, // 1=pending, 2=profile fill, 3=complete
+    bio:         { type: String, default: '', maxlength: 500 },
+    companyName: { type: String, default: '' },
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     passwordResetToken: String,
     passwordResetExpires: Date,
