@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import {
   LuSearch, LuMapPin, LuFlame, LuMenu, LuX,
@@ -80,8 +80,10 @@ function Logo() {
 
 /* ─────────────── MAIN HEADER ─────────────── */
 export default function Header() {
+  const navigate = useNavigate();
   const [open, setOpen]           = useState(false);
   const [search, setSearch]       = useState("");
+  const [mobileSearch, setMobileSearch] = useState("");
   const [scrolled, setScrolled]   = useState(false);
   const [hidden, setHidden]       = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -137,6 +139,22 @@ export default function Header() {
     setUserMenuOpen(false);
     setOpen(false);
     setShowLogout(true);
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const q = search.trim();
+    if (!q) return;
+    setOpen(false);
+    navigate(`/blogerlar?q=${encodeURIComponent(q)}`);
+  };
+
+  const handleMobileSearch = (e) => {
+    e.preventDefault();
+    const q = mobileSearch.trim();
+    if (!q) return;
+    setOpen(false);
+    navigate(`/blogerlar?q=${encodeURIComponent(q)}`);
   };
 
   useEffect(() => {
@@ -379,7 +397,7 @@ export default function Header() {
           <Logo />
 
           {/* SEARCH */}
-          <div className="search-bar" style={{
+          <form className="search-bar" onSubmit={handleSearch} style={{
             flex: 1, maxWidth: 440,
             display: "flex", alignItems: "center",
             background: "#f3f4f6", borderRadius: 12,
@@ -396,18 +414,18 @@ export default function Header() {
               style={{ flex: 1, border: "none", background: "transparent", padding: "11px 8px", fontSize: 13.5, color: "#111827", outline: "none" }}
             />
             {search && (
-              <button onClick={() => setSearch("")} style={{ background: "none", border: "none", cursor: "pointer", padding: "0 6px", color: "#9ca3af", display: "flex", alignItems: "center" }}>
+              <button type="button" onClick={() => setSearch("")} style={{ background: "none", border: "none", cursor: "pointer", padding: "0 6px", color: "#9ca3af", display: "flex", alignItems: "center" }}>
                 <LuX size={13} />
               </button>
             )}
-            <button style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", border: "none", cursor: "pointer", padding: "0 18px", height: "100%", minHeight: 44, color: "#fff", display: "flex", alignItems: "center", gap: 5, fontSize: 13, fontWeight: 600, flexShrink: 0, transition: "opacity 0.2s" }}
+            <button type="submit" style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", border: "none", cursor: "pointer", padding: "0 18px", height: "100%", minHeight: 44, color: "#fff", display: "flex", alignItems: "center", gap: 5, fontSize: 13, fontWeight: 600, flexShrink: 0, transition: "opacity 0.2s" }}
               onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
               onMouseLeave={e => e.currentTarget.style.opacity = "1"}
             >
               <LuSearch size={14} />
               <span className="hidden-sm">Qidirish</span>
             </button>
-          </div>
+          </form>
 
           {/* DESKTOP NAV */}
           <ul className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 2, listStyle: "none", margin: 0, padding: 0, flexShrink: 0 }}>
@@ -491,16 +509,23 @@ export default function Header() {
           <div ref={drawerRef} style={{ padding: "14px 16px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
 
             {/* Mobile search */}
-            <div style={{ display: "flex", alignItems: "center", background: "#f3f4f6", borderRadius: 11, border: "1.5px solid #e5e7eb", overflow: "hidden" }}>
+            <form onSubmit={handleMobileSearch} style={{ display: "flex", alignItems: "center", background: "#f3f4f6", borderRadius: 11, border: "1.5px solid #e5e7eb", overflow: "hidden" }}>
               <LuSearch size={14} style={{ marginLeft: 12, color: "#9ca3af", flexShrink: 0 }} />
               <input
-                placeholder="Qidirish..."
+                value={mobileSearch}
+                onChange={e => setMobileSearch(e.target.value)}
+                placeholder="Bloger, kategoriya, platforma..."
                 style={{ flex: 1, border: "none", background: "transparent", padding: "12px 8px", fontSize: 14, outline: "none" }}
               />
-              <button style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", border: "none", cursor: "pointer", padding: "0 14px", height: 46, color: "#fff", display: "flex", alignItems: "center" }}>
+              {mobileSearch && (
+                <button type="button" onClick={() => setMobileSearch("")} style={{ background: "none", border: "none", cursor: "pointer", padding: "0 6px", color: "#9ca3af", display: "flex", alignItems: "center" }}>
+                  <LuX size={13} />
+                </button>
+              )}
+              <button type="submit" style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", border: "none", cursor: "pointer", padding: "0 14px", height: 46, color: "#fff", display: "flex", alignItems: "center" }}>
                 <LuSearch size={14} />
               </button>
-            </div>
+            </form>
 
             {/* Mobile nav links */}
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>

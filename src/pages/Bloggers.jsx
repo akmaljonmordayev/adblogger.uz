@@ -5,7 +5,7 @@ import BloggerCard from "../components/ui/BlogerCard";
 import FilterSidebar from '../components/layout/FilterSidebar';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTE_PATHS } from "../config/constants";
-import { LuSlidersHorizontal, LuX, LuUsers, LuLoader, LuArrowUpDown, LuChevronLeft, LuChevronRight } from "react-icons/lu";
+import { LuSlidersHorizontal, LuX, LuUsers, LuLoader, LuArrowUpDown, LuChevronLeft, LuChevronRight, LuSearch } from "react-icons/lu";
 import api from "../services/api";
 
 /* ── Kategoriya nomi (uz) ─────────────────────────────────── */
@@ -85,6 +85,7 @@ export default function Blogger() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const categoryFromQS = searchParams.get("category");
+  const qFromQS        = searchParams.get("q") || "";
 
   const [bloggers, setBloggers]         = useState([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -102,27 +103,39 @@ export default function Blogger() {
     staleTime: 5 * 60 * 1000,
   });
 
-  /* ── QS category o'zgarganda filter ── */
+  /* ── QS category / q o'zgarganda filter ── */
   useEffect(() => {
     const mapped = bloggersRaw || [];
     if (!mapped.length) return;
     allRef.current = mapped;
+    let result = mapped;
+
     if (categoryFromQS) {
-      const q = categoryFromQS.toLowerCase();
-      const filtered = mapped.filter(b =>
-        b.categoryText.toLowerCase() === q ||
-        b.categoryType.toLowerCase() === q ||
-        b.allCategories.some(c => c.toLowerCase() === q)
+      const cat = categoryFromQS.toLowerCase();
+      const byCat = result.filter(b =>
+        b.categoryText.toLowerCase() === cat ||
+        b.categoryType.toLowerCase() === cat ||
+        b.allCategories.some(c => c.toLowerCase() === cat)
       );
-      const result = filtered.length > 0 ? filtered : mapped;
-      filteredRef.current = result;
-      setBloggers(applySort(result, sortBy));
-    } else {
-      filteredRef.current = mapped;
-      setBloggers(applySort(mapped, sortBy));
+      if (byCat.length > 0) result = byCat;
     }
+
+    if (qFromQS) {
+      const q = qFromQS.toLowerCase();
+      const byQ = result.filter(b =>
+        b.name.toLowerCase().includes(q) ||
+        b.username.toLowerCase().includes(q) ||
+        b.categoryText.toLowerCase().includes(q) ||
+        b.allCategories.some(c => c.toLowerCase().includes(q)) ||
+        b.allPlatforms.some(p => p.toLowerCase().includes(q))
+      );
+      if (byQ.length > 0) result = byQ;
+    }
+
+    filteredRef.current = result;
+    setBloggers(applySort(result, sortBy));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryFromQS, bloggersRaw]);
+  }, [categoryFromQS, qFromQS, bloggersRaw]);
 
   const applySort = (list, sort) => {
     const arr = [...list];
@@ -291,6 +304,21 @@ export default function Blogger() {
 
         {/* Cards panel */}
         <div className="bl-main bl-scroll">
+
+          {/* Search result banner */}
+          {qFromQS && (
+            <div style={{ display:"flex", alignItems:"center", gap:10, background:"#fef2f2", border:"1.5px solid #fecaca", borderRadius:12, padding:"10px 16px", marginBottom:14 }}>
+              <LuSearch size={14} style={{ color:"#dc2626", flexShrink:0 }} />
+              <span style={{ fontSize:13, color:"#7f1d1d", flex:1 }}>
+                "<strong>{qFromQS}</strong>" bo'yicha{" "}
+                <strong style={{ color:"#dc2626" }}>{bloggers.length} ta</strong> bloger topildi
+              </span>
+              <button
+                onClick={() => navigate("/blogerlar")}
+                style={{ background:"#dc2626", color:"#fff", border:"none", borderRadius:8, padding:"4px 12px", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}
+              >Tozalash</button>
+            </div>
+          )}
 
           {/* Top bar */}
           <div style={{

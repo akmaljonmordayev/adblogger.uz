@@ -34,6 +34,8 @@ import {
 } from "react-icons/pi";
 import api from "../services/api";
 import { toast } from "../components/ui/toast";
+import { useAuthStore } from "../store/useAuthStore";
+import applicationService from "../services/applicationService";
 
 /* ── Font ── */
 if (!document.getElementById("addetail-font")) {
@@ -45,7 +47,12 @@ if (!document.getElementById("addetail-font")) {
 
 /* ── Helpers ── */
 const fmtNum  = n => n ? Number(n).toLocaleString("uz-UZ") : "0";
-const fmtDate = d => d ? new Date(d).toLocaleDateString("uz-UZ", { day:"numeric", month:"long", year:"numeric" }) : "—";
+const UZ_MONTHS = ["yanvar","fevral","mart","aprel","may","iyun","iyul","avgust","sentabr","oktabr","noyabr","dekabr"];
+const fmtDate = d => {
+  if (!d) return "—";
+  const dt = new Date(d);
+  return `${dt.getDate()} ${UZ_MONTHS[dt.getMonth()]} ${dt.getFullYear()} y.`;
+};
 
 const STATUS_CFG = {
   pending:   { bg:"#fef9c3", c:"#854d0e", t:"Tekshiruvda" },
@@ -70,9 +77,14 @@ const NICHE_COLOR = {
 
 /* ── Zayavka modal ── */
 function ZayavkaModal({ ad, onClose }) {
-  const [form, setForm] = useState({ name:"", phone:"", message:"" });
-  const [sent, setSent] = useState(false);
-  const name = ad?.type === "blogger"
+  const { user } = useAuthStore();
+  const navigate  = useNavigate();
+  const autoName  = user ? `${user.firstName||""} ${user.lastName||""}`.trim() : "";
+  const autoPhone = user?.phone || "";
+  const [form,    setForm]    = useState({ name: autoName, phone: autoPhone, message:"" });
+  const [sent,    setSent]    = useState(false);
+  const [loading, setLoading] = useState(false);
+  const toName = ad?.type === "blogger"
     ? `${ad.user?.firstName||""} ${ad.user?.lastName||""}`.trim() || "Bloger"
     : (ad?.companyName || "Biznes");
 
@@ -80,6 +92,26 @@ function ZayavkaModal({ ad, onClose }) {
     width:"100%", padding:"11px 14px", fontSize:14, fontFamily:"inherit",
     border:"1.5px solid #e5e7eb", borderRadius:10, outline:"none",
     background:"#fff", color:"#111827", boxSizing:"border-box", transition:"border-color .2s",
+  };
+
+  const handleSubmit = async () => {
+    if(!form.name.trim())    { toast.error("Ismingizni kiriting"); return; }
+    if(!form.phone.trim())   { toast.error("Telefon raqamini kiriting"); return; }
+    if(!form.message.trim()) { toast.error("Reklama haqida qisqacha yozing"); return; }
+    setLoading(true);
+    try {
+      await applicationService.apply(ad._id, {
+        name:    form.name.trim(),
+        phone:   form.phone.trim(),
+        message: form.message.trim(),
+      });
+      setSent(true);
+    } catch(e) {
+      const msg = e?.response?.data?.message || "Zayavka yuborishda xatolik";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -91,13 +123,22 @@ function ZayavkaModal({ ad, onClose }) {
               <PiCheckCircleDuotone size={32} style={{color:"#16a34a"}}/>
             </div>
             <div style={{fontFamily:"'Syne',sans-serif",fontSize:20,fontWeight:800,color:"#111827",marginBottom:8}}>Zayavka yuborildi!</div>
-            <p style={{fontSize:14,color:"#6b7280",marginBottom:20}}>{name} siz bilan tez orada bog'lanadi.</p>
-            <button onClick={onClose} style={{padding:"11px 28px",borderRadius:12,background:"linear-gradient(135deg,#dc2626,#b91c1c)",color:"#fff",border:"none",cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"inherit"}}>Yopish</button>
+            <p style={{fontSize:14,color:"#6b7280",marginBottom:20}}>{toName} ko'rib chiqib javob beradi.</p>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <button onClick={()=>navigate("/mening-zayavkalarim")}
+                style={{padding:"11px 28px",borderRadius:12,background:"linear-gradient(135deg,#dc2626,#b91c1c)",color:"#fff",border:"none",cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"inherit"}}>
+                Zayavkalarimga o'tish
+              </button>
+              <button onClick={onClose}
+                style={{padding:"10px",background:"none",border:"1.5px solid #e5e7eb",borderRadius:12,fontSize:13,color:"#9ca3af",cursor:"pointer",fontFamily:"inherit"}}>
+                Yopish
+              </button>
+            </div>
           </div>
         ) : (
           <>
             <div style={{fontFamily:"'Syne',sans-serif",fontSize:18,fontWeight:800,color:"#111827",marginBottom:6}}>Zayavka yozish</div>
-            <p style={{fontSize:13,color:"#6b7280",marginBottom:20}}><strong style={{color:"#111827"}}>{name}</strong> ga murojaat</p>
+            <p style={{fontSize:13,color:"#6b7280",marginBottom:20}}><strong style={{color:"#111827"}}>{toName}</strong> ga murojaat</p>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
               <input style={inpStyle} placeholder="Ismingiz *" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))}
                 onFocus={e=>e.target.style.borderColor="#dc2626"} onBlur={e=>e.target.style.borderColor="#e5e7eb"}/>
@@ -105,15 +146,22 @@ function ZayavkaModal({ ad, onClose }) {
                 onFocus={e=>e.target.style.borderColor="#dc2626"} onBlur={e=>e.target.style.borderColor="#e5e7eb"}/>
               <textarea style={{...inpStyle,resize:"vertical"}} rows={3} placeholder="Reklama haqida qisqacha..." value={form.message} onChange={e=>setForm(p=>({...p,message:e.target.value}))}
                 onFocus={e=>e.target.style.borderColor="#dc2626"} onBlur={e=>e.target.style.borderColor="#e5e7eb"}/>
-              <button onClick={()=>{ if(form.name&&form.phone) setSent(true); else toast.error("Ism va telefon kiritilishi shart"); }}
-                style={{padding:"13px",borderRadius:12,background:"linear-gradient(135deg,#dc2626,#b91c1c)",color:"#fff",border:"none",cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:"0 4px 16px rgba(220,38,38,0.3)"}}>
-                <PiChatTextDuotone size={16}/> Yuborish
+              <button onClick={handleSubmit} disabled={loading}
+                style={{padding:"13px",borderRadius:12,background:"linear-gradient(135deg,#dc2626,#b91c1c)",color:"#fff",border:"none",cursor:loading?"not-allowed":"pointer",fontSize:14,fontWeight:700,fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:"0 4px 16px rgba(220,38,38,0.3)",opacity:loading?0.75:1}}>
+                {loading
+                  ? <><span style={{width:16,height:16,border:"2px solid rgba(255,255,255,0.4)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .7s linear infinite",display:"inline-block"}}/> Yuborilmoqda...</>
+                  : <><PiChatTextDuotone size={16}/> Yuborish</>
+                }
               </button>
-              <button onClick={onClose} style={{padding:"10px",background:"none",border:"1.5px solid #e5e7eb",borderRadius:12,fontSize:13,color:"#9ca3af",cursor:"pointer",fontFamily:"inherit"}}>Bekor qilish</button>
+              <button onClick={onClose} disabled={loading}
+                style={{padding:"10px",background:"none",border:"1.5px solid #e5e7eb",borderRadius:12,fontSize:13,color:"#9ca3af",cursor:"pointer",fontFamily:"inherit"}}>
+                Bekor qilish
+              </button>
             </div>
           </>
         )}
       </div>
+      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }
@@ -144,6 +192,7 @@ function InfoChip({ Icon, text }) {
 export default function AdDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [zayavka, setZayavka] = useState(false);
   const [copied,  setCopied]  = useState(false);
 
@@ -448,14 +497,21 @@ export default function AdDetail() {
 
             {/* CTA buttons */}
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {ad.phone && (
-                <a href={`tel:${ad.phone}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"13px",background:`linear-gradient(135deg,${accentColor},${accentColor}cc)`,color:"#fff",textDecoration:"none",borderRadius:12,fontSize:14,fontWeight:700,boxShadow:`0 4px 16px ${accentColor}30`,transition:"opacity .15s"}}
-                  onMouseEnter={e=>e.currentTarget.style.opacity="0.88"}
-                  onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
-                  <PiPhoneDuotone size={16}/> {ad.phone}
-                </a>
+              {user ? (
+                ad.phone && (
+                  <a href={`tel:${ad.phone}`} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"13px",background:`linear-gradient(135deg,${accentColor},${accentColor}cc)`,color:"#fff",textDecoration:"none",borderRadius:12,fontSize:14,fontWeight:700,boxShadow:`0 4px 16px ${accentColor}30`,transition:"opacity .15s"}}
+                    onMouseEnter={e=>e.currentTarget.style.opacity="0.88"}
+                    onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+                    <PiPhoneDuotone size={16}/> {ad.phone}
+                  </a>
+                )
+              ) : (
+                <button onClick={()=>navigate("/kirish")}
+                  style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"13px",background:`linear-gradient(135deg,${accentColor},${accentColor}cc)`,color:"#fff",border:"none",borderRadius:12,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:`0 4px 16px ${accentColor}30`}}>
+                  <PiPhoneDuotone size={16}/> Bog'lanish (kirish kerak)
+                </button>
               )}
-              <button onClick={()=>setZayavka(true)}
+              <button onClick={()=>{ if(!user){ navigate("/kirish"); return; } setZayavka(true); }}
                 style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"12px",background:"#f8fafc",border:`1.5px solid ${accentColor}30`,borderRadius:12,fontSize:14,fontWeight:700,color:accentColor,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}
                 onMouseEnter={e=>{e.currentTarget.style.background=accentColor+"10";}}
                 onMouseLeave={e=>{e.currentTarget.style.background="#f8fafc";}}>

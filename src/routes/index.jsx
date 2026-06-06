@@ -1,128 +1,130 @@
 import { createBrowserRouter } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import MainLayout    from "../layouts/MainLayout";
 import { ROUTE_PATHS } from "../config/constants";
+import PageLoader    from "../components/ui/PageLoader";
 
-// Pages
-import Home          from "../pages/Home";
-import Bloggers      from "../pages/Bloggers";
-import BloggerDetail from "../pages/BloggerDetail";
-import Categories    from "../pages/Categories";
-import Pricing       from "../pages/Pricing";
-import Contact       from "../pages/Contact";
+// Pages — lazy loaded
+const Home          = lazy(() => import("../pages/Home"));
+const Bloggers      = lazy(() => import("../pages/Bloggers"));
+const BloggerDetail = lazy(() => import("../pages/BloggerDetail"));
+const Categories    = lazy(() => import("../pages/Categories"));
+const Pricing       = lazy(() => import("../pages/Pricing"));
+const Contact       = lazy(() => import("../pages/Contact"));
 
-import Ads           from "../pages/Ads";
-import AdDetail      from "../pages/AdDetail";
-import ElonBerish    from "../pages/ElonBerish";
+const Ads           = lazy(() => import("../pages/Ads"));
+const AdDetail      = lazy(() => import("../pages/AdDetail"));
+const ElonBerish    = lazy(() => import("../pages/ElonBerish"));
 
-import Blogs         from "../pages/Blogs";
-import BlogDetail    from "../pages/BlogDetail";
+const Blogs         = lazy(() => import("../pages/Blogs"));
+const BlogDetail    = lazy(() => import("../pages/BlogDetail"));
 
-import About         from "../pages/About";
-import BlogerBolish  from "../pages/BlogerBolish";
+const About         = lazy(() => import("../pages/About"));
+const BlogerBolish  = lazy(() => import("../pages/BlogerBolish"));
 
-import Privacy       from "../pages/Privacy";
-import Terms         from "../pages/Terms";
-import Cookies       from "../pages/Cookies";
-import FAQ           from "../pages/FAQ";
+const Privacy       = lazy(() => import("../pages/Privacy"));
+const Terms         = lazy(() => import("../pages/Terms"));
+const Cookies       = lazy(() => import("../pages/Cookies"));
+const FAQ           = lazy(() => import("../pages/FAQ"));
 
-import Auth          from "../pages/Auth";
-import Profile       from "../pages/Profile";
-import Wishlist      from "../pages/Wishlist";
-import Notifications    from "../pages/Notifications";
-import MyApplications  from "../pages/MyApplications";
+const Auth          = lazy(() => import("../pages/Auth"));
+const Profile       = lazy(() => import("../pages/Profile"));
+const Wishlist      = lazy(() => import("../pages/Wishlist"));
+const Notifications    = lazy(() => import("../pages/Notifications"));
+const MyApplications  = lazy(() => import("../pages/MyApplications"));
 
-import NotFound      from "../pages/NotFound";
+const NotFound      = lazy(() => import("../pages/NotFound"));
 
 // Admin auth
-import AdminLogin    from "../auth/AdminLogin";
-import PendingApproval from "../auth/PendingApproval";
+const AdminLogin    = lazy(() => import("../auth/AdminLogin"));
+const PendingApproval = lazy(() => import("../auth/PendingApproval"));
 
 // Admin
-import AdminLayout      from "../admin/layouts/AdminLayout";
-import AdminDashboard   from "../admin/pages/AdminDashboard";
-import AdminUsers       from "../admin/pages/AdminUsers";
-import AdminBloggers    from "../admin/pages/AdminBloggers";
-import AdminAds         from "../admin/pages/AdminAds";
-import AdminBlogs       from "../admin/pages/AdminBlogs";
-import AdminCategories  from "../admin/pages/AdminCategories";
-import AdminContact     from "../admin/pages/AdminContact";
-import AdminFAQ         from "../admin/pages/AdminFAQ";
-import AdminSettings      from "../admin/pages/AdminSettings";
-import AdminApplications  from "../admin/pages/AdminApplications";
+const AdminLayout      = lazy(() => import("../admin/layouts/AdminLayout"));
+const AdminDashboard   = lazy(() => import("../admin/pages/AdminDashboard"));
+const AdminUsers       = lazy(() => import("../admin/pages/AdminUsers"));
+const AdminBloggers    = lazy(() => import("../admin/pages/AdminBloggers"));
+const AdminAds         = lazy(() => import("../admin/pages/AdminAds"));
+const AdminBlogs       = lazy(() => import("../admin/pages/AdminBlogs"));
+const AdminCategories  = lazy(() => import("../admin/pages/AdminCategories"));
+const AdminContact     = lazy(() => import("../admin/pages/AdminContact"));
+const AdminFAQ         = lazy(() => import("../admin/pages/AdminFAQ"));
+const AdminSettings    = lazy(() => import("../admin/pages/AdminSettings"));
+const AdminApplications = lazy(() => import("../admin/pages/AdminApplications"));
+
+const wrap = (el) => <Suspense fallback={<PageLoader />}>{el}</Suspense>;
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <MainLayout />,
     children: [
-      { path: ROUTE_PATHS.HOME,           element: <Home /> },
+      { path: ROUTE_PATHS.HOME,           element: wrap(<Home />) },
 
       // Blogerlar
-      { path: ROUTE_PATHS.BLOGGERS,       element: <Bloggers /> },
-      { path: ROUTE_PATHS.BLOGGER_DETAIL, element: <BloggerDetail /> },
+      { path: ROUTE_PATHS.BLOGGERS,       element: wrap(<Bloggers />) },
+      { path: ROUTE_PATHS.BLOGGER_DETAIL, element: wrap(<BloggerDetail />) },
 
       // Katalog
-      { path: ROUTE_PATHS.CATEGORIES,     element: <Categories /> },
-      { path: ROUTE_PATHS.PRICING,        element: <Pricing /> },
-      { path: ROUTE_PATHS.CONTACT,        element: <Contact /> },
+      { path: ROUTE_PATHS.CATEGORIES,     element: wrap(<Categories />) },
+      { path: ROUTE_PATHS.PRICING,        element: wrap(<Pricing />) },
+      { path: ROUTE_PATHS.CONTACT,        element: wrap(<Contact />) },
 
       // E'lonlar
-      { path: ROUTE_PATHS.ADS,            element: <Ads /> },
-      { path: ROUTE_PATHS.AD_DETAIL,      element: <AdDetail /> },
-      { path: ROUTE_PATHS.ELON_BERISH,    element: <ElonBerish /> },
+      { path: ROUTE_PATHS.ADS,            element: wrap(<Ads />) },
+      { path: ROUTE_PATHS.AD_DETAIL,      element: wrap(<AdDetail />) },
+      { path: ROUTE_PATHS.ELON_BERISH,    element: wrap(<ElonBerish />) },
 
       // Blog
-      { path: ROUTE_PATHS.BLOGS,          element: <Blogs /> },
-      { path: ROUTE_PATHS.BLOG_DETAIL,    element: <BlogDetail /> },
+      { path: ROUTE_PATHS.BLOGS,          element: wrap(<Blogs />) },
+      { path: ROUTE_PATHS.BLOG_DETAIL,    element: wrap(<BlogDetail />) },
 
       // Kompaniya
-      { path: ROUTE_PATHS.ABOUT,          element: <About /> },
-      { path: ROUTE_PATHS.BLOGER_BOLISH,  element: <BlogerBolish /> },
+      { path: ROUTE_PATHS.ABOUT,          element: wrap(<About />) },
+      { path: ROUTE_PATHS.BLOGER_BOLISH,  element: wrap(<BlogerBolish />) },
 
       // Huquqiy
-      { path: ROUTE_PATHS.PRIVACY,        element: <Privacy /> },
-      { path: ROUTE_PATHS.TERMS,          element: <Terms /> },
-      { path: ROUTE_PATHS.COOKIES,        element: <Cookies /> },
-      { path: ROUTE_PATHS.FAQ,            element: <FAQ /> },
+      { path: ROUTE_PATHS.PRIVACY,        element: wrap(<Privacy />) },
+      { path: ROUTE_PATHS.TERMS,          element: wrap(<Terms />) },
+      { path: ROUTE_PATHS.COOKIES,        element: wrap(<Cookies />) },
+      { path: ROUTE_PATHS.FAQ,            element: wrap(<FAQ />) },
 
       // Auth & foydalanuvchi
-      { path: ROUTE_PATHS.LOGIN,          element: <Auth /> },
-      { path: ROUTE_PATHS.REGISTER,       element: <Auth /> },
-      { path: ROUTE_PATHS.PROFILE,        element: <Profile /> },
-      { path: ROUTE_PATHS.WISHLIST,         element: <Wishlist /> },
-      { path: ROUTE_PATHS.NOTIFICATIONS,   element: <Notifications /> },
-      { path: ROUTE_PATHS.MY_APPLICATIONS, element: <MyApplications /> },
+      { path: ROUTE_PATHS.LOGIN,          element: wrap(<Auth />) },
+      { path: ROUTE_PATHS.REGISTER,       element: wrap(<Auth />) },
+      { path: ROUTE_PATHS.PROFILE,        element: wrap(<Profile />) },
+      { path: ROUTE_PATHS.WISHLIST,         element: wrap(<Wishlist />) },
+      { path: ROUTE_PATHS.NOTIFICATIONS,   element: wrap(<Notifications />) },
+      { path: ROUTE_PATHS.MY_APPLICATIONS, element: wrap(<MyApplications />) },
     ],
   },
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: wrap(<AdminLayout />),
     children: [
-      { index: true,                                    element: <AdminDashboard /> },
-      { path: ROUTE_PATHS.ADMIN_DASHBOARD,              element: <AdminDashboard /> },
-      { path: ROUTE_PATHS.ADMIN_USERS,                  element: <AdminUsers /> },
-      { path: ROUTE_PATHS.ADMIN_BLOGGERS,               element: <AdminBloggers /> },
-      { path: ROUTE_PATHS.ADMIN_ADS,                    element: <AdminAds /> },
-      { path: ROUTE_PATHS.ADMIN_BLOGS,                  element: <AdminBlogs /> },
-      { path: ROUTE_PATHS.ADMIN_CATEGORIES,             element: <AdminCategories /> },
-      { path: ROUTE_PATHS.ADMIN_CONTACT,                element: <AdminContact /> },
-      { path: ROUTE_PATHS.ADMIN_FAQ,                    element: <AdminFAQ /> },
-      { path: ROUTE_PATHS.ADMIN_SETTINGS,               element: <AdminSettings /> },
-      { path: ROUTE_PATHS.ADMIN_APPLICATIONS,           element: <AdminApplications /> },
+      { index: true,                                    element: wrap(<AdminDashboard />) },
+      { path: ROUTE_PATHS.ADMIN_DASHBOARD,              element: wrap(<AdminDashboard />) },
+      { path: ROUTE_PATHS.ADMIN_USERS,                  element: wrap(<AdminUsers />) },
+      { path: ROUTE_PATHS.ADMIN_BLOGGERS,               element: wrap(<AdminBloggers />) },
+      { path: ROUTE_PATHS.ADMIN_ADS,                    element: wrap(<AdminAds />) },
+      { path: ROUTE_PATHS.ADMIN_BLOGS,                  element: wrap(<AdminBlogs />) },
+      { path: ROUTE_PATHS.ADMIN_CATEGORIES,             element: wrap(<AdminCategories />) },
+      { path: ROUTE_PATHS.ADMIN_CONTACT,                element: wrap(<AdminContact />) },
+      { path: ROUTE_PATHS.ADMIN_FAQ,                    element: wrap(<AdminFAQ />) },
+      { path: ROUTE_PATHS.ADMIN_SETTINGS,               element: wrap(<AdminSettings />) },
+      { path: ROUTE_PATHS.ADMIN_APPLICATIONS,           element: wrap(<AdminApplications />) },
     ],
   },
-  // Admin login — standalone (no AdminLayout)
   {
     path: ROUTE_PATHS.ADMIN_LOGIN,
-    element: <AdminLogin />,
+    element: wrap(<AdminLogin />),
   },
-  // Pending approval page — standalone
   {
     path: "/tasdiqlash-kutilmoqda",
-    element: <PendingApproval />,
+    element: wrap(<PendingApproval />),
   },
   {
     path: "*",
-    element: <NotFound />,
+    element: wrap(<NotFound />),
   },
 ]);

@@ -6,8 +6,9 @@ const reviewSchema = new mongoose.Schema(
     reviewer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     campaign: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign' },
     rating:   { type: Number, required: true, min: 1, max: 5 },
-    comment:  { type: String, maxlength: 500 },
+    comment:  { type: String, maxlength: 1000 },
     isVerified: { type: Boolean, default: false },
+    likes:    [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   },
   { timestamps: true }
 );
@@ -31,12 +32,12 @@ reviewSchema.statics.calcAverageRating = async function (bloggerId) {
   }
 };
 
-reviewSchema.post('save', function () {
-  this.constructor.calcAverageRating(this.blogger);
+reviewSchema.post('save', async function () {
+  try { await this.constructor.calcAverageRating(this.blogger); } catch (_) {}
 });
 
-reviewSchema.post('findOneAndDelete', function (doc) {
-  if (doc) doc.constructor.calcAverageRating(doc.blogger);
+reviewSchema.post('findOneAndDelete', async function (doc) {
+  if (doc) { try { await doc.constructor.calcAverageRating(doc.blogger); } catch (_) {} }
 });
 
 module.exports = mongoose.model('Review', reviewSchema);

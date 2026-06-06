@@ -246,8 +246,8 @@ export default function Blogs() {
 
   const [perPage, setPerPage]     = useState(getPerPage);
 
-  const [search, setSearch]           = useState(searchParams.get("search") || "");
-  const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
+  const [search, setSearch]           = useState(searchParams.get("search") || searchParams.get("q") || "");
+  const [searchInput, setSearchInput] = useState(searchParams.get("search") || searchParams.get("q") || "");
   const [category, setCategory]       = useState(searchParams.get("category") || "");
   const [sort, setSort]               = useState(searchParams.get("sort") || "-createdAt");
   const [page, setPage]               = useState(Number(searchParams.get("page")) || 1);

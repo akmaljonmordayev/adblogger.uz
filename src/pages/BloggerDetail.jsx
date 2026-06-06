@@ -7,6 +7,7 @@ import {
   LuImage, LuVideo, LuX, LuHeart, LuLoader, LuGlobe,
   LuBadgeCheck, LuCalendar, LuChartColumn, LuMic,
   LuLink, LuExternalLink, LuPlay, LuBriefcase,
+  LuPencil, LuTrash2, LuSend, LuThumbsUp,
 } from "react-icons/lu";
 import { FaInstagram, FaYoutube, FaTelegram, FaTiktok } from "react-icons/fa";
 import { toast } from "../components/ui/toast";
@@ -66,6 +67,354 @@ function Spinner() {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
       <LuLoader size={36} style={{ color: "#dc2626", animation: "spin 1s linear infinite" }} />
+      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+}
+
+/* ─── StarPicker ─────────────────────────────────────────── */
+function StarPicker({ value, onChange }) {
+  const [hovered, setHovered] = useState(null);
+  return (
+    <div style={{ display: "flex", gap: 4 }}>
+      {[1, 2, 3, 4, 5].map(n => (
+        <button
+          key={n} type="button"
+          onMouseEnter={() => setHovered(n)}
+          onMouseLeave={() => setHovered(null)}
+          onClick={() => onChange(n)}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
+        >
+          <LuStar
+            size={22}
+            style={{
+              color: n <= (hovered ?? value) ? "#f59e0b" : "#d1d5db",
+              fill:  n <= (hovered ?? value) ? "#f59e0b" : "none",
+              transition: "all 0.15s",
+            }}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ─── ReviewsTab ─────────────────────────────────────────── */
+function ReviewsTab({ bloggerId, blogger, reviews, setReviews, currentUser }) {
+  const navigate = useNavigate();
+
+  /* form state */
+  const [rating, setRating]     = useState(5);
+  const [comment, setComment]   = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  /* edit state */
+  const [editId, setEditId]       = useState(null);
+  const [editRating, setEditRating] = useState(5);
+  const [editComment, setEditComment] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
+  /* like loading */
+  const [likingId, setLikingId] = useState(null);
+
+  /* normalize ID to plain string regardless of type */
+  const meId = String(currentUser?._id || currentUser?.id || "");
+
+  /* does current user already have a review? */
+  const myReview = currentUser
+    ? reviews.find(rv => String(rv.reviewer?._id || rv.reviewer || "") === meId)
+    : null;
+
+  /* is this blogger's own profile? */
+  const bloggerUserId = String(blogger?.user?._id || blogger?.user || "");
+  const isOwnProfile = !!currentUser && !!meId && bloggerUserId === meId;
+
+  /* ── submit new review ── */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!currentUser) { navigate("/kirish"); return; }
+    if (!rating) { toast.error("Iltimos, reyting tanlang"); return; }
+    setSubmitting(true);
+    try {
+      const res = await api.post(
+        `/bloggers/${bloggerId}/reviews`,
+        { rating, comment },
+        { _skipToast: true }
+      );
+      setReviews(prev => [res.data.data, ...prev]);
+      setComment(""); setRating(5);
+      toast.success("Sharh qo'shildi!");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Sharh yuborishda xatolik");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /* ── start edit ── */
+  const startEdit = (rv) => {
+    setEditId(rv._id || rv.id);
+    setEditRating(rv.rating);
+    setEditComment(rv.comment || "");
+  };
+
+  /* ── save edit ── */
+  const saveEdit = async (rv) => {
+    setEditSaving(true);
+    const rvId = rv._id || rv.id;
+    try {
+      const res = await api.patch(
+        `/bloggers/${bloggerId}/reviews/${rvId}`,
+        { rating: editRating, comment: editComment },
+        { _skipToast: true }
+      );
+      setReviews(prev => prev.map(r => (r._id || r.id) === rvId ? res.data.data : r));
+      setEditId(null);
+      toast.success("Sharh yangilandi");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Tahrirlashda xatolik");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  /* ── delete ── */
+  const handleDelete = async (rv) => {
+    if (!window.confirm("Sharhni o'chirishni tasdiqlaysizmi?")) return;
+    const rvId = rv._id || rv.id;
+    try {
+      await api.delete(`/bloggers/${bloggerId}/reviews/${rvId}`, { _skipToast: true });
+      setReviews(prev => prev.filter(r => (r._id || r.id) !== rvId));
+      toast.success("Sharh o'chirildi");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "O'chirishda xatolik");
+    }
+  };
+
+  /* ── like toggle ── */
+  const handleLike = async (rv) => {
+    if (!currentUser) { navigate("/kirish"); return; }
+    const rvId = rv._id || rv.id;
+    setLikingId(rvId);
+    try {
+      const res = await api.post(
+        `/bloggers/${bloggerId}/reviews/${rvId}/like`,
+        {},
+        { _skipToast: true }
+      );
+      const { likes } = res.data.data;
+      setReviews(prev => prev.map(r =>
+        (r._id || r.id) === rvId ? { ...r, likes } : r
+      ));
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Xatolik");
+    } finally {
+      setLikingId(null);
+    }
+  };
+
+  const isLiked = (rv) => {
+    if (!currentUser || !meId) return false;
+    return (rv.likes || []).some(id => String(id?._id || id || "") === meId);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+      {/* ── Add comment form ── */}
+      {!isOwnProfile && (
+        <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "22px 24px" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+            <LuMessageCircle size={16} style={{ color: "#dc2626" }} />
+            {myReview ? "Sizning sharhingiz" : "Sharh qoldiring"}
+          </div>
+
+          {myReview ? (
+            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, padding: "12px 16px", fontSize: 13, color: "#15803d", fontWeight: 500 }}>
+              Siz allaqachon sharh qoldirdingiz. Tahrirlash yoki o'chirish uchun quyidagi sharhingizni toping.
+            </div>
+          ) : !currentUser ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, padding: "14px 16px" }}>
+              <span style={{ fontSize: 13, color: "#7f1d1d", flex: 1 }}>Sharh qoldirish uchun tizimga kiring</span>
+              <button onClick={() => navigate("/kirish")} style={{ background: "#dc2626", color: "#fff", border: "none", borderRadius: 8, padding: "7px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                Kirish
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 8 }}>Reyting *</div>
+                <StarPicker value={rating} onChange={setRating} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 8 }}>Izoh</div>
+                <textarea
+                  value={comment}
+                  onChange={e => setComment(e.target.value)}
+                  placeholder="Bu bloger haqida fikringizni yozing..."
+                  maxLength={1000}
+                  rows={3}
+                  style={{ width: "100%", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: "10px 14px", fontSize: 13.5, outline: "none", resize: "vertical", fontFamily: "inherit", color: "#111827", boxSizing: "border-box", transition: "border-color .2s" }}
+                  onFocus={e => { e.target.style.borderColor = "#dc2626"; }}
+                  onBlur={e => { e.target.style.borderColor = "#e2e8f0"; }}
+                />
+                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, textAlign: "right" }}>{comment.length}/1000</div>
+              </div>
+              <button type="submit" disabled={submitting} style={{ alignSelf: "flex-end", display: "flex", alignItems: "center", gap: 7, background: submitting ? "#e5e7eb" : "linear-gradient(135deg,#dc2626,#b91c1c)", color: submitting ? "#9ca3af" : "#fff", border: "none", borderRadius: 10, padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: submitting ? "not-allowed" : "pointer", fontFamily: "inherit", boxShadow: submitting ? "none" : "0 4px 16px rgba(220,38,38,0.3)", transition: "all .2s" }}>
+                {submitting ? <LuLoader size={14} style={{ animation: "spin 1s linear infinite" }} /> : <LuSend size={14} />}
+                {submitting ? "Yuborilmoqda..." : "Sharh yuborish"}
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+
+      {/* ── Rating summary ── */}
+      {reviews.length > 0 && (
+        <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "22px 24px", display: "flex", alignItems: "center", gap: 28 }}>
+          <div style={{ textAlign: "center", flexShrink: 0 }}>
+            <div style={{ fontSize: 52, fontWeight: 900, color: "#0f172a", lineHeight: 1 }}>{blogger.rating?.toFixed(1) || "0.0"}</div>
+            <div style={{ display: "flex", gap: 2, justifyContent: "center", marginTop: 8 }}>{stars(blogger.rating || 0)}</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 5 }}>{reviews.length} ta sharh</div>
+          </div>
+          <div style={{ flex: 1 }}>
+            {[5, 4, 3, 2, 1].map(r => {
+              const cnt = reviews.filter(rv => Math.round(rv.rating) === r).length;
+              const pct = reviews.length ? (cnt / reviews.length) * 100 : 0;
+              return (
+                <div key={r} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, color: "#64748b", width: 8, textAlign: "right" }}>{r}</span>
+                  <LuStar size={11} style={{ color: "#f59e0b", fill: "#f59e0b", flexShrink: 0 }} />
+                  <div style={{ flex: 1, background: "#f1f5f9", borderRadius: 99, height: 7, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#f59e0b,#fbbf24)", borderRadius: 99, transition: "width 0.8s" }} />
+                  </div>
+                  <span style={{ fontSize: 11, color: "#94a3b8", width: 18, textAlign: "right" }}>{cnt}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Empty state ── */}
+      {reviews.length === 0 && (
+        <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "56px 20px", textAlign: "center" }}>
+          <LuMessageCircle size={40} style={{ color: "#e2e8f0", marginBottom: 14 }} />
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Hali sharhlar yo'q</div>
+          <div style={{ fontSize: 13, color: "#94a3b8" }}>Bu bloger uchun hali biror sharh qoldirilmagan</div>
+        </div>
+      )}
+
+      {/* ── Review cards ── */}
+      {reviews.map(rv => {
+        const rvId    = rv._id || rv.id;
+        const rvUserId = String(rv.reviewer?._id || rv.reviewer || "");
+        const isOwn   = !!currentUser && !!meId && rvUserId === meId;
+        const isAdmin = currentUser?.role === "admin";
+        const canEdit = isOwn;
+        const canDel  = isOwn || isAdmin;
+        const liked   = isLiked(rv);
+        const likeCount = (rv.likes || []).length;
+        const isEditing = !!editId && editId === rvId;
+
+        return (
+          <div key={rvId} style={{ background: "#fff", border: `1.5px solid ${isOwn ? "#fecaca" : "#e2e8f0"}`, borderRadius: 16, padding: "18px 20px", transition: "border-color .2s" }}>
+            <div style={{ display: "flex", gap: 12 }}>
+              {/* Avatar */}
+              <div style={{ width: 42, height: 42, borderRadius: "50%", flexShrink: 0, background: "linear-gradient(135deg,#dc2626,#b91c1c)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#fff", overflow: "hidden" }}>
+                {rv.reviewer?.avatar
+                  ? <img src={rv.reviewer.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : (rv.reviewer?.firstName?.[0] || "?").toUpperCase()
+                }
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Header row */}
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 2 }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#0f172a" }}>
+                        {rv.reviewer?.firstName} {rv.reviewer?.lastName}
+                      </span>
+                      {isOwn && <span style={{ fontSize: 10, fontWeight: 700, background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", padding: "1px 7px", borderRadius: 6 }}>Siz</span>}
+                      {rv.isVerified && (
+                        <span style={{ color: "#16a34a", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
+                          <LuBadgeCheck size={13} /> Tasdiqlangan
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
+                      {new Date(rv.createdAt).toLocaleDateString("uz-UZ", { year: "numeric", month: "long", day: "numeric" })}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                    <div style={{ display: "flex", gap: 2 }}>{stars(rv.rating)}</div>
+                    {/* Actions */}
+                    {canEdit && !isEditing && (
+                      <button onClick={() => startEdit(rv)} title="Tahrirlash" style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#94a3b8", display: "flex", alignItems: "center", borderRadius: 6, transition: "all .15s" }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.color = "#374151"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#94a3b8"; }}
+                      >
+                        <LuPencil size={13} />
+                      </button>
+                    )}
+                    {canDel && (
+                      <button onClick={() => handleDelete(rv)} title="O'chirish" style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#94a3b8", display: "flex", alignItems: "center", borderRadius: 6, transition: "all .15s" }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#dc2626"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#94a3b8"; }}
+                      >
+                        <LuTrash2 size={13} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Edit form */}
+                {isEditing ? (
+                  <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                    <StarPicker value={editRating} onChange={setEditRating} />
+                    <textarea
+                      value={editComment}
+                      onChange={e => setEditComment(e.target.value)}
+                      rows={3}
+                      maxLength={1000}
+                      style={{ width: "100%", border: "1.5px solid #dc2626", borderRadius: 10, padding: "9px 12px", fontSize: 13.5, outline: "none", resize: "vertical", fontFamily: "inherit", color: "#111827", boxSizing: "border-box" }}
+                    />
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={() => saveEdit(rv)} disabled={editSaving} style={{ display: "flex", alignItems: "center", gap: 6, background: editSaving ? "#e5e7eb" : "linear-gradient(135deg,#dc2626,#b91c1c)", color: editSaving ? "#9ca3af" : "#fff", border: "none", borderRadius: 8, padding: "7px 18px", fontSize: 13, fontWeight: 700, cursor: editSaving ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+                        {editSaving ? <LuLoader size={13} style={{ animation: "spin 1s linear infinite" }} /> : <LuCheck size={13} />}
+                        Saqlash
+                      </button>
+                      <button onClick={() => setEditId(null)} style={{ background: "#f1f5f9", color: "#374151", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                        Bekor
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {rv.comment && (
+                      <p style={{ fontSize: 13.5, color: "#374151", lineHeight: 1.65, margin: "10px 0 0" }}>{rv.comment}</p>
+                    )}
+                    {/* Like button */}
+                    <button
+                      onClick={() => handleLike(rv)}
+                      disabled={likingId === rvId}
+                      style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 5, background: liked ? "#fef2f2" : "#f8fafc", border: `1px solid ${liked ? "#fecaca" : "#e2e8f0"}`, borderRadius: 20, padding: "4px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", color: liked ? "#dc2626" : "#64748b", transition: "all .15s", fontFamily: "inherit" }}
+                      onMouseEnter={e => { if (!liked) { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.borderColor = "#fecaca"; e.currentTarget.style.color = "#dc2626"; } }}
+                      onMouseLeave={e => { if (!liked) { e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.color = "#64748b"; } }}
+                    >
+                      <LuThumbsUp size={13} style={{ fill: liked ? "#dc2626" : "none" }} />
+                      {likeCount > 0 && likeCount}
+                      {liked ? "Yoqdi" : "Yoqdi deb belgilash"}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>
   );
@@ -736,82 +1085,13 @@ export default function BloggerDetail() {
 
             {/* ── Sharhlar ── */}
             {activeTab === "reviews" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {reviews.length === 0 ? (
-                  <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "56px 20px", textAlign: "center" }}>
-                    <LuMessageCircle size={40} style={{ color: "#e2e8f0", marginBottom: 14 }} />
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Hali sharhlar yo'q</div>
-                    <div style={{ fontSize: 13, color: "#94a3b8" }}>Bu bloger uchun hali biror sharh qoldirilmagan</div>
-                  </div>
-                ) : (
-                  <>
-                    {/* Rating summary */}
-                    <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: "22px 24px", display: "flex", alignItems: "center", gap: 28 }}>
-                      <div style={{ textAlign: "center", flexShrink: 0 }}>
-                        <div style={{ fontSize: 52, fontWeight: 900, color: "#0f172a", lineHeight: 1 }}>{blogger.rating?.toFixed(1) || "0.0"}</div>
-                        <div style={{ display: "flex", gap: 2, justifyContent: "center", marginTop: 8 }}>{stars(blogger.rating || 0)}</div>
-                        <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 5 }}>{blogger.reviewCount || reviews.length} ta sharh</div>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        {[5, 4, 3, 2, 1].map(r => {
-                          const cnt = reviews.filter(rv => Math.round(rv.rating) === r).length;
-                          const pct = reviews.length ? (cnt / reviews.length) * 100 : 0;
-                          return (
-                            <div key={r} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                              <span style={{ fontSize: 11, color: "#64748b", width: 8, textAlign: "right" }}>{r}</span>
-                              <LuStar size={11} style={{ color: "#f59e0b", fill: "#f59e0b", flexShrink: 0 }} />
-                              <div style={{ flex: 1, background: "#f1f5f9", borderRadius: 99, height: 7, overflow: "hidden" }}>
-                                <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, #f59e0b, #fbbf24)", borderRadius: 99, transition: "width 0.8s" }} />
-                              </div>
-                              <span style={{ fontSize: 11, color: "#94a3b8", width: 18, textAlign: "right" }}>{cnt}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Review cards */}
-                    {reviews.map(rv => (
-                      <div key={rv._id} style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 16, padding: "18px 20px" }}>
-                        <div style={{ display: "flex", gap: 12 }}>
-                          <div style={{
-                            width: 42, height: 42, borderRadius: "50%", flexShrink: 0,
-                            background: "linear-gradient(135deg, #dc2626, #b91c1c)",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 16, fontWeight: 800, color: "#fff", overflow: "hidden",
-                          }}>
-                            {rv.reviewer?.avatar
-                              ? <img src={rv.reviewer.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                              : (rv.reviewer?.firstName?.[0] || "?").toUpperCase()
-                            }
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6, marginBottom: 2 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <span style={{ fontWeight: 700, fontSize: 14, color: "#0f172a" }}>
-                                  {rv.reviewer?.firstName} {rv.reviewer?.lastName}
-                                </span>
-                                {rv.isVerified && (
-                                  <span style={{ color: "#16a34a", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
-                                    <LuBadgeCheck size={13} /> Tasdiqlangan
-                                  </span>
-                                )}
-                              </div>
-                              <div style={{ display: "flex", gap: 2 }}>{stars(rv.rating)}</div>
-                            </div>
-                            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 8 }}>
-                              {new Date(rv.createdAt).toLocaleDateString("uz-UZ", { year: "numeric", month: "long", day: "numeric" })}
-                            </div>
-                            {rv.comment && (
-                              <p style={{ fontSize: 13.5, color: "#374151", lineHeight: 1.65, margin: 0 }}>{rv.comment}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
+              <ReviewsTab
+                bloggerId={id}
+                blogger={blogger}
+                reviews={reviews}
+                setReviews={setReviews}
+                currentUser={user}
+              />
             )}
           </div>
 
