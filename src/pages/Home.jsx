@@ -9,6 +9,7 @@ import {
   LuTarget, LuHandshake, LuSparkles, LuGlobe, LuFlame,
   LuEye, LuHeart, LuCrown, LuBadgeCheck, LuActivity, LuBuilding2,
   LuDollarSign, LuClock, LuChevronRight, LuMoveRight,
+  LuSearch, LuFileText,
 } from "react-icons/lu";
 import { ROUTE_PATHS } from "../config/constants";
 import api from "../services/api";
@@ -202,6 +203,12 @@ const TESTIMONIALS = [
 ];
 
 /* ════════════════════════════════ COMPONENT ════════════════════════════════ */
+const SEARCH_TABS = [
+  { key: "blogerlar", label: "Blogerlar",  Icon: LuUsers,     color: "#dc2626", path: "/blogerlar" },
+  { key: "elonlar",   label: "E'lonlar",   Icon: LuFileText,  color: "#2563eb", path: "/elonlar"   },
+  { key: "bloglar",   label: "Bloglar",    Icon: LuTrendingUp,color: "#16a34a", path: "/blog"      },
+];
+
 export default function Home() {
   const navigate = useNavigate();
   const [activeT, setActiveT] = useState(0);
@@ -210,6 +217,20 @@ export default function Home() {
   const [hFeat, setHFeat]       = useState(null);
   const [hPlat, setHPlat]       = useState(null);
   const [hStep, setHStep]       = useState(null);
+
+  /* ── Search ── */
+  const [searchTab, setSearchTab]   = useState("blogerlar");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    const tab = SEARCH_TABS.find(t => t.key === searchTab);
+    if (!tab) return;
+    const param = searchTab === "bloglar" ? "search" : "q";
+    navigate(`${tab.path}?${param}=${encodeURIComponent(q)}`);
+  };
 
   /* rotate testimonials */
   useEffect(() => {
@@ -262,6 +283,114 @@ export default function Home() {
         description="O'zbekistonning eng yirik blogger va reklama platformasi. 500+ tasdiqlangan blogger. Reklama joylashtiring yoki daromad oling!"
         schema={{ "@context":"https://schema.org","@type":"WebPage","name":"ADBlogger","url":"https://adblogger.uz/" }}
       />
+
+      {/* ══════ HERO SEARCH ══════ */}
+      <section style={{
+        background: "linear-gradient(150deg,#060b18 0%,#0d1528 50%,#0a1020 100%)",
+        padding: "72px 32px 80px",
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        {/* bg grid */}
+        <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(rgba(255,255,255,0.025) 1px,transparent 1px)", backgroundSize:"32px 32px", pointerEvents:"none" }} />
+        {/* glow blobs */}
+        <div style={{ position:"absolute", top:-200, left:-200, width:560, height:560, borderRadius:"50%", background:"radial-gradient(circle,rgba(220,38,38,0.14) 0%,transparent 70%)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:-200, right:-200, width:560, height:560, borderRadius:"50%", background:"radial-gradient(circle,rgba(37,99,235,0.1) 0%,transparent 70%)", pointerEvents:"none" }} />
+
+        <div style={{ maxWidth: 780, margin: "0 auto", position: "relative", zIndex: 1, textAlign: "center" }}>
+          {/* pill */}
+          <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.06)", color:"rgba(255,255,255,0.7)", border:"1px solid rgba(255,255,255,0.1)", fontSize:10.5, fontWeight:700, letterSpacing:"2px", textTransform:"uppercase", padding:"5px 15px", borderRadius:100, marginBottom:22 }}>
+            <LuSearch size={11} /> Qidirish
+          </div>
+
+          {/* headline */}
+          <h1 style={{ ...S, fontWeight:900, fontSize:"clamp(28px,5vw,54px)", color:"#fff", margin:"0 0 16px", lineHeight:1.08, letterSpacing:"-1.5px" }}>
+            Bloger, e'lon va{" "}
+            <span style={{ background:"linear-gradient(90deg,#38bdf8,#818cf8,#c084fc)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
+              maqola toping
+            </span>
+          </h1>
+          <p style={{ fontSize:16, color:"rgba(255,255,255,0.45)", margin:"0 0 40px", lineHeight:1.8 }}>
+            O'zbekistonning eng yirik influencer platformasida kerakli narsangizni bir zumda toping.
+          </p>
+
+          {/* search box */}
+          <div style={{ background:"rgba(255,255,255,0.05)", backdropFilter:"blur(20px)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:20, padding:"6px 6px 6px 6px", boxShadow: searchFocused ? "0 0 0 2px rgba(99,179,237,0.3), 0 24px 60px rgba(0,0,0,0.4)" : "0 24px 60px rgba(0,0,0,0.4)", transition:"box-shadow .25s" }}>
+            {/* tabs */}
+            <div style={{ display:"flex", gap:4, padding:"4px 4px 10px", borderBottom:"1px solid rgba(255,255,255,0.07)", marginBottom:8 }}>
+              {SEARCH_TABS.map(t => {
+                const isActive = searchTab === t.key;
+                return (
+                  <button key={t.key} onClick={() => setSearchTab(t.key)} style={{
+                    display:"flex", alignItems:"center", gap:6,
+                    padding:"7px 16px", borderRadius:12, border:"none",
+                    cursor:"pointer", fontFamily:"inherit", fontSize:13, fontWeight:700,
+                    background: isActive ? t.color : "transparent",
+                    color: isActive ? "#fff" : "rgba(255,255,255,0.45)",
+                    transition:"all .2s",
+                    boxShadow: isActive ? `0 4px 14px ${t.color}50` : "none",
+                  }}>
+                    <t.Icon size={14} /> {t.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* input row */}
+            <form onSubmit={handleSearch} style={{ display:"flex", gap:8, padding:"0 4px 4px" }}>
+              <div style={{ flex:1, display:"flex", alignItems:"center", gap:10, background:"rgba(255,255,255,0.07)", borderRadius:12, padding:"0 16px", border:`1.5px solid ${searchFocused ? "rgba(99,179,237,0.4)" : "rgba(255,255,255,0.08)"}`, transition:"border-color .2s" }}>
+                <LuSearch size={16} style={{ color:"rgba(255,255,255,0.35)", flexShrink:0 }} />
+                <input
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
+                  placeholder={
+                    searchTab === "blogerlar" ? "Bloger ismi, kategoriya, platform..." :
+                    searchTab === "elonlar"   ? "E'lon nomi, kompaniya, xizmat..." :
+                                               "Maqola sarlavhasi, kategoriya..."
+                  }
+                  style={{ flex:1, border:"none", background:"transparent", color:"#fff", fontSize:14.5, outline:"none", fontFamily:"inherit", padding:"14px 0" }}
+                />
+                {searchQuery && (
+                  <button type="button" onClick={() => setSearchQuery("")} style={{ background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.3)", padding:0, display:"flex", alignItems:"center" }}>
+                    <LuCircleCheck size={16} style={{ transform:"rotate(45deg)" }} />
+                  </button>
+                )}
+              </div>
+              <button type="submit" style={{
+                background: SEARCH_TABS.find(t => t.key === searchTab)?.color || "#dc2626",
+                color:"#fff", border:"none", cursor:"pointer",
+                padding:"0 28px", borderRadius:12, fontSize:14, fontWeight:700,
+                fontFamily:"inherit", display:"flex", alignItems:"center", gap:8,
+                boxShadow:`0 4px 20px ${SEARCH_TABS.find(t=>t.key===searchTab)?.color||"#dc2626"}50`,
+                transition:"all .2s", whiteSpace:"nowrap",
+              }}
+                onMouseEnter={e => { e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.opacity="0.9"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.opacity="1"; }}
+              >
+                <LuSearch size={16} /> Qidirish
+              </button>
+            </form>
+          </div>
+
+          {/* quick links */}
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, marginTop:20, flexWrap:"wrap" }}>
+            <span style={{ fontSize:12, color:"rgba(255,255,255,0.28)", fontWeight:500 }}>Tez havolalar:</span>
+            {[
+              { label:"Instagram blogerlar", path:"/blogerlar?platforms=instagram" },
+              { label:"YouTube blogerlar",   path:"/blogerlar?platforms=youtube"   },
+              { label:"Biznes e'lonlar",     path:"/elonlar?q=business"            },
+              { label:"Marketing blogi",     path:"/blog?search=marketing"         },
+            ].map((l, i) => (
+              <Link key={i} to={l.path} style={{ fontSize:12, color:"rgba(255,255,255,0.45)", fontWeight:600, textDecoration:"none", padding:"4px 12px", borderRadius:20, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.04)", transition:"all .2s" }}
+                onMouseEnter={e => { e.currentTarget.style.color="#fff"; e.currentTarget.style.borderColor="rgba(255,255,255,0.25)"; e.currentTarget.style.background="rgba(255,255,255,0.09)"; }}
+                onMouseLeave={e => { e.currentTarget.style.color="rgba(255,255,255,0.45)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; e.currentTarget.style.background="rgba(255,255,255,0.04)"; }}
+              >{l.label}</Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ══════ STATS BAR ══════ */}
       <section style={{ background:"#fff", borderBottom:"1px solid #f1f5f9" }}>

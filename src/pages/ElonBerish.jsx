@@ -222,81 +222,98 @@ function Field({ label, required, hint, children, error }) {
   );
 }
 
-/* ── Image Upload ── */
+/* ── Image Upload (local preview, upload on submit) ── */
 function ImageUpload({ value = [], onChange, accentColor = "#dc2626" }) {
   const inputRef = useRef(null);
-  const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
 
-  const uploadFiles = useCallback(async (files) => {
-    if (!files.length) return;
+  // value = array of { file: File, preview: string }
+  const addFiles = useCallback((files) => {
     const allowed = Array.from(files).filter(f => f.type.startsWith("image/"));
     if (!allowed.length) { toast.error("Faqat rasm fayllar qabul qilinadi"); return; }
-    if (value.length + allowed.length > 5) { toast.error("Maksimal 5 ta rasm yuklash mumkin"); return; }
-
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      allowed.forEach(f => fd.append("images", f));
-      const res = await api.post("/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      onChange([...value, ...res.data.urls]);
-      toast.success(`${res.data.urls.length} ta rasm yuklandi`);
-    } catch {
-      toast.error("Rasm yuklashda xatolik");
-    } finally {
-      setUploading(false);
+    if (value.length + allowed.length > 5) {
+      toast.error(`Maksimal 5 ta rasm. ${5 - value.length} ta qo'shish mumkin`);
+      return;
     }
+    const oversized = allowed.filter(f => f.size > 5 * 1024 * 1024);
+    if (oversized.length) { toast.error("Har bir rasm 5MB dan kichik bo'lishi kerak"); return; }
+
+    const newItems = allowed.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+    onChange([...value, ...newItems]);
   }, [value, onChange]);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setDragging(false);
-    uploadFiles(e.dataTransfer.files);
-  }, [uploadFiles]);
+    addFiles(e.dataTransfer.files);
+  }, [addFiles]);
 
-  const remove = (idx) => onChange(value.filter((_, i) => i !== idx));
+  const remove = (idx) => {
+    const next = value.filter((_, i) => i !== idx);
+    // revoke old object URL to free memory
+    URL.revokeObjectURL(value[idx].preview);
+    onChange(next);
+  };
 
   return (
     <div>
-      {/* Preview grid */}
       {value.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
-          {value.map((url, i) => (
-            <div key={i} style={{ position: "relative", width: 80, height: 80 }}>
-              <img src={url} alt="" style={{ width: 80, height: 80, borderRadius: 8, objectFit: "cover", border: "1.5px solid #e5e7eb" }} />
+          {value.map((item, i) => (
+            <div key={i} style={{ position: "relative", width: 82, height: 82 }}>
+              <img
+                src={item.preview}
+                alt=""
+                style={{ width: 82, height: 82, borderRadius: 10, objectFit: "cover", border: "1.5px solid #e5e7eb" }}
+              />
               <button type="button" onClick={() => remove(i)} style={{
                 position: "absolute", top: -6, right: -6,
                 width: 20, height: 20, borderRadius: "50%",
-                background: "#ef4444", border: "none", cursor: "pointer",
+                background: "#ef4444", border: "2px solid #fff", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <LuX size={11} color="#fff" strokeWidth={3} />
+                <LuX size={10} color="#fff" strokeWidth={3} />
               </button>
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0,
+                background: "rgba(0,0,0,0.45)", borderRadius: "0 0 8px 8px",
+                fontSize: 9, color: "#fff", textAlign: "center", padding: "2px 0",
+              }}>
+                {(item.file.size / 1024).toFixed(0)} KB
+              </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Drop zone */}
       {value.length < 5 && (
         <div
-          onClick={() => !uploading && inputRef.current?.click()}
+          onClick={() => inputRef.current?.click()}
           onDragOver={e => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
           style={{
-            height: 90, border: `2px dashed ${dragging ? accentColor : "#e5e7eb"}`,
+            height: 96, border: `2px dashed ${dragging ? accentColor : "#e5e7eb"}`,
             borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
-            gap: 8, cursor: uploading ? "not-allowed" : "pointer", background: dragging ? `${accentColor}08` : "#fafafa",
+            gap: 10, cursor: "pointer",
+            background: dragging ? `${accentColor}08` : "#fafafa",
             transition: "all 0.2s",
           }}
-          onMouseEnter={e => !uploading && (e.currentTarget.style.borderColor = accentColor)}
-          onMouseLeave={e => !dragging && (e.currentTarget.style.borderColor = "#e5e7eb")}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = accentColor; e.currentTarget.style.background = `${accentColor}06`; }}
+          onMouseLeave={e => { if (!dragging) { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#fafafa"; } }}
         >
-          {uploading
-            ? <><LuLoader size={18} style={{ color: "#9ca3af", animation: "spin 1s linear infinite" }} /><span style={{ fontSize: 12, color: "#9ca3af" }}>Yuklanmoqda...</span></>
-            : <><LuCloudUpload size={20} style={{ color: "#9ca3af" }} /><div style={{ textAlign: "center" }}><p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Rasm yuklash uchun bosing yoki sudrang</p><p style={{ fontSize: 10, color: "#d1d5db", margin: "2px 0 0" }}>JPG, PNG, WEBP — max 5MB, {5 - value.length} ta qoldi</p></div></>
-          }
+          <LuCloudUpload size={22} style={{ color: accentColor, flexShrink: 0 }} />
+          <div>
+            <p style={{ fontSize: 12.5, color: "#374151", margin: 0, fontWeight: 600 }}>
+              Rasm yuklash uchun bosing yoki sudrang
+            </p>
+            <p style={{ fontSize: 11, color: "#9ca3af", margin: "3px 0 0" }}>
+              JPG, PNG, WEBP · max 5 MB · {5 - value.length} ta joy qoldi
+            </p>
+          </div>
         </div>
       )}
 
@@ -306,7 +323,7 @@ function ImageUpload({ value = [], onChange, accentColor = "#dc2626" }) {
         multiple
         accept="image/jpg,image/jpeg,image/png,image/webp"
         style={{ display: "none" }}
-        onChange={e => { uploadFiles(e.target.files); e.target.value = ""; }}
+        onChange={e => { addFiles(e.target.files); e.target.value = ""; }}
       />
     </div>
   );
@@ -692,19 +709,30 @@ export default function ElonBerish() {
 
     setLoading(true);
     try {
+      // 1-qadam: rasmlar bo'lsa /upload ga yuborish → cloudinary URL lar olish
+      let imageUrls = [];
+      const imageItems = formData.images || [];
+      if (imageItems.length > 0) {
+        const fd = new FormData();
+        imageItems.forEach(item => fd.append("images", item.file));
+        const uploadRes = await api.post("/upload", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        imageUrls = uploadRes.data.urls || [];
+      }
+
+      // 2-qadam: /ads ga JSON yuborish
       let body = {};
 
       if (type === "blogger") {
-        const services = [...new Set(
-          formData.services.map(s => SERVICE_MAP[s]).filter(Boolean)
-        )];
-        const niche = formData.niche.map(n => NICHE_MAP[n]).filter(Boolean);
+        const services = [...new Set(formData.services.map(s => SERVICE_MAP[s]).filter(Boolean))];
+        const niche    = formData.niche.map(n => NICHE_MAP[n]).filter(Boolean);
 
         body = {
-          type: "blogger",
-          title: formData.about?.slice(0, 80) || "Bloger e'loni",
-          description: formData.about || "",
-          platforms: formData.platforms,
+          type:          "blogger",
+          title:         formData.about?.slice(0, 80) || "Bloger e'loni",
+          description:   formData.about || "",
+          platforms:     formData.platforms,
           services,
           niche,
           followersRange: FOLLOWER_RANGE_MAP[formData.followers] || undefined,
@@ -714,12 +742,12 @@ export default function ElonBerish() {
             video: formData.priceVideo ? Number(formData.priceVideo.replace(/\s/g, "")) : undefined,
           },
           portfolio: formData.portfolio || undefined,
-          phone: formData.phone,
-          images: formData.images || [],
+          phone:     formData.phone,
+          images:    imageUrls,
         };
       } else {
         body = {
-          type: "business",
+          type:               "business",
           companyName:        formData.companyName,
           contactPerson:      formData.contactName,
           phone:              formData.phone,
@@ -734,7 +762,7 @@ export default function ElonBerish() {
           campaignGoal:       formData.goal || undefined,
           requirements:       formData.extra || undefined,
           location:           formData.location || undefined,
-          images:             formData.images || [],
+          images:             imageUrls,
         };
       }
 

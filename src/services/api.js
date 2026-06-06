@@ -1,47 +1,69 @@
 import axios from "axios";
 import { toast } from "../components/ui/toast";
 
-// Axios instance yaratish
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "https://adblogger-uz.onrender.com/api/v1",
-  timeout: 60000,
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request Interceptor: Tokenni yuborish
+// Request Interceptor: Token yuborish + retry metadata
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    if (config._retryCount === undefined) {
+      config._retryCount = 0;
+    }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Xatoliklarni boshqarish
+// Response Interceptor: Retry + xatoliklarni boshqarish
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    const message = error.response?.data?.message || "Kutilmagan xatolik yuz berdi";
-    
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+
+    // Network xatosi yoki server ulanishni yopdi — retry
+    const isNetworkError = !error.response && (
+      error.code === "ERR_NETWORK" ||
+      error.code === "ERR_CONNECTION_CLOSED" ||
+      error.message === "Network Error" ||
+      error.code === "ECONNABORTED"
+    );
+
+    const MAX_RETRIES = 3;
+
+    if (isNetworkError && config && config._retryCount < MAX_RETRIES) {
+      config._retryCount += 1;
+      // Har retry oldidan biroz kutish (eksponentsial: 1s, 2s, 4s)
+      const delay = Math.pow(2, config._retryCount - 1) * 1000;
+      await new Promise((res) => setTimeout(res, delay));
+      return api(config);
+    }
+
+    // 401 — login sahifasiga
     if (error.response?.status === 401) {
       localStorage.removeItem("auth-storage");
       localStorage.removeItem("token");
       window.location.href = "/login";
+      return Promise.reject(error);
     }
 
-    if (!error.config?._skipToast) {
-      if (error.response?.status >= 500) {
+    // Foydalanuvchiga xabar
+    if (!config?._skipToast) {
+      if (isNetworkError) {
+        toast.error("Internet ulanishi yo'q yoki server javob bermayapti. Iltimos, qayta urinib ko'ring.");
+      } else if (error.response?.status >= 500) {
         toast.error("Serverda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.");
-      } else {
+      } else if (error.response?.status !== 401) {
+        const message = error.response?.data?.message || "Kutilmagan xatolik yuz berdi";
         toast.error(message);
       }
     }
