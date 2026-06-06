@@ -13,8 +13,10 @@ const adApplicationSchema = new mongoose.Schema(
     },
     lastMessage:    { type: String, default: '' },
     lastMessageAt:  { type: Date },
-    ownerUnread:    { type: Number, default: 0 },
-    applicantUnread:{ type: Number, default: 0 },
+    ownerUnread:         { type: Number, default: 0 },
+    applicantUnread:     { type: Number, default: 0 },
+    deletedForOwner:     { type: Boolean, default: false },
+    deletedForApplicant: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

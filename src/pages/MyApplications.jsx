@@ -963,6 +963,17 @@ export default function MyApplications() {
     } catch { toast.error("O'chirishda xatolik"); }
   },[selected]);
 
+  const handleDeleteApp = useCallback(async(appId, e)=>{
+    e.stopPropagation();
+    try {
+      await applicationService.deleteApp(appId);
+      setReceived(p=>p.filter(a=>a._id!==appId));
+      setSent(p=>p.filter(a=>a._id!==appId));
+      if(selected?._id===appId){ setSelected(null); setShowChat(false); }
+      toast.success("Zayavka o'chirildi");
+    } catch { toast.error("O'chirishda xatolik"); }
+  },[selected]);
+
   useEffect(()=>{
     if(!initialOrderId||autoSelectedRef.current||orders.length===0) return;
     const order=orders.find(o=>o._id===initialOrderId);
@@ -1175,10 +1186,29 @@ export default function MyApplications() {
                 })
             ) : (
               list.map(app=>(
-                <ConvRow key={app._id} app={app} myId={myId}
-                  isActive={selected?._id===app._id}
-                  onClick={()=>handleSelect(app)}
-                />
+                <div key={app._id} style={{position:"relative"}}
+                  onMouseEnter={e=>{ const btn=e.currentTarget.querySelector('.app-del-btn'); if(btn) btn.style.opacity="1"; }}
+                  onMouseLeave={e=>{ const btn=e.currentTarget.querySelector('.app-del-btn'); if(btn) btn.style.opacity="0"; }}
+                >
+                  <ConvRow app={app} myId={myId}
+                    isActive={selected?._id===app._id}
+                    onClick={()=>handleSelect(app)}
+                  />
+                  <button
+                    className="app-del-btn"
+                    onClick={e=>handleDeleteApp(app._id, e)}
+                    title="O'chirish"
+                    style={{
+                      position:"absolute",top:10,right:10,
+                      width:26,height:26,borderRadius:7,border:"none",
+                      background:"#FEF2F2",color:C.red,cursor:"pointer",
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      opacity:0,transition:"opacity .15s",zIndex:2,
+                    }}
+                  >
+                    <LuTrash2 size={12}/>
+                  </button>
+                </div>
               ))
             )}
           </div>
