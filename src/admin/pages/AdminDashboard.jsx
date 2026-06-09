@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { adminDashboardService } from "../../services/adminService";
+import { CATEGORY_LABEL } from "../../config/categories";
 import { motion } from "framer-motion";
 import {
   FiUsers, FiCalendar, FiStar, FiActivity,
@@ -303,7 +304,7 @@ export default function AdminDashboard() {
 
   const nicheTotalCount = (apiStats?.categoryBreakdown ?? []).reduce((sum, c) => sum + c.count, 0);
   const nicheRows = (apiStats?.categoryBreakdown ?? []).map((c, i) => ({
-    name:  c._id,
+    name:  CATEGORY_LABEL[c._id] ?? c._id,
     count: c.count,
     pct:   nicheTotalCount ? Math.round((c.count / nicheTotalCount) * 100) : 0,
     color: ["#C62828","#1565C0","#2E7D32","#6A1B9A","#E65100","#00695C"][i] ?? T.red,

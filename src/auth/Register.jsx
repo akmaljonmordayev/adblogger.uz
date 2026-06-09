@@ -6,6 +6,8 @@ import * as yup from 'yup';
 import { useAuthStore } from '../store/useAuthStore';
 import { toast } from '../components/ui/toast';
 
+import { CATEGORY_LIST } from '../config/categories';
+
 const SILENT = { _skipToast: true };
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
@@ -340,17 +342,9 @@ function RegisterForm() {
               <Field label="Kategoriya" error={errors.category?.message}>
                 <select className={inputCls(!!errors.category)} {...register('category')}>
                   <option value="">Kategoriyani tanlang</option>
-                  <option value="Tech">Texnologiya</option>
-                  <option value="Lifestyle">Lifestyle</option>
-                  <option value="Beauty">Go'zallik</option>
-                  <option value="Food">Ovqat</option>
-                  <option value="Sports">Sport</option>
-                  <option value="Travel">Sayohat</option>
-                  <option value="Education">Ta'lim</option>
-                  <option value="Business">Biznes</option>
-                  <option value="Gaming">Gaming</option>
-                  <option value="Music">Musiqa</option>
-                  <option value="Other">Boshqa</option>
+                  {CATEGORY_LIST.map(c => (
+                    <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>
+                  ))}
                 </select>
               </Field>
             </div>

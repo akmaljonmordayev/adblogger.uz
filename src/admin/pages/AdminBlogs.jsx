@@ -10,6 +10,7 @@ import {
 } from "react-icons/lu";
 import { toast } from "../../components/ui/toast";
 import api from "../../services/api";
+import { CATEGORY_SELECT_OPTIONS, CATEGORY_COLOR as CAT_COLOR_MAP } from "../../config/categories";
 
 /* ── Design Tokens ─────────────────────────────────────────────── */
 const T = {
@@ -39,20 +40,7 @@ const T = {
 };
 
 /* ── Constants ─────────────────────────────────────────────────── */
-const CATEGORIES = [
-  { value: "",           label: "Barcha kategoriya" },
-  { value: "Tech",       label: "Tech" },
-  { value: "Lifestyle",  label: "Lifestyle" },
-  { value: "Beauty",     label: "Beauty" },
-  { value: "Food",       label: "Food" },
-  { value: "Sports",     label: "Sports" },
-  { value: "Travel",     label: "Travel" },
-  { value: "Education",  label: "Education" },
-  { value: "Business",   label: "Business" },
-  { value: "Gaming",     label: "Gaming" },
-  { value: "Music",      label: "Music" },
-  { value: "Other",      label: "Other" },
-];
+const CATEGORIES = CATEGORY_SELECT_OPTIONS;
 
 const STATUS_TABS = [
   { value: "",         label: "Barchasi",     icon: LuBookOpen,    color: T.textMuted },
@@ -67,11 +55,7 @@ const STATUS_META = {
   rejected: { bg: T.redLight,  c: "#7F1D1D", bd: T.redBorder, label: "Rad etilgan",  dot: "#EF4444" },
 };
 
-const CAT_COLOR = {
-  Tech: "#2563EB", Lifestyle: "#A21CAF", Beauty: "#E11D48", Food: "#D97706",
-  Sports: "#16A34A", Travel: "#0D9488", Education: "#0891B2", Business: T.purple,
-  Gaming: "#EA580C", Music: "#9333EA", Other: T.textDim,
-};
+const CAT_COLOR = { ...CAT_COLOR_MAP, Other: T.textDim };
 
 const PER_PAGE = 10;
 
@@ -124,13 +108,14 @@ function StatusBadge({ status }) {
 /* ── CatBadge ───────────────────────────────────────────────────── */
 function CatBadge({ category }) {
   const c = CAT_COLOR[category] || T.textDim;
+  const label = CAT_COLOR_MAP[category] ? (CATEGORY_SELECT_OPTIONS.find(o => o.value === category)?.label ?? category) : (category || "—");
   return (
     <span style={{
       background: c + "15", color: c, border: `1px solid ${c}30`,
       fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 99,
       display: "inline-block", whiteSpace: "nowrap",
     }}>
-      {category || "—"}
+      {label}
     </span>
   );
 }

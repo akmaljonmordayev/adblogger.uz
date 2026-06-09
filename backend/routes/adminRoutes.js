@@ -254,10 +254,10 @@ router.delete('/blogs/:id', blogController.deleteBlog);
 
 // ── Categories ─────────────────────────────────────────────────────────────────
 router.get('/categories',              categoryController.getAllCategories);
+router.post('/categories/sync-counts', categoryController.syncAllBloggerCounts);
 router.post('/categories',             categoryController.createCategory);
 router.patch('/categories/:id',        categoryController.updateCategory);
 router.delete('/categories/:id',       categoryController.deleteCategory);
-router.post('/categories/sync-counts', categoryController.syncAllBloggerCounts);
 
 // ── FAQs ───────────────────────────────────────────────────────────────────────
 router.get('/faqs',        faqController.adminGetAllFAQs);

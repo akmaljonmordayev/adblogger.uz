@@ -46,6 +46,7 @@ export const ROUTE_PATHS = {
   ADMIN_DASHBOARD:      "/admin/dashboard",
   ADMIN_USERS:          "/admin/users",
   ADMIN_BLOGGERS:       "/admin/bloggers",
+  ADMIN_BUSINESSMEN:    "/admin/businessmen",
   ADMIN_ADS:            "/admin/ads",
   ADMIN_BLOGS:          "/admin/blogs",
   ADMIN_CATEGORIES:     "/admin/categories",

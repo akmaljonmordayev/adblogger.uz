@@ -15,6 +15,7 @@ import api from "../services/api";
 import orderService from "../services/orderService";
 import { useAuthStore } from "../store/useAuthStore";
 import { ROUTE_PATHS } from "../config/constants";
+import { CATEGORY_LABEL, CATEGORY_GRADIENT } from "../config/categories";
 
 /* ─── helpers ────────────────────────────────────────────── */
 const PLATFORM_DISPLAY = {
@@ -22,26 +23,8 @@ const PLATFORM_DISPLAY = {
   telegram: "Telegram", tiktok: "TikTok",
 };
 
-const CATEGORY_LABELS = {
-  Tech: "Texnologiya", Lifestyle: "Lifestyle", Beauty: "Go'zallik",
-  Food: "Ovqat", Sports: "Sport", Travel: "Sayohat",
-  Education: "Ta'lim", Business: "Biznes", Gaming: "Gaming",
-  Music: "Musiqa", Other: "Boshqa",
-};
-
-const CATEGORY_GRADIENTS = {
-  Tech:      "linear-gradient(135deg, #024da1 0%, #012b64 100%)",
-  Lifestyle: "linear-gradient(135deg, #8c0d3a 0%, #46041d 100%)",
-  Beauty:    "linear-gradient(135deg, #5b137d 0%, #2f0745 100%)",
-  Food:      "linear-gradient(135deg, #a13602 0%, #4b1700 100%)",
-  Sports:    "linear-gradient(135deg, #1a4d7c 0%, #0b2a3e 100%)",
-  Travel:    "linear-gradient(135deg, #1b5e20 0%, #002d12 100%)",
-  Education: "linear-gradient(135deg, #4a148c 0%, #1a0d47 100%)",
-  Gaming:    "linear-gradient(135deg, #9c27b0 0%, #2d003f 100%)",
-  Music:     "linear-gradient(135deg, #2c2c2c 0%, #0a0a0a 100%)",
-  Business:  "linear-gradient(135deg, #b45309 0%, #431407 100%)",
-  Other:     "linear-gradient(135deg, #334155 0%, #0f172a 100%)",
-};
+const CATEGORY_LABELS    = CATEGORY_LABEL;
+const CATEGORY_GRADIENTS = CATEGORY_GRADIENT;
 
 function fmtNum(n) {
   if (!n) return "0";

@@ -7,6 +7,7 @@ import { useState, forwardRef } from "react";
 import SEO, { breadcrumbSchema } from "../components/SEO";
 import { useAuthStore } from "../store/useAuthStore";
 import { toast } from "../components/ui/toast";
+import { CATEGORY_LIST } from "../config/categories";
 
 /* ─── Static data ────────────────────────────────────────────────── */
 const steps = [
@@ -284,17 +285,9 @@ export default function BlogerBolish() {
                 <BBInput label="Obunachilar soni *" type="number" placeholder="Masalan: 50000" error={errors.followers?.message} {...register("followers")} />
                 <BBSelect label="Kategoriya" error={errors.category?.message} {...register("category")}>
                   <option value="">Kategoriyani tanlang</option>
-                  <option value="Tech">Texnologiya</option>
-                  <option value="Lifestyle">Lifestyle</option>
-                  <option value="Beauty">Go'zallik</option>
-                  <option value="Food">Ovqat</option>
-                  <option value="Sports">Sport</option>
-                  <option value="Travel">Sayohat</option>
-                  <option value="Education">Ta'lim</option>
-                  <option value="Business">Biznes</option>
-                  <option value="Gaming">Gaming</option>
-                  <option value="Music">Musiqa</option>
-                  <option value="Other">Boshqa</option>
+                  {CATEGORY_LIST.map(c => (
+                    <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>
+                  ))}
                 </BBSelect>
               </div>
             </div>

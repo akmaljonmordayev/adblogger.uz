@@ -51,7 +51,8 @@ const AdminCategories  = lazy(() => import("../admin/pages/AdminCategories"));
 const AdminContact     = lazy(() => import("../admin/pages/AdminContact"));
 const AdminFAQ         = lazy(() => import("../admin/pages/AdminFAQ"));
 const AdminSettings    = lazy(() => import("../admin/pages/AdminSettings"));
-const AdminApplications = lazy(() => import("../admin/pages/AdminApplications"));
+const AdminApplications  = lazy(() => import("../admin/pages/AdminApplications"));
+const AdminBusinessmen   = lazy(() => import("../admin/pages/AdminBusinessmen"));
 
 const wrap = (el) => <Suspense fallback={<PageLoader />}>{el}</Suspense>;
 
@@ -114,6 +115,7 @@ export const router = createBrowserRouter([
       { path: ROUTE_PATHS.ADMIN_FAQ,                    element: wrap(<AdminFAQ />) },
       { path: ROUTE_PATHS.ADMIN_SETTINGS,               element: wrap(<AdminSettings />) },
       { path: ROUTE_PATHS.ADMIN_APPLICATIONS,           element: wrap(<AdminApplications />) },
+      { path: ROUTE_PATHS.ADMIN_BUSINESSMEN,            element: wrap(<AdminBusinessmen />) },
     ],
   },
   {

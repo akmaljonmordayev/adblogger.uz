@@ -3,6 +3,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import SEO, { breadcrumbSchema } from "../components/SEO";
 import api from "../services/api";
+import { CATEGORY_SELECT_OPTIONS, CATEGORY_LABEL as CAT_LABEL } from "../config/categories";
 import {
   LuSearch, LuX, LuHeart, LuEye, LuClock, LuCalendar,
   LuChevronLeft, LuChevronRight, LuMessageCircle, LuTrendingUp,
@@ -11,20 +12,9 @@ import {
 } from "react-icons/lu";
 
 /* ── constants ──────────────────────────────────────────────────────────── */
-const CATEGORIES = [
-  { value: "", label: "Barchasi" },
-  { value: "Tech",       label: "Texnologiya" },
-  { value: "Lifestyle",  label: "Lifestyle" },
-  { value: "Beauty",     label: "Go'zallik" },
-  { value: "Food",       label: "Ovqat" },
-  { value: "Sports",     label: "Sport" },
-  { value: "Travel",     label: "Sayohat" },
-  { value: "Education",  label: "Ta'lim" },
-  { value: "Business",   label: "Biznes" },
-  { value: "Gaming",     label: "Gaming" },
-  { value: "Music",      label: "Musiqa" },
-  { value: "Other",      label: "Boshqa" },
-];
+const CATEGORIES = CATEGORY_SELECT_OPTIONS.map(c =>
+  c.value === "" ? { value: "", label: "Barchasi" } : c
+);
 
 const SORT_OPTIONS = [
   { value: "-createdAt", label: "Eng yangi" },
@@ -119,7 +109,7 @@ function BlogCard({ post, view = "grid" }) {
           <div style={{ padding: "20px 20px 20px 0", flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ background: cs.bg, color: cs.tc, border: `1px solid ${cs.border}`, fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 6 }}>
-                {post.category}
+                {CAT_LABEL[post.category] ?? post.category}
               </span>
               <span style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 3 }}>
                 <LuCalendar size={10} />{fmtDate(post.createdAt)}
@@ -195,7 +185,7 @@ function BlogCard({ post, view = "grid" }) {
         <div style={{ padding: "18px 18px 20px", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
             <span style={{ background: cs.bg, color: cs.tc, border: `1px solid ${cs.border}`, fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 6 }}>
-              {post.category}
+              {CAT_LABEL[post.category] ?? post.category}
             </span>
             <span style={{ fontSize: 10.5, color: "#94a3b8", display: "flex", alignItems: "center", gap: 3 }}>
               <LuCalendar size={9} />{fmtDate(post.createdAt)}

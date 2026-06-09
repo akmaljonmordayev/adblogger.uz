@@ -19,18 +19,19 @@ const SidebarStyles = () => (
   `}</style>
 );
 
+// id = DB qiymati (inglizcha), label = o'zbek nomi
 const CATEGORIES = [
-  { id: "Texnologiya", emoji: "💻" },
-  { id: "Lifestyle",   emoji: "🌿" },
-  { id: "Go'zallik",  emoji: "✨" },
-  { id: "Ovqat",      emoji: "🍕" },
-  { id: "Sport",      emoji: "🏆" },
-  { id: "Gaming",     emoji: "🎮" },
-  { id: "Sayohat",    emoji: "✈️" },
-  { id: "Ta'lim",     emoji: "📚" },
-  { id: "Musiqa",     emoji: "🎵" },
-  { id: "Biznes",     emoji: "💼" },
-  { id: "Boshqa",     emoji: "🏷️" },
+  { id: "Tech",      label: "Texnologiya", emoji: "💻" },
+  { id: "Lifestyle", label: "Lifestyle",   emoji: "✨" },
+  { id: "Beauty",    label: "Go'zallik",   emoji: "💄" },
+  { id: "Food",      label: "Ovqat",       emoji: "🍴" },
+  { id: "Sports",    label: "Sport",       emoji: "⚽" },
+  { id: "Gaming",    label: "Gaming",      emoji: "🎮" },
+  { id: "Travel",    label: "Sayohat",     emoji: "✈️" },
+  { id: "Education", label: "Ta'lim",      emoji: "📚" },
+  { id: "Music",     label: "Musiqa",      emoji: "🎵" },
+  { id: "Business",  label: "Biznes",      emoji: "💼" },
+  { id: "Other",     label: "Boshqa",      emoji: "🏷️" },
 ];
 
 const PLATFORMS = [
@@ -491,7 +492,7 @@ export default function FilterSidebar({ onApplyFilter, usersList = [], initialCa
                 {CATEGORIES.map((c) => (
                   <Chip
                     key={c.id}
-                    label={c.id}
+                    label={c.label}
                     emoji={c.emoji}
                     checked={filters.category.includes(c.id)}
                     onClick={() => toggle("category", c.id)}

@@ -758,6 +758,7 @@ export default function AdminBloggers() {
                   {[
                     { l:"#",           w:48  },
                     { l:"Blogger",     w:"auto" },
+                    { l:"Rol",         w:110 },
                     { l:"Handle",      w:130 },
                     { l:"Followers",   w:100 },
                     { l:"Reyting",     w:90  },
@@ -773,7 +774,7 @@ export default function AdminBloggers() {
               </thead>
               <tbody>
                 {pageData.length === 0 ? (
-                  <tr><td colSpan={8} style={{ textAlign:"center", padding:"56px", color:"#cbd5e1", fontSize:14, fontWeight:600 }}>
+                  <tr><td colSpan={9} style={{ textAlign:"center", padding:"56px", color:"#cbd5e1", fontSize:14, fontWeight:600 }}>
                     Blogger topilmadi
                   </td></tr>
                 ) : pageData.map((b, idx) => {
@@ -821,6 +822,29 @@ export default function AdminBloggers() {
                             <div style={{ fontSize:11, color:"#94a3b8" }}>{u?.email || "—"}</div>
                           </div>
                         </div>
+                      </td>
+
+                      {/* Rol */}
+                      <td style={{ padding:"12px 14px" }}>
+                        {(() => {
+                          const role = u?.role;
+                          if (role === "blogger") return (
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"#eef2ff", color:"#4338ca", border:"1px solid #c7d2fe", padding:"3px 10px", borderRadius:99, fontSize:11, fontWeight:700, whiteSpace:"nowrap" }}>
+                              Blogger
+                            </span>
+                          );
+                          if (role === "business") return (
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"#fff7ed", color:"#c2410c", border:"1px solid #fed7aa", padding:"3px 10px", borderRadius:99, fontSize:11, fontWeight:700, whiteSpace:"nowrap" }}>
+                              Biznesmen
+                            </span>
+                          );
+                          if (role === "admin") return (
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"#fef2f2", color:"#991b1b", border:"1px solid #fca5a5", padding:"3px 10px", borderRadius:99, fontSize:11, fontWeight:700, whiteSpace:"nowrap" }}>
+                              Admin
+                            </span>
+                          );
+                          return <span style={{ color:"#cbd5e1", fontSize:12 }}>{role || "—"}</span>;
+                        })()}
                       </td>
 
                       {/* Handle */}

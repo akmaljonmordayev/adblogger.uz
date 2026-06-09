@@ -5,37 +5,13 @@ import BloggerCard from "../components/ui/BlogerCard";
 import FilterSidebar from '../components/layout/FilterSidebar';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTE_PATHS } from "../config/constants";
+import { CATEGORY_LABEL, CATEGORY_GRADIENT } from "../config/categories";
 import { LuSlidersHorizontal, LuX, LuUsers, LuLoader, LuArrowUpDown, LuChevronLeft, LuChevronRight, LuSearch } from "react-icons/lu";
 import api from "../services/api";
 
-/* ── Kategoriya nomi (uz) ─────────────────────────────────── */
-const CATEGORY_LABELS = {
-  Tech:      "Texnologiya",
-  Lifestyle: "Lifestyle",
-  Beauty:    "Go'zallik",
-  Food:      "Ovqat",
-  Sports:    "Sport",
-  Travel:    "Sayohat",
-  Education: "Ta'lim",
-  Business:  "Biznes",
-  Gaming:    "Gaming",
-  Music:     "Musiqa",
-  Other:     "Boshqa",
-};
-
-const CATEGORY_GRADIENTS = {
-  Tech:      "linear-gradient(180deg, #024da1 0%, #012b64 100%)",
-  Lifestyle: "linear-gradient(180deg, #8c0d3a 0%, #46041d 100%)",
-  Beauty:    "linear-gradient(180deg, #5b137d 0%, #2f0745 100%)",
-  Food:      "linear-gradient(180deg, #a13602 0%, #4b1700 100%)",
-  Sports:    "linear-gradient(180deg, #1a4d7c 0%, #0b2a3e 100%)",
-  Travel:    "linear-gradient(180deg, #1b5e20 0%, #002d12 100%)",
-  Education: "linear-gradient(180deg, #4a148c 0%, #1a0d47 100%)",
-  Gaming:    "linear-gradient(180deg, #9c27b0 0%, #2d003f 100%)",
-  Music:     "linear-gradient(180deg, #2c2c2c 0%, #0a0a0a 100%)",
-  Business:  "linear-gradient(180deg, #b45309 0%, #431407 100%)",
-  Other:     "linear-gradient(180deg, #334155 0%, #0f172a 100%)",
-};
+/* ── Eski nomlar mos kelishi uchun ─────────────────────────── */
+const CATEGORY_LABELS    = CATEGORY_LABEL;
+const CATEGORY_GRADIENTS = CATEGORY_GRADIENT;
 
 const PLATFORM_DISPLAY = {
   youtube:   "YouTube",
@@ -69,7 +45,7 @@ function mapBlogger(b) {
     allPlatforms:  (b.platforms || [plat]).map(p => PLATFORM_DISPLAY[p] ?? p),
     categoryType:  cat,
     categoryText:  CATEGORY_LABELS[cat] ?? cat,
-    allCategories: (b.categories || [cat]).map(c => CATEGORY_LABELS[c] ?? c),
+    allCategories: b.categories || [cat], // DB qiymatlari (Tech, Food…)
     followers:     formatFollowers(b.followers),
     rawFollowers:  b.followers || 0,
     engagement:    `${b.engagementRate || 0}%`,
@@ -112,10 +88,10 @@ export default function Blogger() {
 
     if (categoryFromQS) {
       const cat = categoryFromQS.toLowerCase();
+      // Faqat PRIMARY kategoriya bo'yicha filtr (birinchi kategoriya)
       const byCat = result.filter(b =>
-        b.categoryText.toLowerCase() === cat ||
-        b.categoryType.toLowerCase() === cat ||
-        b.allCategories.some(c => c.toLowerCase() === cat)
+        b.categoryText.toLowerCase() === cat ||   // O'zbek nomi (Biznes)
+        b.categoryType.toLowerCase() === cat       // Ingliz nomi (Business)
       );
       if (byCat.length > 0) result = byCat;
     }
@@ -173,8 +149,9 @@ export default function Blogger() {
       result = result.filter(b => b.id === selectedUser.id);
     }
     if (filters.category?.length) {
+      // Faqat PRIMARY kategoriya bo'yicha filtr
       result = result.filter(b =>
-        b.allCategories.some(c => filters.category.includes(c))
+        filters.category.includes(b.categoryType)
       );
     }
     if (filters.platform?.length) {

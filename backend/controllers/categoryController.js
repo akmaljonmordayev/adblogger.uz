@@ -117,7 +117,16 @@ exports.getCategory = catchAsync(async (req, res, next) => {
 
 // POST /api/v1/admin/categories
 exports.createCategory = catchAsync(async (req, res) => {
-  const category = await Category.create(req.body);
+  const body = { ...req.body };
+  // slug avtomatik yaratish (agar yuborilmasa)
+  if (!body.slug && body.name) {
+    body.slug = body.name
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+  }
+  const category = await Category.create(body);
   res.status(201).json({ success: true, data: category });
 });
 
