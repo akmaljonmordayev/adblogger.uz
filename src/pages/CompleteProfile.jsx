@@ -7,8 +7,9 @@ import {
 import { useAuthStore } from "../store/useAuthStore";
 import api from "../services/api";
 import { toast } from "../components/ui/toast";
+import { CATEGORY_LIST } from "../config/categories";
 
-const CATEGORIES = ["Tech","Lifestyle","Beauty","Food","Sports","Travel","Education","Business","Gaming","Music","Other"];
+const CATEGORIES = CATEGORY_LIST; // { value, label, emoji, … }
 const SERVICES   = ["Post","Story","Reel","Video","Live","Unboxing"];
 const PLATFORMS  = [
   { key: "instagram", label: "Instagram", Icon: LuInstagram,    color: "#e1306c" },
@@ -148,8 +149,8 @@ function BloggerForm({ onSubmit, loading }) {
 
       <Field label="Kategoriyalar *">
         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-          {CATEGORIES.map(c => (
-            <Toggle key={c} value={categories.includes(c)} onChange={() => toggleArr(categories, setCategories, c)} label={c} />
+          {CATEGORIES.map(({ value, label, emoji }) => (
+            <Toggle key={value} value={categories.includes(value)} onChange={() => toggleArr(categories, setCategories, value)} label={`${emoji} ${label}`} />
           ))}
         </div>
       </Field>

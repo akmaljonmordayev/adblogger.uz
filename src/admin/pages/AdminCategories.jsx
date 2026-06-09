@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "../../components/ui/toast";
 import { adminCategoriesService, adminBloggersService } from "../../services/adminService";
+import { CATEGORY_LABEL } from "../../config/categories";
 import {
   LuLoader, LuSearch, LuPlus, LuPencil, LuTrash2,
   LuTriangleAlert, LuX, LuCheck, LuTag, LuUsers,
@@ -241,7 +242,7 @@ function DeleteConfirm({ cat, onConfirm, onCancel, saving }) {
         <p style={{ fontSize: 13.5, color: T.textMuted, margin: "0 0 10px", lineHeight: 1.6 }}>Bu kategoriyani o'chirsangiz, qaytarib bo'lmaydi.</p>
         {cat && (
           <p style={{ fontSize: 13, color: T.text, fontWeight: 700, background: T.surfaceUp, padding: "8px 16px", borderRadius: 10, border: `1px solid ${T.border}`, margin: "0 0 24px" }}>
-            "{cat.name}"
+            "{CATEGORY_LABEL[cat.name] ?? cat.name}"
             {cat.bloggerCount > 0 && (
               <span style={{ fontSize: 12, color: T.warn, marginLeft: 8, fontWeight: 600 }}>
                 ⚠️ {cat.bloggerCount} ta blogger bor
@@ -321,8 +322,9 @@ export default function AdminCategories() {
       toast.success("Yangi kategoriya qo'shildi");
       setShowCreate(false);
       queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
-    } catch {
-      toast.error("Xatolik yuz berdi");
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Xatolik yuz berdi";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -359,14 +361,20 @@ export default function AdminCategories() {
 
   /* ── Delete ── */
   const handleDelete = async () => {
+    if (!deletingCat?._id) {
+      toast.error("Bu kategoriya DB da yo'q, o'chirib bo'lmaydi");
+      setDeletingCat(null);
+      return;
+    }
     setSaving(true);
     try {
       await adminCategoriesService.remove(deletingCat._id);
       toast.success("Kategoriya o'chirildi");
       setDeletingCat(null);
       queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
-    } catch {
-      toast.error("Xatolik yuz berdi");
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Xatolik yuz berdi";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -522,7 +530,7 @@ export default function AdminCategories() {
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                       <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-                        {cat.name}
+                        {CATEGORY_LABEL[cat.name] ?? cat.name}
                       </p>
                       {cat._noDoc && (
                         <span title="Bu kategoriya DB da yo'q, faqat bloggerlarda mavjud" style={{ fontSize: 10, fontWeight: 700, color: T.warn, background: T.warnBg, border: `1px solid ${T.warnBd}`, padding: "1px 6px", borderRadius: 6 }}>
