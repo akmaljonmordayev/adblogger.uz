@@ -5,6 +5,7 @@ import Header from "../components/layout/Header"
 import Footer from "../components/layout/Footer";
 import PageLoader from "../components/ui/PageLoader";
 import { useAuthStore } from "../store/useAuthStore";
+import ReviewModal from "../components/ReviewModal";
 
 const MainLayout = () => {
   const { pathname } = useLocation();
@@ -32,6 +33,7 @@ const MainLayout = () => {
         <Outlet />
       </main>
       {!hideFooter && <Footer/>}
+      <ReviewModal />
     </div>
   );
 };

@@ -5,7 +5,7 @@ import { toast } from "../../components/ui/toast";
 import { useAdminSocket } from "../../hooks/useSocket";
 import {
   LuRefreshCw, LuLoader, LuCheck, LuX, LuClock,
-  LuChevronLeft, LuChevronRight, LuSearch,
+  LuChevronLeft, LuChevronRight, LuSearch, LuTrash2,
 } from "react-icons/lu";
 
 const STATUS_TABS = [
@@ -101,6 +101,55 @@ function RejectModal({ user, onConfirm, onClose, title = "Arizani rad etish", co
   );
 }
 
+function DeleteConfirmModal({ user, onConfirm, onClose }) {
+  const [loading, setLoading] = useState(false);
+  const handleConfirm = async () => {
+    setLoading(true);
+    try { await onConfirm(user._id); }
+    finally { setLoading(false); }
+  };
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 400, overflow: "hidden" }}>
+        <div style={{ padding: "18px 22px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>Foydalanuvchini o'chirish</span>
+          <button onClick={onClose} style={{ fontSize: 22, color: "#6b7280", background: "none", border: "none", cursor: "pointer" }}>×</button>
+        </div>
+        <div style={{ padding: 22 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, padding: "12px 14px", background: "#fef2f2", borderRadius: 10, border: "1px solid #fecaca" }}>
+            <Ava user={user} size={40} />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{user.firstName} {user.lastName}</div>
+              <div style={{ fontSize: 12, color: "#6b7280" }}>{user.email}</div>
+            </div>
+          </div>
+          <p style={{ fontSize: 13, color: "#374151", margin: "0 0 18px", lineHeight: 1.6 }}>
+            Ushbu foydalanuvchi <strong>butunlay o'chirib tashlanadi</strong>. Bu amalni ortga qaytarib bo'lmaydi.
+          </p>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={onClose}
+              style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+            >
+              Bekor qilish
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={loading}
+              style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "none", background: "#ef4444", color: "#fff", fontWeight: 700, fontSize: 13, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1 }}
+            >
+              {loading ? "O'chirilmoqda…" : "O'chirish"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const PER = 15;
 
 export default function AdminApplications() {
@@ -110,6 +159,7 @@ export default function AdminApplications() {
   const [search, setSearch] = useState("");
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectProfileTarget, setRejectProfileTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [liveSteps, setLiveSteps] = useState({}); // { userId: step } — real-time tracking
   const [profileReviewCount, setProfileReviewCount] = useState(0);
@@ -232,6 +282,17 @@ export default function AdminApplications() {
     }
   };
 
+  const handleDeleteUser = async (userId) => {
+    try {
+      await api.delete(`/admin/users/${userId}`);
+      toast.success("Foydalanuvchi o'chirildi.");
+      queryClient.invalidateQueries({ queryKey: ["admin-applications"] });
+      setDeleteTarget(null);
+    } catch {
+      toast.error("Xatolik yuz berdi");
+    }
+  };
+
   const switchTab = (tab) => {
     setActiveTab(tab);
     setPage(1);
@@ -323,7 +384,7 @@ export default function AdminApplications() {
                 <tr>
                   {["Foydalanuvchi", "Email", "Telefon", "Rol", "Ariza sanasi",
                     ...(activeTab === "rejected" ? ["Sabab"] : []),
-                    ...(activeTab === "approved" ? ["Onboarding"] : []),
+                    ...(activeTab === "approved" ? ["Onboarding", "Amallar"] : []),
                     ...(activeTab === "profile_review" ? ["Profil holati", "Amallar"] : []),
                     ...(activeTab === "pending" ? ["Amallar"] : [])
                   ].map(h => (
@@ -398,12 +459,28 @@ export default function AdminApplications() {
                         ? { label: "Profil ko'rib chiqilmoqda", bg: "#f5f3ff", color: "#5b21b6", dot: "#7c3aed", pulse: true }
                         : { label: "Profil kutilmoqda", bg: "#fffbeb", color: "#92400e", dot: "#f59e0b", pulse: true };
                       return (
-                        <td style={TD}>
-                          <div style={{ display:"flex", alignItems:"center", gap:6, padding:"4px 10px", borderRadius:8, background:cfg.bg, width:"fit-content" }}>
-                            <span style={{ width:7, height:7, borderRadius:"50%", background:cfg.dot, flexShrink:0, animation: cfg.pulse ? "pulse 2s infinite" : "none" }} />
-                            <span style={{ fontSize:11, fontWeight:700, color:cfg.color, whiteSpace:"nowrap" }}>{cfg.label}</span>
-                          </div>
-                        </td>
+                        <>
+                          <td style={TD}>
+                            <div style={{ display:"flex", alignItems:"center", gap:6, padding:"4px 10px", borderRadius:8, background:cfg.bg, width:"fit-content" }}>
+                              <span style={{ width:7, height:7, borderRadius:"50%", background:cfg.dot, flexShrink:0, animation: cfg.pulse ? "pulse 2s infinite" : "none" }} />
+                              <span style={{ fontSize:11, fontWeight:700, color:cfg.color, whiteSpace:"nowrap" }}>{cfg.label}</span>
+                            </div>
+                          </td>
+                          <td style={TD}>
+                            <button
+                              onClick={() => setDeleteTarget(u)}
+                              title="O'chirish"
+                              style={{
+                                display: "flex", alignItems: "center", gap: 5,
+                                padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                                background: "#fee2e2", color: "#991b1b", fontWeight: 700, fontSize: 12,
+                              }}
+                            >
+                              <LuTrash2 style={{ fontSize: 13 }} />
+                              O'chirish
+                            </button>
+                          </td>
+                        </>
                       );
                     })()}
 
@@ -541,6 +618,15 @@ export default function AdminApplications() {
           onClose={() => setRejectProfileTarget(null)}
           title="Profilni rad etish"
           confirmLabel="Profilni rad etish"
+        />
+      )}
+
+      {/* Delete Confirm Modal */}
+      {deleteTarget && (
+        <DeleteConfirmModal
+          user={deleteTarget}
+          onConfirm={handleDeleteUser}
+          onClose={() => setDeleteTarget(null)}
         />
       )}
 
