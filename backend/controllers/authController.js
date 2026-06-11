@@ -321,9 +321,10 @@ exports.verifyLoginOtp = catchAsync(async (req, res, next) => {
     return next(new AppError("Email yoki kod noto'g'ri.", 401));
   }
 
-  // Clear OTP fields
+  // Clear OTP fields and save last login
   user.loginOtp = undefined;
   user.loginOtpExpires = undefined;
+  user.lastLoginAt = new Date();
   await user.save({ validateBeforeSave: false });
 
   sendTokenResponse(user, 200, res);
@@ -366,6 +367,7 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Akkauntingiz bloklangan.', 403));
   }
 
+  await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
   sendTokenResponse(user, 200, res);
 });
 
@@ -382,6 +384,7 @@ exports.adminLogin = catchAsync(async (req, res, next) => {
     return next(new AppError("Admin email yoki parol noto'g'ri.", 401));
   }
 
+  await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
   sendTokenResponse(user, 200, res);
 });
 

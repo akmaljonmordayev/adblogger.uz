@@ -83,7 +83,7 @@ exports.updateMyProfile = catchAsync(async (req, res, next) => {
 // GET /api/v1/admin/bloggers
 exports.adminGetAllBloggers = catchAsync(async (req, res) => {
   const features = new APIFeatures(
-    Blogger.find().populate('user', 'firstName lastName avatar email isBlocked isFrozen isActive'),
+    Blogger.find().populate('user', 'firstName lastName avatar email isBlocked isFrozen isActive lastLoginAt'),
     req.query
   )
     .filter()
@@ -99,8 +99,9 @@ exports.adminGetAllBloggers = catchAsync(async (req, res) => {
   const data = bloggers.map(b => {
     const obj = b.toObject();
     if (obj.user) {
-      obj.isBlocked = obj.user.isBlocked || false;
-      obj.isFrozen  = obj.user.isFrozen  || false;
+      obj.isBlocked   = obj.user.isBlocked   || false;
+      obj.isFrozen    = obj.user.isFrozen    || false;
+      obj.lastLoginAt = obj.user.lastLoginAt || null;
     }
     return obj;
   });

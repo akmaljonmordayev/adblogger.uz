@@ -314,6 +314,7 @@ function DetailModal({ blogger, onClose, onUpdate }) {
               { Icon: PiMapPinDuotone,               label:"Joylashuv",      val: local.location || "—"           },
               { Icon: PiCalendarDotsDuotone,         label:"Ro'yxatdan",     val: fmtDate(local.createdAt)        },
               { Icon: PiUserCircleDuotone,           label:"Hisob turi",     val: local.accountType || "Blogger"  },
+              { Icon: PiCalendarDotsDuotone,         label:"Oxirgi kirish",  val: local.lastLoginAt ? fmtDate(local.lastLoginAt) : "Hali kirmagan" },
             ].map(r => (
               <div key={r.label} style={{ background:"#f8fafc", border:"1.5px solid #f1f5f9", borderRadius:12, padding:"10px 14px", display:"flex", alignItems:"flex-start", gap:10 }}>
                 <r.Icon size={16} style={{ color:"#6366f1", flexShrink:0, marginTop:2 }}/>
@@ -756,15 +757,16 @@ export default function AdminBloggers() {
               <thead>
                 <tr style={{ background:"#f8fafc" }}>
                   {[
-                    { l:"#",           w:48  },
-                    { l:"Blogger",     w:"auto" },
-                    { l:"Rol",         w:110 },
-                    { l:"Handle",      w:130 },
-                    { l:"Followers",   w:100 },
-                    { l:"Reyting",     w:90  },
-                    { l:"Platformalar",w:140 },
-                    { l:"Holat",       w:130 },
-                    { l:"Amallar",     w:100 },
+                    { l:"#",             w:48  },
+                    { l:"Blogger",       w:"auto" },
+                    { l:"Rol",           w:110 },
+                    { l:"Handle",        w:130 },
+                    { l:"Followers",     w:100 },
+                    { l:"Reyting",       w:90  },
+                    { l:"Platformalar",  w:140 },
+                    { l:"Oxirgi kirish", w:130 },
+                    { l:"Holat",         w:130 },
+                    { l:"Amallar",       w:100 },
                   ].map((h, i) => (
                     <th key={i} style={{ padding:"11px 14px", textAlign:"left", fontSize:10, fontWeight:800, color:"#94a3b8", textTransform:"uppercase", letterSpacing:"0.07em", borderBottom:"1.5px solid #f1f5f9", width:h.w, whiteSpace:"nowrap" }}>
                       {h.l}
@@ -872,6 +874,20 @@ export default function AdminBloggers() {
                       {/* Platforms */}
                       <td style={{ padding:"12px 14px" }}>
                         <PlatformIcons platforms={b.platforms} size={24} gap={5} />
+                      </td>
+
+                      {/* Last login */}
+                      <td style={{ padding:"12px 14px" }}>
+                        {b.lastLoginAt ? (
+                          <div>
+                            <div style={{ fontSize:12, fontWeight:700, color:"#374151" }}>{fmtDate(b.lastLoginAt)}</div>
+                            <div style={{ fontSize:10, color:"#9ca3af", marginTop:2 }}>
+                              {new Date(b.lastLoginAt).toLocaleTimeString("uz-UZ", { hour:"2-digit", minute:"2-digit" })}
+                            </div>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize:11, color:"#d1d5db", fontStyle:"italic" }}>Hali kirmagan</span>
+                        )}
                       </td>
 
                       {/* Status + quick unblock/unfreeze */}

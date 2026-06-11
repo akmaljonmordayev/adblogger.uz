@@ -167,8 +167,9 @@ function DetailModal({ user, onClose, onUpdate }) {
   const rows = [
     { Icon: PiEnvelopeDuotone,    label:"Email",        val: local.email || "—" },
     { Icon: PiPhoneDuotone,        label:"Telefon",      val: local.phone || "—" },
-    { Icon: PiCalendarDotsDuotone, label:"Ro'yxatdan",   val: fmtDate(local.createdAt) },
-    { Icon: PiUserCircleDuotone,   label:"Rol",          val: "Biznesmen" },
+    { Icon: PiCalendarDotsDuotone, label:"Ro'yxatdan",    val: fmtDate(local.createdAt) },
+    { Icon: PiUserCircleDuotone,   label:"Rol",           val: "Biznesmen" },
+    { Icon: PiCalendarDotsDuotone, label:"Oxirgi kirish", val: local.lastLoginAt ? fmtDate(local.lastLoginAt) : "Hali kirmagan" },
   ];
 
   return (
@@ -521,13 +522,14 @@ export default function AdminBusinessmen() {
               <thead>
                 <tr style={{ background:"#f8fafc" }}>
                   {[
-                    { l:"#",           w:48   },
-                    { l:"Biznesmen",   w:"auto" },
-                    { l:"Email",       w:200  },
-                    { l:"Telefon",     w:130  },
-                    { l:"Sana",        w:120  },
-                    { l:"Holat",       w:150  },
-                    { l:"Amallar",     w:110  },
+                    { l:"#",             w:48   },
+                    { l:"Biznesmen",     w:"auto" },
+                    { l:"Email",         w:180  },
+                    { l:"Telefon",       w:130  },
+                    { l:"Sana",          w:110  },
+                    { l:"Oxirgi kirish", w:130  },
+                    { l:"Holat",         w:150  },
+                    { l:"Amallar",       w:110  },
                   ].map((h, i) => (
                     <th key={i} style={{ padding:"11px 14px", textAlign:"left", fontSize:10, fontWeight:800, color:"#94a3b8", textTransform:"uppercase", letterSpacing:"0.07em", borderBottom:"1.5px solid #f1f5f9", width:h.w, whiteSpace:"nowrap" }}>
                       {h.l}
@@ -593,6 +595,20 @@ export default function AdminBusinessmen() {
                       {/* date */}
                       <td style={{ padding:"12px 14px", fontSize:12, color:"#94a3b8" }}>
                         {fmtDate(u.createdAt)}
+                      </td>
+
+                      {/* last login */}
+                      <td style={{ padding:"12px 14px" }}>
+                        {u.lastLoginAt ? (
+                          <div>
+                            <div style={{ fontSize:12, fontWeight:700, color:"#374151" }}>{fmtDate(u.lastLoginAt)}</div>
+                            <div style={{ fontSize:10, color:"#9ca3af", marginTop:2 }}>
+                              {new Date(u.lastLoginAt).toLocaleTimeString("uz-UZ", { hour:"2-digit", minute:"2-digit" })}
+                            </div>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize:11, color:"#d1d5db", fontStyle:"italic" }}>Hali kirmagan</span>
+                        )}
                       </td>
 
                       {/* status + quick actions */}

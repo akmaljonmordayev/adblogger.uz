@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema(
     isActive:   { type: Boolean, default: true },
     isBlocked:  { type: Boolean, default: false },
     isFrozen:   { type: Boolean, default: false },
+    lastLoginAt: { type: Date, default: null },
     applicationStatus: {
       type: String,
       enum: ['pre_register', 'pending', 'approved', 'rejected'],

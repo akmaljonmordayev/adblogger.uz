@@ -49,6 +49,6 @@ exports.uploadLogo = catchAsync(async (req, res, next) => {
 
 // ── Admin ──────────────────────────────────────────────────────
 exports.adminGetAll = catchAsync(async (req, res) => {
-  const list = await Business.find().populate('user', 'firstName lastName email avatar');
+  const list = await Business.find().populate('user', 'firstName lastName email avatar lastLoginAt');
   res.status(200).json({ success: true, results: list.length, data: list });
 });
