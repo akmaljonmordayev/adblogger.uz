@@ -23,7 +23,7 @@ function StepIndicator({ step }) {
   const steps = [
     { n: 1, label: "Ariza yuborish",    done: true  },
     { n: 2, label: "Profil to'ldirish", done: false, active: step === 2 },
-    { n: 3, label: "Faollashtirish",    done: false, active: step === 3 },
+    { n: 3, label: "Tasdiqlash",        done: false, active: step === 3 },
   ];
   return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:0, marginBottom:32 }}>
@@ -262,7 +262,8 @@ export default function CompleteProfile() {
       const res = await api.patch("/auth/complete-onboarding", data);
       setUser(res.data.data);
       setDone(true);
-      setTimeout(() => navigate("/"), 2500);
+      // Redirect to profile pending approval screen (second admin review)
+      setTimeout(() => navigate("/profil-tasdiqlash-kutilmoqda"), 2500);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Xatolik yuz berdi");
     } finally {
@@ -281,9 +282,9 @@ export default function CompleteProfile() {
           <div style={{ width:72, height:72, borderRadius:"50%", background:"#dcfce7", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 20px" }}>
             <LuCircleCheck size={36} style={{ color:"#16a34a" }} />
           </div>
-          <h2 style={{ fontSize:24, fontWeight:800, color:"#111827", margin:"0 0 12px" }}>Tabriklaymiz! 🎉</h2>
-          <p style={{ color:"#4b5563", fontSize:15, marginBottom:8 }}>Profilingiz muvaffaqiyatli to'ldirildi.</p>
-          <p style={{ color:"#9ca3af", fontSize:13 }}>Bosh sahifaga o'tilmoqda...</p>
+          <h2 style={{ fontSize:24, fontWeight:800, color:"#111827", margin:"0 0 12px" }}>Profil yuborildi!</h2>
+          <p style={{ color:"#4b5563", fontSize:15, marginBottom:8 }}>Profilingiz ko'rib chiqish uchun yuborildi.</p>
+          <p style={{ color:"#9ca3af", fontSize:13 }}>Tasdiqlash sahifasiga o'tilmoqda...</p>
           <div style={{ height:4, background:"#e5e7eb", borderRadius:99, marginTop:24, overflow:"hidden" }}>
             <div style={{ height:"100%", background:"#22c55e", borderRadius:99, animation:"fillBar 2.5s linear forwards" }} />
           </div>

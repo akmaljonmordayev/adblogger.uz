@@ -32,102 +32,23 @@ router.use(protect, restrictTo('admin'));
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Statistika ma'lumotlari
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success: { type: boolean }
- *                 data:
- *                   type: object
- *                   properties:
- *                     stats:
- *                       type: object
- *                       properties:
- *                         totalUsers:          { type: number }
- *                         totalBloggers:       { type: number }
- *                         totalAds:            { type: number }
- *                         totalBlogs:          { type: number }
- *                         pendingAds:          { type: number }
- *                         newContacts:         { type: number }
- *                         completedCampaigns:  { type: number }
  */
 router.get('/dashboard', adminController.getDashboardStats);
 
 // ── Applications (Registration Approvals) ──────────────────────────────────────
-router.get('/applications',              adminController.getPendingApplications);
-router.patch('/applications/:id/approve', adminController.approveApplication);
-router.patch('/applications/:id/reject',  adminController.rejectApplication);
+router.get('/applications',                        adminController.getPendingApplications);
+router.patch('/applications/:id/approve',           adminController.approveApplication);
+router.patch('/applications/:id/reject',            adminController.rejectApplication);
+router.patch('/applications/:id/approve-profile',   adminController.approveProfile);
+router.patch('/applications/:id/reject-profile',    adminController.rejectProfile);
 
 // ── Users ──────────────────────────────────────────────────────────────────────
-/**
- * @swagger
- * /admin/users:
- *   get:
- *     summary: Barcha foydalanuvchilar
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: role
- *         schema:
- *           type: string
- *           enum: [user, blogger, business]
- *       - in: query
- *         name: isActive
- *         schema:
- *           type: boolean
- *     responses:
- *       200:
- *         description: Foydalanuvchilar ro'yxati
- */
 router.get('/users',        profileController.adminGetAllUsers);
 router.get('/users/:id',    profileController.adminGetUser);
 router.patch('/users/:id',  profileController.adminUpdateUser);
 router.delete('/users/:id', profileController.adminDeleteUser);
 
 // ── Bloggers ───────────────────────────────────────────────────────────────────
-/**
- * @swagger
- * /admin/bloggers:
- *   get:
- *     summary: Barcha bloggerlar (admin)
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Bloggerlar ro'yxati
- */
-/**
- * @swagger
- * /admin/bloggers/{id}/verify:
- *   patch:
- *     summary: Bloggerni tasdiqlash / bekor qilish
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               isVerified: { type: boolean }
- *     responses:
- *       200:
- *         description: Blogger holati yangilandi
- */
 router.get('/bloggers', bloggerController.adminGetAllBloggers);
 router.patch('/bloggers/:id/verify', bloggerController.verifyBlogger);
 router.patch('/bloggers/:id/block', bloggerController.blockBlogger);
@@ -135,118 +56,11 @@ router.patch('/bloggers/:id/freeze', bloggerController.freezeBlogger);
 router.delete('/bloggers/:id', bloggerController.adminDeleteBlogger);
 
 // ── Ads ────────────────────────────────────────────────────────────────────────
-/**
- * @swagger
- * /admin/ads:
- *   get:
- *     summary: Barcha e'lonlar (admin)
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: E'lonlar ro'yxati
- */
-/**
- * @swagger
- * /admin/ads/{id}/status:
- *   patch:
- *     summary: E'lon statusini o'zgartirish
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               status:
- *                 type: string
- *                 enum: [pending, approved, rejected, active, completed]
- *     responses:
- *       200:
- *         description: Status yangilandi
- */
 router.get('/ads', adController.adminGetAllAds);
 router.patch('/ads/:id/status', adController.changeAdStatus);
 router.delete('/ads/:id', adController.adminDeleteAd);
 
 // ── Blogs ──────────────────────────────────────────────────────────────────────
-/**
- * @swagger
- * /admin/blogs:
- *   get:
- *     summary: Barcha blog maqolalari (admin)
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Blog maqolalari
- *   post:
- *     summary: Yangi blog maqolasi yaratish
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             required: [title, content, category]
- *             properties:
- *               title:       { type: string }
- *               excerpt:     { type: string }
- *               content:     { type: string }
- *               category:    { type: string }
- *               tags:        { type: string }
- *               isPublished: { type: boolean }
- *               coverImage:
- *                 type: string
- *                 format: binary
- *     responses:
- *       201:
- *         description: Maqola yaratildi
- */
-/**
- * @swagger
- * /admin/blogs/{id}:
- *   patch:
- *     summary: Blog maqolasini tahrirlash
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Maqola yangilandi
- *   delete:
- *     summary: Blog maqolasini o'chirish
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       204:
- *         description: Maqola o'chirildi
- */
 router.get('/blogs', blogController.adminGetAllBlogs);
 router.post('/blogs', uploadBlogImage.single('coverImage'), blogController.createBlog);
 router.patch('/blogs/:id', uploadBlogImage.single('coverImage'), blogController.updateBlog);
@@ -276,24 +90,6 @@ router.patch('/career-applications/:appId/status',      careerController.updateA
 router.delete('/career-applications/:appId',            careerController.deleteApplication);
 
 // ── Contacts ───────────────────────────────────────────────────────────────────
-/**
- * @swagger
- * /admin/contacts:
- *   get:
- *     summary: Barcha bog'lanish xabarlari
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *           enum: [new, read, responded]
- *     responses:
- *       200:
- *         description: Xabarlar ro'yxati
- */
 router.get('/contacts',              contactController.getAllContacts);
 router.get('/contacts/:id',          contactController.getContact);
 router.patch('/contacts/:id/status', contactController.updateContactStatus);

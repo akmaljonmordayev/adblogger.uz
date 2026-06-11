@@ -26,6 +26,10 @@ exports.protect = catchAsync(async (req, res, next) => {
     return next(new AppError('Parol o\'zgartirilgan. Iltimos, qayta login qiling.', 401));
   }
 
+  if (user.applicationStatus === 'pre_register') {
+    return next(new AppError("Ro'yxatdan o'tishni davom eting.", 403));
+  }
+
   if (user.applicationStatus === 'pending') {
     return next(new AppError('Arizangiz hali ko\'rib chiqilmagan. Iltimos, kuting.', 403));
   }

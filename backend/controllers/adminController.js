@@ -4,9 +4,12 @@ const Ad = require('../models/Ad');
 const BlogPost = require('../models/BlogPost');
 const Campaign = require('../models/Campaign');
 const Contact = require('../models/Contact');
+const Notification = require('../models/Notification');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const { generateToken } = require('../utils/generateToken');
+const sendEmail = require('../utils/sendEmail');
+const { applicationApprovedTemplate, applicationRejectedTemplate, profileApprovedTemplate, profileRejectedTemplate } = sendEmail;
 
 // GET /api/v1/admin/dashboard
 exports.getDashboardStats = catchAsync(async (req, res) => {
@@ -88,17 +91,23 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
   });
 });
 
-// GET /api/v1/admin/applications — Kutilayotgan arizalar
+// GET /api/v1/admin/applications — Arizalar ro'yxati
 exports.getPendingApplications = catchAsync(async (req, res) => {
   const { status = 'pending', page = 1, limit = 20 } = req.query;
   const skip = (page - 1) * limit;
 
   const filter = {};
-  if (status === 'all') {
+
+  if (status === 'profile_review') {
+    // Users who have been approved (application) but whose profile is pending review
+    filter.applicationStatus = 'approved';
+    filter.profileStatus = 'pending_review';
+  } else if (status === 'all') {
     filter.applicationStatus = { $in: ['pending', 'approved', 'rejected'] };
   } else {
     filter.applicationStatus = status;
   }
+
   filter.role = { $ne: 'admin' };
 
   const [applications, total] = await Promise.all([
@@ -106,7 +115,7 @@ exports.getPendingApplications = catchAsync(async (req, res) => {
       .sort('-createdAt')
       .skip(skip)
       .limit(Number(limit))
-      .select('firstName lastName email phone role applicationStatus rejectionReason onboardingStep createdAt avatar'),
+      .select('firstName lastName email phone role applicationStatus rejectionReason profileStatus profileRejectionReason onboardingStep createdAt avatar'),
     User.countDocuments(filter),
   ]);
 
@@ -151,8 +160,18 @@ exports.approveApplication = catchAsync(async (req, res, next) => {
   const io = req.app.get('io');
   if (io) {
     io.to(`user_${user._id}`).emit('application_approved', { token, user: userObj });
-    // Notify admin room of step change
     io.to('admin_room').emit('user_onboarding_step', { userId: String(user._id), step: 2, name: `${user.firstName} ${user.lastName}` });
+  }
+
+  // Send approval email
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: 'Arizangiz tasdiqlandi — Adblogger.uz',
+      html: applicationApprovedTemplate(user.firstName),
+    });
+  } catch {
+    // Don't fail the request if email fails
   }
 
   res.status(200).json({
@@ -183,8 +202,125 @@ exports.rejectApplication = catchAsync(async (req, res, next) => {
     });
   }
 
+  // Send rejection email
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: 'Ariza natijasi — Adblogger.uz',
+      html: applicationRejectedTemplate(user.firstName, reason),
+    });
+  } catch {
+    // Don't fail the request if email fails
+  }
+
   res.status(200).json({
     success: true,
     message: `${user.firstName} ${user.lastName} arizasi rad etildi.`,
+  });
+});
+
+// PATCH /api/v1/admin/applications/:id/approve-profile — Profil tasdiqlash
+exports.approveProfile = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+  if (!user) return next(new AppError('Foydalanuvchi topilmadi.', 404));
+
+  if (user.profileStatus !== 'pending_review') {
+    return next(new AppError('Bu foydalanuvchi profil tasdiqlash kutmayotir.', 400));
+  }
+
+  user.profileStatus  = 'approved';
+  user.profileRejectionReason = '';
+  user.onboardingStep = 4;
+  await user.save({ validateBeforeSave: false });
+
+  // Emit to user socket
+  const io = req.app.get('io');
+  if (io) {
+    io.to(`user_${user._id}`).emit('profile_approved', {
+      userId:  String(user._id),
+      message: 'Profilingiz tasdiqlandi!',
+    });
+  }
+
+  // Create notification for user
+  const notif = await Notification.create({
+    user:  user._id,
+    type:  'verify',
+    title: '🎉 Akkauntingiz faollashdi!',
+    body:  'Profilingiz admin tomonidan tasdiqlandi. Platformadan to\'liq foydalanishingiz mumkin!',
+    link:  '/',
+  });
+
+  if (io) {
+    io.to(`user_${user._id}`).emit('new_notification', notif);
+  }
+
+  // Send approval email
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: 'Profilingiz tasdiqlandi — Adblogger.uz',
+      html: profileApprovedTemplate(user.firstName),
+    });
+  } catch {
+    // Don't fail request if email fails
+  }
+
+  res.status(200).json({
+    success: true,
+    message: `${user.firstName} ${user.lastName} profili tasdiqlandi.`,
+  });
+});
+
+// PATCH /api/v1/admin/applications/:id/reject-profile — Profilni rad etish
+exports.rejectProfile = catchAsync(async (req, res, next) => {
+  const { reason } = req.body;
+
+  const user = await User.findById(req.params.id);
+  if (!user) return next(new AppError('Foydalanuvchi topilmadi.', 404));
+
+  user.profileStatus = 'rejected';
+  user.profileRejectionReason = reason || '';
+  // Reset back to step 2 so user can re-fill
+  user.onboardingStep = 2;
+  await user.save({ validateBeforeSave: false });
+
+  const io = req.app.get('io');
+  if (io) {
+    io.to(`user_${user._id}`).emit('profile_rejected', {
+      userId: String(user._id),
+      reason: user.profileRejectionReason,
+    });
+  }
+
+  // Create notification for user
+  const notif = await Notification.create({
+    user:  user._id,
+    type:  'info',
+    title: 'Profilingiz rad etildi',
+    body:  reason
+      ? `Profilingiz rad etildi: ${reason}. Ma'lumotlarni to'g'rilab, qayta yuboring.`
+      : 'Profilingiz rad etildi. Ma\'lumotlarni to\'g\'rilab, qayta yuboring.',
+    link:  '/profil-toldirish',
+  });
+
+  if (io) {
+    io.to(`user_${user._id}`).emit('new_notification', notif);
+  }
+
+  // Send rejection email
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: 'Profil natijasi — Adblogger.uz',
+      html: profileRejectedTemplate(user.firstName, reason),
+    });
+  } catch {
+    // Don't fail request if email fails
+  }
+
+  res.status(200).json({
+    success: true,
+    message: `${user.firstName} ${user.lastName} profili rad etildi.`,
   });
 });
