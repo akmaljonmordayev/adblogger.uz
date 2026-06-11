@@ -28,6 +28,7 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
     topBloggers,
     categoryBreakdown,
     recentBusinesses,
+    totalBusinessmen,
   ] = await Promise.all([
     User.countDocuments({ role: { $ne: 'admin' }, applicationStatus: 'approved' }),
     Blogger.countDocuments({ isActive: true }),
@@ -56,6 +57,7 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
       .sort('-createdAt')
       .limit(5)
       .select('firstName lastName email createdAt'),
+    User.countDocuments({ role: 'business', applicationStatus: 'approved' }),
   ]);
 
   // Monthly registrations for current year
@@ -80,6 +82,7 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
         newContacts,
         completedCampaigns,
         pendingApplications,
+        totalBusinessmen,
       },
       recentUsers,
       recentAds,
@@ -87,6 +90,116 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
       topBloggers,
       categoryBreakdown,
       recentBusinesses,
+    },
+  });
+});
+
+// GET /api/v1/admin/statistics
+exports.getStatistics = catchAsync(async (req, res) => {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const last12Months = new Date(now);
+  last12Months.setMonth(last12Months.getMonth() - 11);
+  last12Months.setDate(1);
+  last12Months.setHours(0, 0, 0, 0);
+
+  const [
+    totalBloggers,
+    totalBusinessmen,
+    totalAds,
+    totalBlogs,
+    totalCampaigns,
+    totalContacts,
+    pendingAds,
+    approvedAds,
+    activeAds,
+    rejectedAds,
+    completedAds,
+    pendingApplications,
+    monthlyRegs,
+    platformDist,
+    categoryDist,
+    adStatusDist,
+    userRoleDist,
+    topBloggers,
+    monthlyAdsDist,
+  ] = await Promise.all([
+    Blogger.countDocuments({ isActive: true }),
+    User.countDocuments({ role: 'business', applicationStatus: 'approved' }),
+    Ad.countDocuments(),
+    BlogPost.countDocuments({ isPublished: true }),
+    Campaign.countDocuments(),
+    Contact.countDocuments(),
+    Ad.countDocuments({ status: 'pending' }),
+    Ad.countDocuments({ status: 'approved' }),
+    Ad.countDocuments({ status: 'active' }),
+    Ad.countDocuments({ status: 'rejected' }),
+    Ad.countDocuments({ status: 'completed' }),
+    User.countDocuments({ applicationStatus: 'pending' }),
+    // Monthly registrations last 12 months
+    User.aggregate([
+      { $match: { createdAt: { $gte: last12Months }, role: { $ne: 'admin' } } },
+      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 } } },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ]),
+    // Platform distribution
+    Blogger.aggregate([
+      { $match: { isActive: true } },
+      { $unwind: '$platforms' },
+      { $group: { _id: '$platforms', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]),
+    // Category distribution
+    Blogger.aggregate([
+      { $match: { isActive: true } },
+      { $unwind: '$categories' },
+      { $group: { _id: '$categories', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 8 },
+    ]),
+    // Ad status distribution
+    Ad.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]),
+    // User role distribution
+    User.aggregate([
+      { $match: { role: { $ne: 'admin' }, applicationStatus: 'approved' } },
+      { $group: { _id: '$role', count: { $sum: 1 } } },
+    ]),
+    // Top 10 bloggers
+    Blogger.find({ isActive: true })
+      .sort({ followers: -1 })
+      .limit(10)
+      .populate('user', 'firstName lastName avatar')
+      .select('user handle platforms followers engagementRate rating categories'),
+    // Monthly ads created last 12 months
+    Ad.aggregate([
+      { $match: { createdAt: { $gte: last12Months } } },
+      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 } } },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ]),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      overview: {
+        totalBloggers,
+        totalBusinessmen,
+        totalAds,
+        totalBlogs,
+        totalCampaigns,
+        totalContacts,
+        pendingApplications,
+      },
+      adStatus: { pendingAds, approvedAds, activeAds, rejectedAds, completedAds },
+      monthlyRegs,
+      platformDist,
+      categoryDist,
+      adStatusDist,
+      userRoleDist,
+      topBloggers,
+      monthlyAdsDist,
     },
   });
 });

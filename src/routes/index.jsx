@@ -44,6 +44,7 @@ const ProfilePendingApproval = lazy(() => import("../auth/ProfilePendingApproval
 // Admin
 const AdminLayout      = lazy(() => import("../admin/layouts/AdminLayout"));
 const AdminDashboard   = lazy(() => import("../admin/pages/AdminDashboard"));
+const AdminStatistics  = lazy(() => import("../admin/pages/AdminStatistics"));
 const AdminUsers       = lazy(() => import("../admin/pages/AdminUsers"));
 const AdminBloggers    = lazy(() => import("../admin/pages/AdminBloggers"));
 const AdminAds         = lazy(() => import("../admin/pages/AdminAds"));
@@ -117,6 +118,7 @@ export const router = createBrowserRouter([
       { path: ROUTE_PATHS.ADMIN_SETTINGS,               element: wrap(<AdminSettings />) },
       { path: ROUTE_PATHS.ADMIN_APPLICATIONS,           element: wrap(<AdminApplications />) },
       { path: ROUTE_PATHS.ADMIN_BUSINESSMEN,            element: wrap(<AdminBusinessmen />) },
+      { path: "/admin/statistics", element: wrap(<AdminStatistics />) },
     ],
   },
   {

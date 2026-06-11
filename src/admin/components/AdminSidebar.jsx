@@ -17,6 +17,7 @@ PiEnvelopeOpenDuotone,
   PiCaretRightDuotone,
   PiClipboardTextDuotone,
   PiBriefcaseDuotone,
+  PiChartBarDuotone,
 } from "react-icons/pi";
 import LogoutModal from "../../components/ui/LogoutModal";
 
@@ -38,6 +39,7 @@ const NAV_GROUPS = [
     label: "Boshqaruv",
     items: [
       { label: "Dashboard",        path: ROUTE_PATHS.ADMIN_DASHBOARD,  Icon: PiSquaresFourDuotone     },
+      { label: "Statistika",       path: ROUTE_PATHS.ADMIN_STATISTICS,   Icon: PiChartBarDuotone        },
       { label: "Arizalar",         path: ROUTE_PATHS.ADMIN_APPLICATIONS, Icon: PiClipboardTextDuotone   },
       { label: "Blogerlar",        path: ROUTE_PATHS.ADMIN_BLOGGERS,      Icon: PiRssDuotone             },
       { label: "Biznesmenlar",     path: ROUTE_PATHS.ADMIN_BUSINESSMEN,   Icon: PiBriefcaseDuotone       },

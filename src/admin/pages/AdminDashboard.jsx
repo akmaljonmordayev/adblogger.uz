@@ -320,7 +320,7 @@ export default function AdminDashboard() {
   const greeting = hour < 12 ? "Xayrli tong" : hour < 18 ? "Xayrli kun" : "Xayrli kech";
 
   const STATS_CFG = [
-    { icon: FiUsers,        label: "Foydalanuvchilar", value: s.totalUsers,         sub: `${s.pendingApplications ?? 0} ta kutilmoqda`, color: "red",    trendUp: true,  href: "/admin/users"        },
+    { icon: FiUsers,        label: "Biznesmenlar", value: s.totalBusinessmen,         sub: `Tasdiqlangan biznesmenlar`, color: "red",    trendUp: true,  href: "/admin/businessmen"        },
     { icon: FiActivity,     label: "Bloggerlar",        value: s.totalBloggers,      sub: "Faol blogerlar",                              color: "blue",   trendUp: true,  href: "/admin/bloggers"     },
     { icon: FiLayers,       label: "E'lonlar",           value: s.totalAds,           sub: `${s.pendingAds ?? 0} ta ko'rib chiqilmoqda`,  color: "sky",    trendUp: true,  href: "/admin/ads"          },
     { icon: FiCalendar,     label: "Kampaniyalar",       value: s.totalCampaigns,     sub: `${s.completedCampaigns ?? 0} ta yakunlangan`, color: "green",  trendUp: true,  href: "/admin/ads"          },
@@ -355,7 +355,7 @@ export default function AdminDashboard() {
             <h2 className="text-xl font-black" style={{ color: T.text }}>{greeting}, Admin 👋</h2>
             <p className="text-sm mt-0.5" style={{ color: T.textMuted }}>
               Platformada{" "}
-              <span onClick={() => navigate("/admin/users")} className="font-bold cursor-pointer hover:underline" style={{ color: T.redBr }}>{s.totalUsers ?? "..."}</span> foydalanuvchi,{" "}
+              <span onClick={() => navigate("/admin/businessmen")} className="font-bold cursor-pointer hover:underline" style={{ color: T.redBr }}>{s.totalBusinessmen ?? "..."}</span> ta biznesmen,{" "}
               <span onClick={() => navigate("/admin/ads")} className="font-bold cursor-pointer hover:underline" style={{ color: T.redBr }}>{s.pendingAds ?? "..."}</span> e'lon ko'rib chiqilmoqda
             </p>
           </div>

@@ -5,6 +5,10 @@ export const adminDashboardService = {
   getStats: () => api.get("/admin/dashboard").then((r) => r.data.data || r.data),
 };
 
+export const adminStatisticsService = {
+  getStats: () => api.get("/admin/statistics").then((r) => r.data.data || r.data),
+};
+
 // ── Applications ───────────────────────────────────────────────────────────────
 export const adminApplicationsService = {
   getAll: (params) => api.get("/admin/applications", { params }).then((r) => r.data),

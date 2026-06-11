@@ -34,6 +34,7 @@ router.use(protect, restrictTo('admin'));
  *       - bearerAuth: []
  */
 router.get('/dashboard', adminController.getDashboardStats);
+router.get('/statistics', adminController.getStatistics);
 
 // ── Applications (Registration Approvals) ──────────────────────────────────────
 router.get('/applications',                        adminController.getPendingApplications);
