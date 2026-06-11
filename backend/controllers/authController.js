@@ -6,8 +6,15 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const { sendTokenResponse, generateToken } = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
+const { registrationOtpTemplate, loginOtpTemplate } = sendEmail;
 
-// POST /api/v1/auth/register
+// Helper: sanitize a string input (strip <>, trim, limit length)
+function sanitizeStr(val, maxLen = 200) {
+  if (typeof val !== 'string') return val;
+  return val.replace(/[<>]/g, '').trim().slice(0, maxLen);
+}
+
+// POST /api/v1/auth/register (legacy — kept for backward compatibility)
 exports.register = catchAsync(async (req, res, next) => {
   const { firstName, lastName, email, phone, password, role, platforms, followers, categories } = req.body;
 
@@ -57,6 +64,271 @@ exports.register = catchAsync(async (req, res, next) => {
   });
 });
 
+// POST /api/v1/auth/send-registration-otp
+exports.sendRegistrationOtp = catchAsync(async (req, res, next) => {
+  const { role, firstName, lastName, email, phone, _hp, _time } = req.body;
+
+  // Honeypot check — if filled, it's likely a bot
+  if (_hp && String(_hp).length > 0) {
+    return next(new AppError('Xatolik yuz berdi.', 400));
+  }
+
+  // Timing check — submitted too quickly (< 3 seconds)
+  if (_time) {
+    const elapsed = Date.now() - parseInt(_time, 10);
+    if (elapsed < 3000) {
+      return next(new AppError('Xatolik yuz berdi.', 400));
+    }
+  }
+
+  // Validate role
+  const allowedRoles = ['blogger', 'business'];
+  if (!allowedRoles.includes(role)) {
+    return next(new AppError("Iltimos, 'blogger' yoki 'business' rolini tanlang.", 400));
+  }
+
+  // Validate required fields
+  if (!firstName || !email) {
+    return next(new AppError('Ism va email kiritilishi shart.', 400));
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return next(new AppError("Email formati noto'g'ri.", 400));
+  }
+
+  // Sanitize inputs
+  const cleanFirstName = sanitizeStr(firstName, 100);
+  const cleanLastName  = sanitizeStr(lastName || '', 100);
+  const cleanEmail     = sanitizeStr(email, 254).toLowerCase();
+  const cleanPhone     = sanitizeStr(phone || '', 50);
+
+  // Check if email already exists and is NOT pre_register
+  const existingUser = await User.findOne({ email: cleanEmail });
+  if (existingUser && existingUser.applicationStatus !== 'pre_register') {
+    return next(new AppError("Bu email allaqachon ro'yxatdan o'tgan.", 409));
+  }
+
+  let user;
+  let isNew = false;
+
+  if (existingUser && existingUser.applicationStatus === 'pre_register') {
+    // Update existing pre_register user
+    user = existingUser;
+    user.firstName = cleanFirstName;
+    user.lastName  = cleanLastName;
+    user.phone     = cleanPhone;
+    user.role      = role;
+  } else {
+    // Create new user with temporary random password
+    user = new User({
+      firstName: cleanFirstName,
+      lastName:  cleanLastName || cleanFirstName,
+      email:     cleanEmail,
+      phone:     cleanPhone,
+      role,
+      applicationStatus: 'pre_register',
+      password: crypto.randomBytes(16).toString('hex'),
+    });
+    isNew = true;
+  }
+
+  // Generate email OTP
+  const otp = user.createEmailOtp();
+  await user.save({ validateBeforeSave: false });
+
+  // Send OTP email
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: `${otp} — Adblogger.uz tasdiqlash kodi`,
+      html: registrationOtpTemplate(user.firstName, otp),
+    });
+  } catch (err) {
+    // If email failed and user was just created, clean up
+    if (isNew) {
+      await User.findByIdAndDelete(user._id);
+    }
+    return next(new AppError("Email yuborishda xatolik yuz berdi. Keyinroq urinib ko'ring.", 500));
+  }
+
+  res.status(200).json({
+    success: true,
+    message: `Tasdiqlash kodi ${cleanEmail} manziliga yuborildi.`,
+    userId: user._id,
+  });
+});
+
+// POST /api/v1/auth/verify-registration-otp
+exports.verifyRegistrationOtp = catchAsync(async (req, res, next) => {
+  const { userId, otp } = req.body;
+
+  if (!userId || !otp) {
+    return next(new AppError('userId va otp kiritilishi shart.', 400));
+  }
+
+  const user = await User.findById(userId).select('+emailOtp +emailOtpExpires');
+  if (!user || user.applicationStatus !== 'pre_register') {
+    return next(new AppError('Foydalanuvchi topilmadi yoki ariza holati noto\'g\'ri.', 404));
+  }
+
+  // Check expiry
+  if (!user.emailOtpExpires || user.emailOtpExpires < Date.now()) {
+    return next(new AppError('OTP kodi muddati tugagan. Yangi kod so\'rang.', 400));
+  }
+
+  // Verify OTP
+  const hashedInput = crypto.createHash('sha256').update(String(otp)).digest('hex');
+  if (hashedInput !== user.emailOtp) {
+    return next(new AppError("OTP kodi noto'g'ri.", 400));
+  }
+
+  // Clear OTP fields and update status
+  user.emailOtp = undefined;
+  user.emailOtpExpires = undefined;
+  user.applicationStatus = 'pending';
+  user.onboardingStep = 1;
+  await user.save({ validateBeforeSave: false });
+
+  // Create blogger profile if needed
+  if (user.role === 'blogger') {
+    const existingBlogger = await Blogger.findOne({ user: user._id });
+    if (!existingBlogger) {
+      await Blogger.create({ user: user._id });
+    }
+  }
+
+  // Find admin and create notification
+  const admin = await User.findOne({ role: 'admin' });
+  if (admin) {
+    const notif = await Notification.create({
+      user:  admin._id,
+      type:  'new_application',
+      title: 'Yangi ariza',
+      body:  `${user.firstName} ${user.lastName} ro'yxatdan o'tdi. Ko'rib chiqing.`,
+      link:  '/admin/applications',
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin_room').emit('new_application', {
+        userId:    user._id,
+        firstName: user.firstName,
+        lastName:  user.lastName,
+        email:     user.email,
+        role:      user.role,
+        createdAt: user.createdAt,
+      });
+      io.to('admin_room').emit('new_notification', notif);
+    }
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Email tasdiqlandi! Ariza yuborildi.',
+    userId:  user._id,
+  });
+});
+
+// POST /api/v1/auth/send-login-otp
+exports.sendLoginOtp = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return next(new AppError('Email kiritilishi shart.', 400));
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return next(new AppError("Email formati noto'g'ri.", 400));
+  }
+
+  const cleanEmail = sanitizeStr(email, 254).toLowerCase();
+
+  const user = await User.findOne({ email: cleanEmail }).select('+loginOtp +loginOtpExpires');
+
+  // Don't reveal whether email exists (generic success)
+  if (!user) {
+    return res.status(200).json({
+      success: true,
+      message: 'Kirish kodi emailga yuborildi (agar akkaunt mavjud bo\'lsa).',
+    });
+  }
+
+  // Status checks
+  if (user.applicationStatus === 'pre_register') {
+    return next(new AppError("Ro'yxatdan o'tishni davom eting.", 403));
+  }
+  if (user.applicationStatus === 'pending') {
+    return next(new AppError("Arizangiz ko'rib chiqilmoqda. Iltimos, kuting.", 403));
+  }
+  if (user.applicationStatus === 'rejected') {
+    const msg = user.rejectionReason
+      ? `Arizangiz rad etildi: ${user.rejectionReason}`
+      : "Arizangiz rad etildi. Murojaat uchun biz bilan bog'laning.";
+    return next(new AppError(msg, 403));
+  }
+  if (!user.isActive || user.isBlocked) {
+    return next(new AppError('Akkaunt bloklangan. Murojaat qiling.', 403));
+  }
+
+  // Generate login OTP
+  const otp = user.createLoginOtp();
+  await user.save({ validateBeforeSave: false });
+
+  // Send OTP email
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: `${otp} — Adblogger.uz kirish kodi`,
+      html: loginOtpTemplate(user.firstName, otp),
+    });
+  } catch {
+    return next(new AppError("Email yuborishda xatolik yuz berdi. Keyinroq urinib ko'ring.", 500));
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Kirish kodi emailga yuborildi.',
+  });
+});
+
+// POST /api/v1/auth/verify-login-otp
+exports.verifyLoginOtp = catchAsync(async (req, res, next) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return next(new AppError('Email va kod kiritilishi shart.', 400));
+  }
+
+  const cleanEmail = sanitizeStr(email, 254).toLowerCase();
+
+  const user = await User.findOne({ email: cleanEmail }).select('+loginOtp +loginOtpExpires');
+  if (!user) {
+    return next(new AppError("Email yoki kod noto'g'ri.", 401));
+  }
+
+  // Check expiry
+  if (!user.loginOtpExpires || user.loginOtpExpires < Date.now()) {
+    return next(new AppError('OTP kodi muddati tugagan. Yangi kod so\'rang.', 400));
+  }
+
+  // Verify OTP
+  const hashedInput = crypto.createHash('sha256').update(String(otp)).digest('hex');
+  if (hashedInput !== user.loginOtp) {
+    return next(new AppError("Email yoki kod noto'g'ri.", 401));
+  }
+
+  // Clear OTP fields
+  user.loginOtp = undefined;
+  user.loginOtpExpires = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  sendTokenResponse(user, 200, res);
+});
+
 // POST /api/v1/auth/login
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
@@ -66,11 +338,15 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   const user = await User.findOne({ email }).select('+password');
-  if (!user || !(await user.correctPassword(password, user.password))) {
+  if (!user || !user.password || !(await user.correctPassword(password, user.password))) {
     return next(new AppError("Email yoki parol noto'g'ri.", 401));
   }
 
   // Check application status
+  if (user.applicationStatus === 'pre_register') {
+    return next(new AppError("Ro'yxatdan o'tishni davom eting.", 403));
+  }
+
   if (user.applicationStatus === 'pending') {
     return next(new AppError('Arizangiz hali ko\'rib chiqilmagan. Iltimos, kuting.', 403));
   }
@@ -162,13 +438,18 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
 // GET /api/v1/auth/check-status/:userId — Public, for pending approval page
 exports.checkApplicationStatus = catchAsync(async (req, res, next) => {
-  const user = await User.findById(req.params.userId).select('applicationStatus rejectionReason firstName');
+  const user = await User.findById(req.params.userId).select(
+    'applicationStatus rejectionReason profileStatus profileRejectionReason onboardingStep firstName'
+  );
   if (!user) return next(new AppError('Foydalanuvchi topilmadi.', 404));
 
   res.status(200).json({
     success: true,
-    applicationStatus: user.applicationStatus,
-    rejectionReason: user.rejectionReason || '',
+    applicationStatus:     user.applicationStatus,
+    rejectionReason:       user.rejectionReason || '',
+    profileStatus:         user.profileStatus || 'approved',
+    profileRejectionReason: user.profileRejectionReason || '',
+    onboardingStep:        user.onboardingStep,
   });
 });
 
@@ -176,7 +457,12 @@ exports.checkApplicationStatus = catchAsync(async (req, res, next) => {
 exports.completeOnboarding = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user._id);
   if (!user) return next(new AppError('Foydalanuvchi topilmadi.', 404));
-  if (user.onboardingStep === 3) return next(new AppError('Profil allaqachon to\'ldirilgan.', 400));
+  if (user.onboardingStep >= 3 && user.profileStatus === 'pending_review') {
+    return next(new AppError('Profil ko\'rib chiqilmoqda.', 400));
+  }
+  if (user.onboardingStep === 4) {
+    return next(new AppError('Profil allaqachon to\'ldirilgan.', 400));
+  }
 
   if (user.role === 'blogger') {
     const { bio, platforms, socialLinks, categories, services, followers, followersRange, pricing, location, website } = req.body;
@@ -201,22 +487,50 @@ exports.completeOnboarding = catchAsync(async (req, res, next) => {
     if (phone)        user.phone       = phone;
   }
 
+  // Set profile to pending_review (second approval needed)
   user.onboardingStep = 3;
+  user.profileStatus  = 'pending_review';
   await user.save({ validateBeforeSave: false });
 
-  // Send "account activated" notification
-  const notif = await Notification.create({
+  // Notify admin about profile review needed
+  const admin = await User.findOne({ role: 'admin' });
+  if (admin) {
+    const adminNotif = await Notification.create({
+      user:  admin._id,
+      type:  'new_application',
+      title: 'Profil ko\'rib chiqish',
+      body:  `${user.firstName} ${user.lastName} profilini to'ldirdi. Ko'rib chiqing.`,
+      link:  '/admin/applications?tab=profile_review',
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin_room').emit('new_profile_review', {
+        userId: String(user._id),
+        name:   `${user.firstName} ${user.lastName}`,
+        role:   user.role,
+      });
+      io.to('admin_room').emit('user_onboarding_step', {
+        userId: String(user._id),
+        step:   3,
+        name:   `${user.firstName} ${user.lastName}`,
+      });
+      io.to('admin_room').emit('new_notification', adminNotif);
+    }
+  }
+
+  // Notify the user that profile is under review
+  const userNotif = await Notification.create({
     user:  user._id,
-    type:  'verify',
-    title: '🎉 Akkauntingiz to\'liq faollashdi!',
-    body:  'Profilingiz muvaffaqiyatli to\'ldirildi. Platformadan to\'liq foydalanishingiz mumkin.',
-    link:  '/profil',
+    type:  'info',
+    title: 'Profilingiz ko\'rib chiqilmoqda',
+    body:  'Profilingiz admin tomonidan ko\'rib chiqilmoqda. Tez orada javob olasiz.',
+    link:  '/profil-tasdiqlash-kutilmoqda',
   });
 
   const io = req.app.get('io');
   if (io) {
-    io.to(`user_${user._id}`).emit('new_notification', notif);
-    io.to('admin_room').emit('user_onboarding_step', { userId: String(user._id), step: 3, name: `${user.firstName} ${user.lastName}` });
+    io.to(`user_${user._id}`).emit('new_notification', userNotif);
   }
 
   const updatedUser = await User.findById(user._id);

@@ -24,6 +24,20 @@ export const useAuthStore = create(
         set({ token, user, pendingUserId: null, pendingEmail: null });
       },
 
+      // ── OTP Login ────────────────────────────────────────────────────────
+      loginWithOtp: async ({ email, otp }, axiosConfig = {}) => {
+        const res = await api.post("/auth/verify-login-otp", { email, otp }, axiosConfig);
+        const { token, user } = res.data;
+        localStorage.setItem("token", token);
+        set({ token, user, pendingUserId: null, pendingEmail: null });
+        return user;
+      },
+
+      // Set pending after OTP registration verification
+      setPendingFromOtp: ({ userId, email }) => {
+        set({ pendingUserId: userId, pendingEmail: email });
+      },
+
       // ── Register ─────────────────────────────────────────────────────────
       register: async ({ firstName, lastName, email, phone, password, role, platforms, followers, categories }, axiosConfig = {}) => {
         const res = await api.post("/auth/register", {
@@ -36,7 +50,7 @@ export const useAuthStore = create(
         return res.data;
       },
 
-      // ── Login ─────────────────────────────────────────────────────────────
+      // ── Login (password-based, kept for backward compatibility) ───────────
       login: async ({ email, password }, axiosConfig = {}) => {
         const res = await api.post("/auth/login", { email, password }, axiosConfig);
         const { token, user } = res.data;

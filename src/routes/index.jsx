@@ -39,6 +39,7 @@ const NotFound      = lazy(() => import("../pages/NotFound"));
 // Admin auth
 const AdminLogin    = lazy(() => import("../auth/AdminLogin"));
 const PendingApproval = lazy(() => import("../auth/PendingApproval"));
+const ProfilePendingApproval = lazy(() => import("../auth/ProfilePendingApproval"));
 
 // Admin
 const AdminLayout      = lazy(() => import("../admin/layouts/AdminLayout"));
@@ -129,6 +130,10 @@ export const router = createBrowserRouter([
   {
     path: "/profil-toldirish",
     element: wrap(<CompleteProfile />),
+  },
+  {
+    path: "/profil-tasdiqlash-kutilmoqda",
+    element: wrap(<ProfilePendingApproval />),
   },
   {
     path: "*",

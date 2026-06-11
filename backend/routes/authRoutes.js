@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const authController = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
@@ -10,11 +11,29 @@ const { protect } = require('../middleware/auth');
  *   description: Autentifikatsiya
  */
 
+// Stricter rate limiter for OTP endpoints — max 5 requests per 15 minutes
+const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: {
+    success: false,
+    message: "Juda ko'p urinish. 15 daqiqadan so'ng qayta urinib ko'ring.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// ── OTP Registration / Login routes (public, rate-limited) ──────────────────
+router.post('/send-registration-otp', otpLimiter, authController.sendRegistrationOtp);
+router.post('/verify-registration-otp', otpLimiter, authController.verifyRegistrationOtp);
+router.post('/send-login-otp', otpLimiter, authController.sendLoginOtp);
+router.post('/verify-login-otp', otpLimiter, authController.verifyLoginOtp);
+
 /**
  * @swagger
  * /auth/register:
  *   post:
- *     summary: Ro'yxatdan o'tish
+ *     summary: Ro'yxatdan o'tish (legacy)
  *     tags: [Auth]
  *     security: []
  *     requestBody:
@@ -26,16 +45,8 @@ const { protect } = require('../middleware/auth');
  *     responses:
  *       201:
  *         description: Muvaffaqiyatli ro'yxatdan o'tildi
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AuthResponse'
  *       400:
  *         description: Noto'g'ri ma'lumot
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.post('/register', authController.register);
 
@@ -43,24 +54,9 @@ router.post('/register', authController.register);
  * @swagger
  * /auth/login:
  *   post:
- *     summary: Tizimga kirish
+ *     summary: Tizimga kirish (password-based)
  *     tags: [Auth]
  *     security: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/LoginInput'
- *     responses:
- *       200:
- *         description: Muvaffaqiyatli kirildi
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AuthResponse'
- *       401:
- *         description: Email yoki parol noto'g'ri
  */
 router.post('/login', authController.login);
 
@@ -71,15 +67,6 @@ router.post('/login', authController.login);
  *     summary: Admin tizimga kirish
  *     tags: [Auth]
  *     security: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/LoginInput'
- *     responses:
- *       200:
- *         description: Admin muvaffaqiyatli kirdi
  */
 router.post('/admin-login', authController.adminLogin);
 
@@ -90,19 +77,6 @@ router.post('/admin-login', authController.adminLogin);
  *     summary: Parolni unutdim
  *     tags: [Auth]
  *     security: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 example: akmal@mail.com
- *     responses:
- *       200:
- *         description: Reset link emailga yuborildi
  */
 router.post('/forgot-password', authController.forgotPassword);
 
@@ -113,25 +87,6 @@ router.post('/forgot-password', authController.forgotPassword);
  *     summary: Parolni tiklash
  *     tags: [Auth]
  *     security: []
- *     parameters:
- *       - in: path
- *         name: token
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               password:
- *                 type: string
- *                 example: newpassword123
- *     responses:
- *       200:
- *         description: Parol muvaffaqiyatli yangilandi
  */
 router.patch('/reset-password/:token', authController.resetPassword);
 
@@ -148,13 +103,6 @@ router.use(protect);
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Foydalanuvchi ma'lumotlari
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
  */
 router.get('/me', authController.getMe);
 
@@ -166,20 +114,6 @@ router.get('/me', authController.getMe);
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               currentPassword:
- *                 type: string
- *               newPassword:
- *                 type: string
- *     responses:
- *       200:
- *         description: Parol yangilandi
  */
 router.patch('/update-password', authController.updatePassword);
 router.patch('/complete-onboarding', authController.completeOnboarding);

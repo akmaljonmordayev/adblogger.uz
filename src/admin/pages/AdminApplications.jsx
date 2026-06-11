@@ -9,9 +9,10 @@ import {
 } from "react-icons/lu";
 
 const STATUS_TABS = [
-  { key: "pending",  label: "Kutilayotgan", color: "#b45309", bg: "#fef3c7", border: "#fde68a" },
-  { key: "approved", label: "Tasdiqlangan", color: "#166534", bg: "#f0fdf4", border: "#bbf7d0" },
-  { key: "rejected", label: "Rad etilgan",  color: "#991b1b", bg: "#fef2f2", border: "#fecaca" },
+  { key: "pending",       label: "Kutilayotgan",      color: "#b45309", bg: "#fef3c7", border: "#fde68a" },
+  { key: "approved",      label: "Tasdiqlangan",       color: "#166534", bg: "#f0fdf4", border: "#bbf7d0" },
+  { key: "profile_review", label: "Profil ko'rib chiqish", color: "#5b21b6", bg: "#f5f3ff", border: "#ddd6fe" },
+  { key: "rejected",      label: "Rad etilgan",        color: "#991b1b", bg: "#fef2f2", border: "#fecaca" },
 ];
 
 const ROLE_LABELS = { user: "Foydalanuvchi", blogger: "Blogger", business: "Biznesmen" };
@@ -38,7 +39,7 @@ function Ava({ user, size = 36 }) {
   );
 }
 
-function RejectModal({ user, onConfirm, onClose }) {
+function RejectModal({ user, onConfirm, onClose, title = "Arizani rad etish", confirmLabel = "Rad etish" }) {
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -58,7 +59,7 @@ function RejectModal({ user, onConfirm, onClose }) {
     >
       <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 440, overflow: "hidden" }}>
         <div style={{ padding: "18px 22px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>Arizani rad etish</span>
+          <span style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>{title}</span>
           <button onClick={onClose} style={{ fontSize: 22, color: "#6b7280", background: "none", border: "none", cursor: "pointer" }}>×</button>
         </div>
         <div style={{ padding: 22 }}>
@@ -91,7 +92,7 @@ function RejectModal({ user, onConfirm, onClose }) {
               disabled={loading}
               style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "none", background: "#ef4444", color: "#fff", fontWeight: 700, fontSize: 13, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1 }}
             >
-              {loading ? "Rad etilmoqda…" : "Rad etish"}
+              {loading ? "Rad etilmoqda…" : confirmLabel}
             </button>
           </div>
         </div>
@@ -108,8 +109,10 @@ export default function AdminApplications() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [rejectTarget, setRejectTarget] = useState(null);
+  const [rejectProfileTarget, setRejectProfileTarget] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [liveSteps, setLiveSteps] = useState({}); // { userId: step } — real-time tracking
+  const [profileReviewCount, setProfileReviewCount] = useState(0);
 
   const { data: appsData, isLoading: loading, refetch: fetchApplications } = useQuery({
     queryKey: ["admin-applications", activeTab, page],
@@ -130,6 +133,16 @@ export default function AdminApplications() {
     staleTime: 2 * 60 * 1000,
   });
 
+  const { data: profileReviewCountFetched = 0 } = useQuery({
+    queryKey: ["admin-profile-review-count"],
+    queryFn: async () => {
+      const res = await api.get("/admin/applications", { params: { status: "profile_review", limit: 1 } });
+      return res.data.pagination?.total || 0;
+    },
+    staleTime: 2 * 60 * 1000,
+    onSuccess: (data) => setProfileReviewCount(data),
+  });
+
   const allApplications = appsData?.data || [];
   const total = appsData?.pagination?.total || allApplications.length;
 
@@ -142,7 +155,7 @@ export default function AdminApplications() {
     );
   }, [allApplications, search]);
 
-  // Real-time: new applications + onboarding step updates
+  // Real-time: new applications + onboarding step updates + profile review
   useAdminSocket({
     new_application: () => {
       queryClient.setQueryData(["admin-pending-count"], c => (c || 0) + 1);
@@ -152,8 +165,16 @@ export default function AdminApplications() {
     },
     user_onboarding_step: ({ userId, step, name }) => {
       setLiveSteps(prev => ({ ...prev, [userId]: step }));
-      const stepLabel = step === 2 ? "Profil to'ldirmoqda" : "Profil to'ldirildi ✅";
+      const stepLabel = step === 2 ? "Profil to'ldirmoqda" : step === 3 ? "Profil ko'rib chiqilmoqda ⏳" : "Profil to'ldirildi ✅";
       toast.success(`${name}: ${stepLabel}`, { duration: 4000 });
+    },
+    new_profile_review: ({ userId, name, role }) => {
+      setProfileReviewCount(c => (c || 0) + 1);
+      queryClient.invalidateQueries({ queryKey: ["admin-profile-review-count"] });
+      toast.success(`${name} profili ko'rib chiqilishi kerak`, { duration: 4000 });
+      if (activeTab === "profile_review") {
+        queryClient.invalidateQueries({ queryKey: ["admin-applications"] });
+      }
     },
   });
 
@@ -183,6 +204,34 @@ export default function AdminApplications() {
     }
   };
 
+  const handleApproveProfile = async (userId) => {
+    setActionLoading(userId + "_approve_profile");
+    try {
+      await api.patch(`/admin/applications/${userId}/approve-profile`);
+      toast.success("Profil tasdiqlandi!");
+      queryClient.invalidateQueries({ queryKey: ["admin-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-profile-review-count"] });
+      setProfileReviewCount(c => Math.max(0, (c || 0) - 1));
+    } catch {
+      toast.error("Xatolik yuz berdi");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRejectProfile = async (userId, reason) => {
+    try {
+      await api.patch(`/admin/applications/${userId}/reject-profile`, { reason });
+      toast.success("Profil rad etildi.");
+      queryClient.invalidateQueries({ queryKey: ["admin-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-profile-review-count"] });
+      setProfileReviewCount(c => Math.max(0, (c || 0) - 1));
+      setRejectProfileTarget(null);
+    } catch {
+      toast.error("Xatolik yuz berdi");
+    }
+  };
+
   const switchTab = (tab) => {
     setActiveTab(tab);
     setPage(1);
@@ -197,6 +246,9 @@ export default function AdminApplications() {
   const TH   = { padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "1px solid #f3f4f6", whiteSpace: "nowrap" };
   const TD   = { padding: "11px 14px", borderBottom: "1px solid #f9fafb", verticalAlign: "middle" };
 
+  // Determine the count badge for profile_review tab
+  const displayProfileReviewCount = profileReviewCount || profileReviewCountFetched || 0;
+
   return (
     <div style={BASE}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -208,7 +260,7 @@ export default function AdminApplications() {
         </div>
 
         {/* Tab switcher */}
-        <div style={{ display: "flex", gap: 6, marginBottom: 18, background: "#fff", borderRadius: 12, padding: 5, border: "1px solid #e5e7eb", width: "fit-content" }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 18, background: "#fff", borderRadius: 12, padding: 5, border: "1px solid #e5e7eb", width: "fit-content", flexWrap: "wrap" }}>
           {STATUS_TABS.map(tab => (
             <button
               key={tab.key}
@@ -228,6 +280,14 @@ export default function AdminApplications() {
                   fontSize: 10, fontWeight: 800, padding: "1px 6px", minWidth: 18, textAlign: "center",
                 }}>
                   {pendingCount}
+                </span>
+              )}
+              {tab.key === "profile_review" && displayProfileReviewCount > 0 && (
+                <span style={{
+                  background: "#7c3aed", color: "#fff", borderRadius: 99,
+                  fontSize: 10, fontWeight: 800, padding: "1px 6px", minWidth: 18, textAlign: "center",
+                }}>
+                  {displayProfileReviewCount}
                 </span>
               )}
             </button>
@@ -264,6 +324,7 @@ export default function AdminApplications() {
                   {["Foydalanuvchi", "Email", "Telefon", "Rol", "Ariza sanasi",
                     ...(activeTab === "rejected" ? ["Sabab"] : []),
                     ...(activeTab === "approved" ? ["Onboarding"] : []),
+                    ...(activeTab === "profile_review" ? ["Profil holati", "Amallar"] : []),
                     ...(activeTab === "pending" ? ["Amallar"] : [])
                   ].map(h => (
                     <th key={h} style={TH}>{h}</th>
@@ -272,20 +333,24 @@ export default function AdminApplications() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={7} style={{ textAlign: "center", padding: 48, color: "#6b7280" }}>
+                  <tr><td colSpan={8} style={{ textAlign: "center", padding: 48, color: "#6b7280" }}>
                     <LuLoader style={{ fontSize: 28, animation: "spin 1s linear infinite", display: "block", margin: "0 auto 10px" }} />
                     Yuklanmoqda…
                   </td></tr>
                 ) : applications.length === 0 ? (
-                  <tr><td colSpan={7} style={{ textAlign: "center", padding: 56, color: "#9ca3af" }}>
+                  <tr><td colSpan={8} style={{ textAlign: "center", padding: 56, color: "#9ca3af" }}>
                     <div style={{ fontSize: 40, marginBottom: 10 }}>
-                      {activeTab === "pending" ? "⏳" : activeTab === "approved" ? "✅" : "❌"}
+                      {activeTab === "pending" ? "⏳" : activeTab === "approved" ? "✅" : activeTab === "profile_review" ? "🔍" : "❌"}
                     </div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: "#374151", marginBottom: 4 }}>
-                      {activeTab === "pending" ? "Kutilayotgan ariza yo'q" : activeTab === "approved" ? "Tasdiqlangan ariza yo'q" : "Rad etilgan ariza yo'q"}
+                      {activeTab === "pending" ? "Kutilayotgan ariza yo'q"
+                        : activeTab === "approved" ? "Tasdiqlangan ariza yo'q"
+                        : activeTab === "profile_review" ? "Ko'rib chiqilayotgan profil yo'q"
+                        : "Rad etilgan ariza yo'q"}
                     </div>
                     <div style={{ fontSize: 13 }}>
                       {activeTab === "pending" ? "Yangi arizalar kelganda bu yerda ko'rinadi" : ""}
+                      {activeTab === "profile_review" ? "Foydalanuvchilar profilini to'ldirganda bu yerda ko'rinadi" : ""}
                     </div>
                   </td></tr>
                 ) : applications.map(u => (
@@ -327,8 +392,10 @@ export default function AdminApplications() {
                     {/* Onboarding step column (approved tab) */}
                     {activeTab === "approved" && (() => {
                       const step = liveSteps[String(u._id)] ?? u.onboardingStep ?? 2;
-                      const cfg = step >= 3
-                        ? { label: "Profil to'ldirildi", bg: "#f0fdf4", color: "#166534", dot: "#22c55e" }
+                      const cfg = step >= 4
+                        ? { label: "Faol", bg: "#f0fdf4", color: "#166534", dot: "#22c55e" }
+                        : step === 3
+                        ? { label: "Profil ko'rib chiqilmoqda", bg: "#f5f3ff", color: "#5b21b6", dot: "#7c3aed", pulse: true }
                         : { label: "Profil kutilmoqda", bg: "#fffbeb", color: "#92400e", dot: "#f59e0b", pulse: true };
                       return (
                         <td style={TD}>
@@ -339,6 +406,55 @@ export default function AdminApplications() {
                         </td>
                       );
                     })()}
+
+                    {/* Profile review status + actions */}
+                    {activeTab === "profile_review" && (
+                      <>
+                        <td style={TD}>
+                          <div style={{ display:"flex", alignItems:"center", gap:6, padding:"4px 10px", borderRadius:8, background:"#f5f3ff", width:"fit-content" }}>
+                            <span style={{ width:7, height:7, borderRadius:"50%", background:"#7c3aed", flexShrink:0, animation:"pulse 2s infinite" }} />
+                            <span style={{ fontSize:11, fontWeight:700, color:"#5b21b6", whiteSpace:"nowrap" }}>Ko'rib chiqilmoqda</span>
+                          </div>
+                        </td>
+                        <td style={TD}>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            {/* Approve Profile */}
+                            <button
+                              onClick={() => handleApproveProfile(u._id)}
+                              disabled={actionLoading === u._id + "_approve_profile"}
+                              title="Profilni tasdiqlash"
+                              style={{
+                                display: "flex", alignItems: "center", gap: 5,
+                                padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                                background: "#dcfce7", color: "#166534", fontWeight: 700, fontSize: 12,
+                                opacity: actionLoading === u._id + "_approve_profile" ? 0.6 : 1,
+                              }}
+                            >
+                              {actionLoading === u._id + "_approve_profile" ? (
+                                <LuLoader style={{ fontSize: 13, animation: "spin 1s linear infinite" }} />
+                              ) : (
+                                <LuCheck style={{ fontSize: 13 }} />
+                              )}
+                              Tasdiqlash
+                            </button>
+
+                            {/* Reject Profile */}
+                            <button
+                              onClick={() => setRejectProfileTarget(u)}
+                              title="Profilni rad etish"
+                              style={{
+                                display: "flex", alignItems: "center", gap: 5,
+                                padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                                background: "#fee2e2", color: "#991b1b", fontWeight: 700, fontSize: 12,
+                              }}
+                            >
+                              <LuX style={{ fontSize: 13 }} />
+                              Rad etish
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    )}
 
                     {/* Actions for pending */}
                     {activeTab === "pending" && (
@@ -406,12 +522,25 @@ export default function AdminApplications() {
         </div>
       </div>
 
-      {/* Reject Modal */}
+      {/* Application Reject Modal */}
       {rejectTarget && (
         <RejectModal
           user={rejectTarget}
           onConfirm={handleReject}
           onClose={() => setRejectTarget(null)}
+          title="Arizani rad etish"
+          confirmLabel="Rad etish"
+        />
+      )}
+
+      {/* Profile Reject Modal */}
+      {rejectProfileTarget && (
+        <RejectModal
+          user={rejectProfileTarget}
+          onConfirm={handleRejectProfile}
+          onClose={() => setRejectProfileTarget(null)}
+          title="Profilni rad etish"
+          confirmLabel="Profilni rad etish"
         />
       )}
 
