@@ -1,17 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { adminStatisticsService } from "../../services/adminService";
 import { CATEGORY_LABEL } from "../../config/categories";
 import {
   PiChartBarDuotone, PiChartPieDuotone, PiChartLineUpDuotone,
-  PiUsersDuotone, PiRssDuotone, PiBriefcaseDuotone,
+  PiRssDuotone, PiBriefcaseDuotone,
   PiMegaphoneSimpleDuotone, PiArticleDuotone, PiCalendarDotsDuotone,
   PiEnvelopeDuotone, PiStarDuotone, PiArrowsClockwiseDuotone,
 } from "react-icons/pi";
-import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from "recharts";
 
 /* ─ tokens ─ */
 const T = {
@@ -71,18 +67,211 @@ function Section({ icon: Icon, title, sub, children }) {
   );
 }
 
-/* ─ Custom Tooltip ─ */
-const ChartTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
+/* ─ Line Chart SVG ─ */
+function LineChartSVG({ data = [], dataKey = "count", color = "#dc2626", height = 200 }) {
+  const [tooltip, setTooltip] = useState(null);
+  if (!data.length) return <div style={{ height, display: "flex", alignItems: "center", justifyContent: "center", color: T.dim, fontSize: 12 }}>Ma'lumot yo'q</div>;
+
+  const W = 700, H = height, padL = 36, padR = 16, padT = 12, padB = 32;
+  const vals = data.map(d => d[dataKey]);
+  const max = Math.max(...vals, 1);
+  const step = (W - padL - padR) / (data.length - 1 || 1);
+
+  const toX = i => padL + i * step;
+  const toY = v => padT + (H - padT - padB) * (1 - v / max);
+
+  const points = data.map((d, i) => ({ x: toX(i), y: toY(d[dataKey]), d }));
+  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
+  const areaD = `${pathD} L${points[points.length - 1].x},${H - padB} L${padL},${H - padB} Z`;
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(t => Math.round(max * t));
+
   return (
-    <div style={{ background: "#1e293b", color: "#fff", borderRadius: 10, padding: "8px 14px", fontSize: 12, fontWeight: 700, boxShadow: "0 8px 24px rgba(0,0,0,0.25)" }}>
-      {label && <div style={{ marginBottom: 4, color: "#94a3b8" }}>{label}</div>}
-      {payload.map((p, i) => (
-        <div key={i} style={{ color: p.color }}>{p.name}: <b>{p.value}</b></div>
-      ))}
+    <div style={{ position: "relative" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height }}>
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {/* Y grid */}
+        {yTicks.map((tick, i) => {
+          const y = toY(tick);
+          return (
+            <g key={i}>
+              <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="#f1f5f9" strokeWidth={1} />
+              <text x={padL - 6} y={y + 4} textAnchor="end" fontSize={9} fill={T.dim}>{tick}</text>
+            </g>
+          );
+        })}
+        {/* X labels */}
+        {data.map((d, i) => (
+          <text key={i} x={toX(i)} y={H - padB + 16} textAnchor="middle" fontSize={9} fill={T.dim}>{d.month}</text>
+        ))}
+        {/* Area */}
+        <path d={areaD} fill="url(#lineGrad)" />
+        {/* Line */}
+        <path d={pathD} fill="none" stroke={color} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+        {/* Dots + hover targets */}
+        {points.map((p, i) => (
+          <g key={i}
+            onMouseEnter={() => setTooltip({ x: p.x, y: p.y, label: p.d.month, value: p.d[dataKey] })}
+            onMouseLeave={() => setTooltip(null)}
+            style={{ cursor: "pointer" }}>
+            <circle cx={p.x} cy={p.y} r={14} fill="transparent" />
+            <circle cx={p.x} cy={p.y} r={4} fill={color} stroke="#fff" strokeWidth={2} />
+          </g>
+        ))}
+      </svg>
+      {tooltip && (
+        <div style={{ position: "absolute", left: `${(tooltip.x / W) * 100}%`, top: tooltip.y - 44, transform: "translateX(-50%)", background: "#1e293b", color: "#fff", borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 700, pointerEvents: "none", whiteSpace: "nowrap", zIndex: 10 }}>
+          {tooltip.label}: <b>{tooltip.value}</b>
+        </div>
+      )}
     </div>
   );
-};
+}
+
+/* ─ Bar Chart SVG ─ */
+function BarChartSVG({ data = [], dataKey = "count", height = 200 }) {
+  const [tooltip, setTooltip] = useState(null);
+  if (!data.length) return <div style={{ height, display: "flex", alignItems: "center", justifyContent: "center", color: T.dim, fontSize: 12 }}>Ma'lumot yo'q</div>;
+
+  const W = 700, H = height, padL = 36, padR = 16, padT = 12, padB = 32;
+  const vals = data.map(d => d[dataKey] ?? d.value ?? d.count ?? 0);
+  const max = Math.max(...vals, 1);
+  const barW = Math.min(40, ((W - padL - padR) / data.length) * 0.6);
+  const gap = (W - padL - padR) / data.length;
+
+  const toY = v => padT + (H - padT - padB) * (1 - v / max);
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(t => Math.round(max * t));
+
+  return (
+    <div style={{ position: "relative" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height }}>
+        {yTicks.map((tick, i) => {
+          const y = toY(tick);
+          return (
+            <g key={i}>
+              <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="#f1f5f9" strokeWidth={1} />
+              <text x={padL - 6} y={y + 4} textAnchor="end" fontSize={9} fill={T.dim}>{tick}</text>
+            </g>
+          );
+        })}
+        {data.map((d, i) => {
+          const v = vals[i];
+          const x = padL + i * gap + gap / 2 - barW / 2;
+          const y = toY(v);
+          const bH = H - padB - y;
+          const color = d.fill ?? PALETTE[i % PALETTE.length];
+          return (
+            <g key={i}
+              onMouseEnter={() => setTooltip({ x: padL + i * gap + gap / 2, y, label: d.name ?? d.month, value: v })}
+              onMouseLeave={() => setTooltip(null)}
+              style={{ cursor: "pointer" }}>
+              <rect x={x} y={y} width={barW} height={Math.max(bH, 0)} fill={color} rx={4} ry={4} />
+              <text x={padL + i * gap + gap / 2} y={H - padB + 16} textAnchor="middle" fontSize={9} fill={T.dim}>{d.name ?? d.month}</text>
+            </g>
+          );
+        })}
+      </svg>
+      {tooltip && (
+        <div style={{ position: "absolute", left: `${(tooltip.x / W) * 100}%`, top: tooltip.y - 44, transform: "translateX(-50%)", background: "#1e293b", color: "#fff", borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 700, pointerEvents: "none", whiteSpace: "nowrap", zIndex: 10 }}>
+          {tooltip.label}: <b>{tooltip.value}</b>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─ Horizontal Bar (CSS) ─ */
+function HBarChart({ data = [] }) {
+  if (!data.length) return <div style={{ color: T.dim, fontSize: 12, textAlign: "center", padding: 20 }}>Ma'lumot yo'q</div>;
+  const max = Math.max(...data.map(d => d.count ?? d.value ?? 0), 1);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {data.map((d, i) => {
+        const v = d.count ?? d.value ?? 0;
+        const pct = (v / max) * 100;
+        const color = d.fill ?? PALETTE[i % PALETTE.length];
+        return (
+          <div key={i}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12 }}>
+              <span style={{ color: T.text, fontWeight: 600, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</span>
+              <span style={{ color: T.muted, fontWeight: 700 }}>{v}</span>
+            </div>
+            <div style={{ height: 8, background: "#f1f5f9", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 4, transition: "width 0.6s ease" }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─ Donut Chart SVG ─ */
+function DonutChart({ data = [], height = 200 }) {
+  const [hovered, setHovered] = useState(null);
+  if (!data.length) return <div style={{ height, display: "flex", alignItems: "center", justifyContent: "center", color: T.dim, fontSize: 12 }}>Ma'lumot yo'q</div>;
+
+  const total = data.reduce((s, d) => s + (d.value ?? 0), 0) || 1;
+  const cx = 100, cy = 100, R = 80, r = 50;
+  let angle = -Math.PI / 2;
+
+  const slices = data.map((d) => {
+    const frac = (d.value ?? 0) / total;
+    const a1 = angle, a2 = angle + frac * 2 * Math.PI;
+    angle = a2;
+    const x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
+    const x2 = cx + R * Math.cos(a2), y2 = cy + R * Math.sin(a2);
+    const ix1 = cx + r * Math.cos(a1), iy1 = cy + r * Math.sin(a1);
+    const ix2 = cx + r * Math.cos(a2), iy2 = cy + r * Math.sin(a2);
+    const large = frac > 0.5 ? 1 : 0;
+    const path = `M${ix1},${iy1} L${x1},${y1} A${R},${R},0,${large},1,${x2},${y2} L${ix2},${iy2} A${r},${r},0,${large},0,${ix1},${iy1} Z`;
+    return { ...d, path, frac, midA: (a1 + a2) / 2 };
+  });
+
+  const active = hovered !== null ? data[hovered] : null;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+      <svg viewBox="0 0 200 200" style={{ width: height, height, flexShrink: 0 }}>
+        {slices.map((s, i) => (
+          <path
+            key={i}
+            d={s.path}
+            fill={s.fill ?? PALETTE[i % PALETTE.length]}
+            stroke="#fff"
+            strokeWidth={2}
+            opacity={hovered === null || hovered === i ? 1 : 0.5}
+            style={{ cursor: "pointer", transition: "opacity 0.15s" }}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+          />
+        ))}
+        <text x={cx} y={cy - 8} textAnchor="middle" fontSize={14} fontWeight={900} fill={T.text}>
+          {active ? fmt(active.value) : fmt(total)}
+        </text>
+        <text x={cx} y={cy + 10} textAnchor="middle" fontSize={9} fill={T.muted}>
+          {active ? active.name : "Jami"}
+        </text>
+      </svg>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, minWidth: 100 }}>
+        {slices.map((s, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", opacity: hovered === null || hovered === i ? 1 : 0.5 }}
+            onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
+            <div style={{ width: 8, height: 8, borderRadius: 2, background: s.fill ?? PALETTE[i % PALETTE.length], flexShrink: 0 }} />
+            <span style={{ fontSize: 11, color: T.muted, flex: 1 }}>{s.name}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: T.text }}>{s.value}</span>
+            <span style={{ fontSize: 10, color: T.dim }}>({(s.frac * 100).toFixed(0)}%)</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /* ─ Main ─ */
 export default function AdminStatistics() {
@@ -169,12 +358,12 @@ export default function AdminStatistics() {
   const o = raw?.overview ?? {};
 
   const STAT_CARDS = [
-    { icon: PiRssDuotone,              label: "Bloggerlar",    value: o.totalBloggers,    sub: "Faol bloggerlar",     color: "#7c3aed" },
-    { icon: PiBriefcaseDuotone,        label: "Biznesmenlar",  value: o.totalBusinessmen, sub: "Tasdiqlangan",        color: "#dc2626" },
-    { icon: PiMegaphoneSimpleDuotone,  label: "E'lonlar",       value: o.totalAds,         sub: `${o.totalAds ?? 0} jami`, color: "#2563eb" },
-    { icon: PiArticleDuotone,          label: "Blog postlar",  value: o.totalBlogs,       sub: "Nashr etilgan",       color: "#16a34a" },
-    { icon: PiCalendarDotsDuotone,     label: "Kampaniyalar",  value: o.totalCampaigns,   sub: "Jami kampaniyalar",   color: "#d97706" },
-    { icon: PiEnvelopeDuotone,         label: "Xabarlar",      value: o.totalContacts,    sub: "Jami murojaatlar",    color: "#0891b2" },
+    { icon: PiRssDuotone,             label: "Bloggerlar",   value: o.totalBloggers,    sub: "Faol bloggerlar",   color: "#7c3aed" },
+    { icon: PiBriefcaseDuotone,       label: "Biznesmenlar", value: o.totalBusinessmen, sub: "Tasdiqlangan",      color: "#dc2626" },
+    { icon: PiMegaphoneSimpleDuotone, label: "E'lonlar",      value: o.totalAds,         sub: "Jami e'lonlar",     color: "#2563eb" },
+    { icon: PiArticleDuotone,         label: "Blog postlar", value: o.totalBlogs,       sub: "Nashr etilgan",     color: "#16a34a" },
+    { icon: PiCalendarDotsDuotone,    label: "Kampaniyalar", value: o.totalCampaigns,   sub: "Jami kampaniyalar", color: "#d97706" },
+    { icon: PiEnvelopeDuotone,        label: "Xabarlar",     value: o.totalContacts,    sub: "Jami murojaatlar",  color: "#0891b2" },
   ];
 
   return (
@@ -204,88 +393,31 @@ export default function AdminStatistics() {
 
         {/* Row 1: Monthly Registrations + User Role Pie */}
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }}>
-
           <Section icon={PiChartLineUpDuotone} title="Oylik ro'yxatdan o'tishlar" sub="Oxirgi 12 oy davomida yangi foydalanuvchilar">
-            <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={monthlyRegs} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: T.dim }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: T.dim }} axisLine={false} tickLine={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Line type="monotone" dataKey="count" name="Foydalanuvchilar" stroke="#dc2626" strokeWidth={2.5} dot={{ r: 4, fill: "#dc2626" }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <LineChartSVG data={monthlyRegs} dataKey="count" color="#dc2626" height={220} />
           </Section>
-
           <Section icon={PiChartPieDuotone} title="Foydalanuvchi turlari" sub="Blogger va biznesmenlar nisbati">
-            <ResponsiveContainer width="100%" height={240}>
-              <PieChart>
-                <Pie data={roleData} cx="50%" cy="50%" outerRadius={85} dataKey="value" nameKey="name" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
-                  {roleData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                </Pie>
-                <Tooltip content={<ChartTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
+            <DonutChart data={roleData} height={180} />
           </Section>
         </div>
 
-        {/* Row 2: Platform Bar + Category Bar */}
+        {/* Row 2: Platform Bar + Category HBar */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-
           <Section icon={PiChartBarDuotone} title="Platforma taqsimoti" sub="Bloggerlarda eng ko'p ishlatiladigan platformalar">
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={platformData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: T.dim }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: T.dim }} axisLine={false} tickLine={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Bar dataKey="value" name="Bloggerlar" radius={[6, 6, 0, 0]}>
-                  {platformData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <BarChartSVG data={platformData} dataKey="value" height={200} />
           </Section>
-
           <Section icon={PiChartBarDuotone} title="Kategoriya taqsimoti" sub="Bloggerlar bo'yicha kategoriyalar">
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={categoryData} layout="vertical" margin={{ top: 4, right: 8, left: 60, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 10, fill: T.dim }} axisLine={false} tickLine={false} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: T.dim }} axisLine={false} tickLine={false} width={60} />
-                <Tooltip content={<ChartTooltip />} />
-                <Bar dataKey="count" name="Blogger" radius={[0, 6, 6, 0]}>
-                  {categoryData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <HBarChart data={categoryData} />
           </Section>
         </div>
 
-        {/* Row 3: Monthly Ads + Ad Status Pie */}
+        {/* Row 3: Monthly Ads Bar + Ad Status Pie */}
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }}>
-
-          <Section icon={PiChartLineUpDuotone} title="Oylik e'lonlar" sub="Oxirgi 12 oy davomida e'lonlar soni">
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={monthlyAds} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: T.dim }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: T.dim }} axisLine={false} tickLine={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Bar dataKey="count" name="E'lonlar" fill="#2563eb" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <Section icon={PiChartBarDuotone} title="Oylik e'lonlar" sub="Oxirgi 12 oy davomida e'lonlar soni">
+            <BarChartSVG data={monthlyAds} dataKey="count" height={200} />
           </Section>
-
           <Section icon={PiChartPieDuotone} title="E'lon holatlari" sub="Statuslar bo'yicha taqsimot">
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie data={adStatusData} cx="50%" cy="45%" outerRadius={75} dataKey="value" nameKey="name">
-                  {adStatusData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                </Pie>
-                <Tooltip content={<ChartTooltip />} />
-                <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10 }} />
-              </PieChart>
-            </ResponsiveContainer>
+            <DonutChart data={adStatusData} height={180} />
           </Section>
         </div>
 
@@ -342,9 +474,8 @@ export default function AdminStatistics() {
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.5 } }
-        @media (max-width: 1024px) {
+        @media (max-width: 1200px) {
           .stats-grid-6 { grid-template-columns: repeat(3, 1fr) !important; }
-          .stats-grid-2-1, .stats-grid-1-1 { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 640px) {
           .stats-grid-6 { grid-template-columns: repeat(2, 1fr) !important; }
