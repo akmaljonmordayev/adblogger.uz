@@ -195,11 +195,7 @@ const STEPS = [
   { n:"02", Icon:LuHandshake, color:"#3b82f6", grad:"135deg,#3b82f6,#2563eb", title:"Kelishuv tuzing", desc:"Bloger bilan to'g'ridan-to'g'ri muloqot qiling. Shartlarni muvofiqlashtiring va xavfsiz shartnoma imzolang." },
   { n:"03", Icon:LuRocket,    color:"#10b981", grad:"135deg,#10b981,#059669", title:"Natija oling",    desc:"Kampaniyangiz ishga tushadi. Real vaqtda statistikani kuzating va ROI ni o'lchang." },
 ];
-const TESTIMONIALS = [
-  { text:"adblogger orqali 3 oyda brendimiz kanalining obunachilari 40%ga oshdi. Platforma juda qulay va blogerlar sifatli!", name:"Akbar Mirzayev",   role:"Marketing Director · TechUz",        init:"AM", color:"#ef4444", stars:5 },
-  { text:"Bloger sifatida ro'yxatdan o'tganimdan keyin bir oyda 3 ta brend bilan shartnoma tuzdim. Daromadim ikki hissa oshdi!", name:"Nilufar Qodirov",  role:"Lifestyle Blogger · 250K followers", init:"NQ", color:"#3b82f6", stars:5 },
-  { text:"Real vaqtda kampaniya statistikasini kuzatib borish — bu bizni eng ko'p quvontirgan narsa. ROI 3× bo'ldi!", name:"Sherzod Tursunov", role:"CEO · FoodChain Uz",                  init:"ST", color:"#8b5cf6", stars:5 },
-];
+const ACCENT_COLORS = ["#ef4444", "#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ec4899"];
 
 /* ════════════════════════════════ COMPONENT ════════════════════════════════ */
 export default function Home() {
@@ -211,11 +207,36 @@ export default function Home() {
   const [hPlat, setHPlat]       = useState(null);
   const [hStep, setHStep]       = useState(null);
 
+  /* fetch site reviews */
+  const { data: reviewsRes } = useQuery({
+    queryKey: ["site-reviews"],
+    queryFn: () => api.get("/site-reviews", { params: { limit: 10 } }),
+    staleTime: 10 * 60 * 1000,
+  });
+  const TESTIMONIALS = useMemo(() => {
+    const reviews = reviewsRes?.data?.data || [];
+    return reviews.map((r, i) => {
+      const name = r.displayName || r.user?.firstName || 'Foydalanuvchi';
+      const role = r.displayRole || '';
+      const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      return {
+        text: r.comment || '',
+        name,
+        role,
+        init: initials,
+        color: ACCENT_COLORS[i % ACCENT_COLORS.length],
+        stars: r.rating,
+        avatar: r.displayAvatar || r.user?.avatar || '',
+      };
+    });
+  }, [reviewsRes]);
+
   /* rotate testimonials */
   useEffect(() => {
+    if (!TESTIMONIALS.length) return;
     const t = setInterval(() => setActiveT(v => (v+1) % TESTIMONIALS.length), 5000);
     return () => clearInterval(t);
-  }, []);
+  }, [TESTIMONIALS.length]);
 
   /* fetch all bloggers for platform grouping */
   const { data: allBloggersRes, isLoading: platLoading } = useQuery({
@@ -585,14 +606,19 @@ export default function Home() {
               <span style={{ background:"linear-gradient(90deg,#fbbf24,#fde68a)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>ishonch bildirgan</span>
             </h2>
           </div>
-          {TESTIMONIALS.map((t, i) => (
+          {TESTIMONIALS.length === 0 ? (
+            <div style={{ textAlign:"center", color:"rgba(255,255,255,0.3)", padding:"40px 0", fontSize:14 }}>Hali fikrlar yo'q</div>
+          ) : TESTIMONIALS.map((t, i) => (
             <div key={i} className="hp-testimonial" style={{ display:i===activeT ? "block" : "none", background:"rgba(255,255,255,0.04)", backdropFilter:"blur(28px)", borderRadius:32, padding:"40px 36px", border:"1px solid rgba(255,255,255,0.07)", boxShadow:"0 24px 80px rgba(0,0,0,0.4)", animation:"fi .4s ease" }}>
               <div style={{ width:48, height:48, borderRadius:14, background:`${t.color}18`, color:t.color, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:28, border:`1px solid ${t.color}22` }}>
                 <LuQuote size={22} />
               </div>
               <p style={{ fontSize:"clamp(14px,2vw,17px)", color:"rgba(255,255,255,0.84)", lineHeight:1.85, margin:"0 0 28px", fontStyle:"italic" }}>"{t.text}"</p>
               <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
-                <div style={{ width:50, height:50, borderRadius:"50%", background:`linear-gradient(135deg,${t.color},${t.color}88)`, display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:800, fontSize:15, flexShrink:0, ...S }}>{t.init}</div>
+                {t.avatar
+                  ? <img src={t.avatar} alt={t.name} style={{ width:50, height:50, borderRadius:"50%", objectFit:"cover", flexShrink:0, border:`2px solid ${t.color}44` }} />
+                  : <div style={{ width:50, height:50, borderRadius:"50%", background:`linear-gradient(135deg,${t.color},${t.color}88)`, display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:800, fontSize:15, flexShrink:0, ...S }}>{t.init}</div>
+                }
                 <div>
                   <div style={{ fontWeight:700, color:"#fff", fontSize:15.5 }}>{t.name}</div>
                   <div style={{ fontSize:12.5, color:"rgba(255,255,255,0.38)", marginTop:3 }}>{t.role}</div>
@@ -603,11 +629,13 @@ export default function Home() {
               </div>
             </div>
           ))}
-          <div style={{ display:"flex", justifyContent:"center", gap:8, marginTop:32 }}>
-            {TESTIMONIALS.map((t, i) => (
-              <button key={i} onClick={() => setActiveT(i)} style={{ height:5, borderRadius:3, border:"none", cursor:"pointer", transition:"all .35s", width:i===activeT ? 42 : 14, background:i===activeT ? t.color : "rgba(255,255,255,0.16)", boxShadow:i===activeT ? `0 0 14px ${t.color}70` : "none", padding:0 }} />
-            ))}
-          </div>
+          {TESTIMONIALS.length > 1 && (
+            <div style={{ display:"flex", justifyContent:"center", gap:8, marginTop:32 }}>
+              {TESTIMONIALS.map((t, i) => (
+                <button key={i} onClick={() => setActiveT(i)} style={{ height:5, borderRadius:3, border:"none", cursor:"pointer", transition:"all .35s", width:i===activeT ? 42 : 14, background:i===activeT ? t.color : "rgba(255,255,255,0.16)", boxShadow:i===activeT ? `0 0 14px ${t.color}70` : "none", padding:0 }} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

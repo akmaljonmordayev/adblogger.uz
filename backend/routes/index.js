@@ -21,4 +21,7 @@ router.use('/blogger-orders',   require('./bloggerOrderRoutes'));
 // Nested reviews under bloggers
 router.use('/bloggers/:bloggerId/reviews', require('./reviewRoutes'));
 
+// Platform/site reviews
+router.use('/site-reviews', require('./siteReviewRoutes'));
+
 module.exports = router;
