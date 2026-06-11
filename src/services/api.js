@@ -48,11 +48,15 @@ api.interceptors.response.use(
       return api(config);
     }
 
-    // 401 — login sahifasiga
+    // 401 — login sahifasiga (faqat auth bo'lmagan so'rovlar uchun)
     if (error.response?.status === 401) {
-      localStorage.removeItem("auth-storage");
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+      const url = config?.url || "";
+      const isAuthEndpoint = url.includes("/auth/login") || url.includes("/auth/verify-login-otp") || url.includes("/auth/admin-login");
+      if (!isAuthEndpoint) {
+        localStorage.removeItem("auth-storage");
+        localStorage.removeItem("token");
+        window.location.href = "/kirish";
+      }
       return Promise.reject(error);
     }
 
