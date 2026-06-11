@@ -39,10 +39,12 @@ const NotFound      = lazy(() => import("../pages/NotFound"));
 // Admin auth
 const AdminLogin    = lazy(() => import("../auth/AdminLogin"));
 const PendingApproval = lazy(() => import("../auth/PendingApproval"));
+const ProfilePendingApproval = lazy(() => import("../auth/ProfilePendingApproval"));
 
 // Admin
 const AdminLayout      = lazy(() => import("../admin/layouts/AdminLayout"));
 const AdminDashboard   = lazy(() => import("../admin/pages/AdminDashboard"));
+const AdminStatistics  = lazy(() => import("../admin/pages/AdminStatistics"));
 const AdminUsers       = lazy(() => import("../admin/pages/AdminUsers"));
 const AdminBloggers    = lazy(() => import("../admin/pages/AdminBloggers"));
 const AdminAds         = lazy(() => import("../admin/pages/AdminAds"));
@@ -51,7 +53,8 @@ const AdminCategories  = lazy(() => import("../admin/pages/AdminCategories"));
 const AdminContact     = lazy(() => import("../admin/pages/AdminContact"));
 const AdminFAQ         = lazy(() => import("../admin/pages/AdminFAQ"));
 const AdminSettings    = lazy(() => import("../admin/pages/AdminSettings"));
-const AdminApplications = lazy(() => import("../admin/pages/AdminApplications"));
+const AdminApplications  = lazy(() => import("../admin/pages/AdminApplications"));
+const AdminBusinessmen   = lazy(() => import("../admin/pages/AdminBusinessmen"));
 
 const wrap = (el) => <Suspense fallback={<PageLoader />}>{el}</Suspense>;
 
@@ -114,6 +117,8 @@ export const router = createBrowserRouter([
       { path: ROUTE_PATHS.ADMIN_FAQ,                    element: wrap(<AdminFAQ />) },
       { path: ROUTE_PATHS.ADMIN_SETTINGS,               element: wrap(<AdminSettings />) },
       { path: ROUTE_PATHS.ADMIN_APPLICATIONS,           element: wrap(<AdminApplications />) },
+      { path: ROUTE_PATHS.ADMIN_BUSINESSMEN,            element: wrap(<AdminBusinessmen />) },
+      { path: "/admin/statistics", element: wrap(<AdminStatistics />) },
     ],
   },
   {
@@ -127,6 +132,10 @@ export const router = createBrowserRouter([
   {
     path: "/profil-toldirish",
     element: wrap(<CompleteProfile />),
+  },
+  {
+    path: "/profil-tasdiqlash-kutilmoqda",
+    element: wrap(<ProfilePendingApproval />),
   },
   {
     path: "*",

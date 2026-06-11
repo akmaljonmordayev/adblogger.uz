@@ -13,6 +13,7 @@ import {
 import { toast } from "../components/ui/toast";
 import { useAuthStore } from "../store/useAuthStore";
 import api from "../services/api";
+import { CATEGORY_LIST, CATEGORY_LABEL } from "../config/categories";
 import LogoutModal from "../components/ui/LogoutModal";
 
 /* ─── tiny helpers ────────────────────────────────────────────── */
@@ -47,9 +48,7 @@ const PLATFORMS = [
   { id: "tiktok",    label: "TikTok",    color: "#010101",  bg: "#f8f8f8", Icon: LuTrendingUp },
 ];
 
-const CATEGORIES = [
-  "Tech","Lifestyle","Beauty","Food","Sports","Travel","Education","Business","Gaming","Music","Other"
-];
+const CATEGORIES = CATEGORY_LIST; // { value, label, emoji, … }
 const SERVICES = [
   { id: "Post",     label: "Post",      emoji: "📸" },
   { id: "Story",    label: "Story",     emoji: "⏱" },
@@ -95,9 +94,7 @@ const TABS = [
   { id: "security",  label: "Xavfsizlik",       Icon: LuShield },
 ];
 
-const BLOG_CATEGORIES = [
-  "Tech","Lifestyle","Beauty","Food","Sports","Travel","Education","Business","Gaming","Music","Other"
-];
+const BLOG_CATEGORIES = CATEGORY_LIST; // { value, label, … }
 
 const BLOG_STATUS_META = {
   pending:  { bg:"#fef9c3", c:"#854d0e", bd:"#fde68a", t:"Tasdiq kutilmoqda", icon:"⏳" },
@@ -1111,16 +1108,16 @@ export default function Profile() {
                 <SectionTitle sub="Qaysi sohalarda ishlaysiz?">Kategoriyalar (Nisha)</SectionTitle>
                 <FieldWrap>
                   <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                    {CATEGORIES.map(cat => {
-                      const active = bForm.categories.includes(cat);
+                    {CATEGORIES.map(({ value, label, emoji }) => {
+                      const active = bForm.categories.includes(value);
                       return (
-                        <button key={cat} type="button" onClick={()=>toggleArr("categories",cat)} className="chip-btn" style={{
+                        <button key={value} type="button" onClick={()=>toggleArr("categories",value)} className="chip-btn" style={{
                           padding:"7px 14px", borderRadius:20,
                           border:`1.5px solid ${active?"#dc2626":"#e2e8f0"}`,
                           background: active?"#fef2f2":"#fff",
                           color: active?"#dc2626":"#64748b",
                           fontSize:13, fontWeight:active?700:500,
-                        }}>{cat}</button>
+                        }}>{emoji} {label}</button>
                       );
                     })}
                   </div>
@@ -1414,16 +1411,16 @@ export default function Profile() {
                 <FieldWrap>
                   <Label>Maqsadli nishalar (blogger kategoriyasi)</Label>
                   <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                    {CATEGORIES.map(cat => {
-                      const active = bizForm.targetNiches.includes(cat);
+                    {CATEGORIES.map(({ value, label, emoji }) => {
+                      const active = bizForm.targetNiches.includes(value);
                       return (
-                        <button key={cat} type="button" onClick={()=>toggleBizArr("targetNiches",cat)} className="chip-btn" style={{
+                        <button key={value} type="button" onClick={()=>toggleBizArr("targetNiches",value)} className="chip-btn" style={{
                           padding:"7px 14px", borderRadius:20,
                           border:`1.5px solid ${active?"#dc2626":"#e2e8f0"}`,
                           background:active?"#fef2f2":"#fff",
                           color:active?"#dc2626":"#64748b",
                           fontSize:13, fontWeight:active?700:500,
-                        }}>{cat}</button>
+                        }}>{emoji} {label}</button>
                       );
                     })}
                   </div>
@@ -1728,10 +1725,12 @@ export default function Profile() {
                           onChange={e=>setBlogForm(p=>({...p,category:e.target.value}))} required>
                           <option value="">Kategoriya tanlang</option>
                           {(user?.role === "blogger" && bloggerProfile?.categories?.length > 0
-                            ? bloggerProfile.categories
+                            ? bloggerProfile.categories.map(v => ({ value: v, label: CATEGORY_LABEL[v] ?? v }))
                             : BLOG_CATEGORIES
                           ).map(cat=>(
-                            <option key={cat} value={cat}>{cat}</option>
+                            <option key={cat.value ?? cat} value={cat.value ?? cat}>
+                              {cat.label ?? CATEGORY_LABEL[cat] ?? cat}
+                            </option>
                           ))}
                         </select>
                       </FieldWrap>
@@ -1828,7 +1827,7 @@ export default function Profile() {
                           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6, flexWrap:"wrap" }}>
                             <BlogStatusBadge s={b.status || "pending"}/>
                             <span style={{ fontSize:11, fontWeight:600, background:"#f1f5f9", color:"#64748b", padding:"2px 8px", borderRadius:5 }}>
-                              {b.category}
+                              {CATEGORY_LABEL[b.category] ?? b.category}
                             </span>
                             <span style={{ fontSize:11, color:"#94a3b8", display:"flex", alignItems:"center", gap:3 }}>
                               <LuClock size={10}/>

@@ -46,6 +46,7 @@ export const ROUTE_PATHS = {
   ADMIN_DASHBOARD:      "/admin/dashboard",
   ADMIN_USERS:          "/admin/users",
   ADMIN_BLOGGERS:       "/admin/bloggers",
+  ADMIN_BUSINESSMEN:    "/admin/businessmen",
   ADMIN_ADS:            "/admin/ads",
   ADMIN_BLOGS:          "/admin/blogs",
   ADMIN_CATEGORIES:     "/admin/categories",
@@ -53,4 +54,5 @@ export const ROUTE_PATHS = {
   ADMIN_FAQ:            "/admin/faq",
   ADMIN_SETTINGS:       "/admin/settings",
   ADMIN_APPLICATIONS:   "/admin/applications",
+  ADMIN_STATISTICS:     "/admin/statistics",
 };

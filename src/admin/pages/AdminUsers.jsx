@@ -233,24 +233,25 @@ export default function AdminUsers() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr>
-                  {["Foydalanuvchi", "Email", "Rol", "Holat", "Ro'yxat sanasi", "Amallar"].map(h => (
-                    <th key={h} style={TH}>{h}</th>
+                  {["#", "Foydalanuvchi", "Email", "Rol", "Holat", "Ro'yxat sanasi", "Amallar"].map(h => (
+                    <th key={h} style={h === "#" ? { ...TH, width: 40, textAlign: "center" } : TH}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "#6b7280" }}>
+                  <tr><td colSpan={7} style={{ textAlign: "center", padding: 40, color: "#6b7280" }}>
                     <LuLoader style={{ fontSize: 24, animation: "spin 1s linear infinite", display: "block", margin: "0 auto 8px" }} />
                     Yuklanmoqda…
                   </td></tr>
                 ) : users.length === 0 ? (
-                  <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "#9ca3af", fontSize: 14 }}>Foydalanuvchi topilmadi</td></tr>
-                ) : users.map(u => (
+                  <tr><td colSpan={7} style={{ textAlign: "center", padding: 40, color: "#9ca3af", fontSize: 14 }}>Foydalanuvchi topilmadi</td></tr>
+                ) : users.map((u, idx) => (
                   <tr key={u._id}
                     onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                   >
+                    <td style={{ ...TD, textAlign: "center", color: "#9ca3af", fontWeight: 500, fontSize: 12 }}>{(page - 1) * PER + idx + 1}</td>
                     <td style={TD}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <Ava user={u} size={34} />

@@ -17,7 +17,6 @@ const userSchema = new mongoose.Schema(
     phone: { type: String, trim: true },
     password: {
       type: String,
-      required: [true, 'Parol kiritilishi shart'],
       minlength: [6, 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak'],
       select: false,
     },
@@ -31,26 +30,40 @@ const userSchema = new mongoose.Schema(
     isActive:   { type: Boolean, default: true },
     isBlocked:  { type: Boolean, default: false },
     isFrozen:   { type: Boolean, default: false },
+    lastLoginAt: { type: Date, default: null },
     applicationStatus: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
+      enum: ['pre_register', 'pending', 'approved', 'rejected'],
       default: 'pending',
     },
     rejectionReason: { type: String, default: '' },
-    onboardingStep: { type: Number, default: 1 }, // 1=pending, 2=profile fill, 3=complete
+    onboardingStep: { type: Number, default: 1 }, // 1=pending, 2=profile fill, 3=complete, 4=fully active
     bio:         { type: String, default: '', maxlength: 500 },
     companyName: { type: String, default: '' },
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     passwordResetToken: String,
     passwordResetExpires: Date,
     passwordChangedAt: Date,
+    // Email OTP for registration verification
+    emailOtp: { type: String, select: false },
+    emailOtpExpires: { type: Date, select: false },
+    // Login OTP
+    loginOtp: { type: String, select: false },
+    loginOtpExpires: { type: Date, select: false },
+    // Profile review status (second approval after profile fill)
+    profileStatus: {
+      type: String,
+      enum: ['pending_review', 'approved', 'rejected'],
+      default: 'approved',
+    },
+    profileRejectionReason: { type: String, default: '' },
   },
   { timestamps: true }
 );
 
-// Hash password before save
+// Hash password before save (only if password is set)
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
@@ -82,6 +95,22 @@ userSchema.methods.createPasswordResetToken = function () {
   this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
   return resetToken;
+};
+
+// Generate email OTP for registration
+userSchema.methods.createEmailOtp = function () {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  this.emailOtp = crypto.createHash('sha256').update(otp).digest('hex');
+  this.emailOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  return otp;
+};
+
+// Generate login OTP
+userSchema.methods.createLoginOtp = function () {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  this.loginOtp = crypto.createHash('sha256').update(otp).digest('hex');
+  this.loginOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  return otp;
 };
 
 module.exports = mongoose.model('User', userSchema);

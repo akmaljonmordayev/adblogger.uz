@@ -314,6 +314,7 @@ function DetailModal({ blogger, onClose, onUpdate }) {
               { Icon: PiMapPinDuotone,               label:"Joylashuv",      val: local.location || "—"           },
               { Icon: PiCalendarDotsDuotone,         label:"Ro'yxatdan",     val: fmtDate(local.createdAt)        },
               { Icon: PiUserCircleDuotone,           label:"Hisob turi",     val: local.accountType || "Blogger"  },
+              { Icon: PiCalendarDotsDuotone,         label:"Oxirgi kirish",  val: local.lastLoginAt ? fmtDate(local.lastLoginAt) : "Hali kirmagan" },
             ].map(r => (
               <div key={r.label} style={{ background:"#f8fafc", border:"1.5px solid #f1f5f9", borderRadius:12, padding:"10px 14px", display:"flex", alignItems:"flex-start", gap:10 }}>
                 <r.Icon size={16} style={{ color:"#6366f1", flexShrink:0, marginTop:2 }}/>
@@ -756,14 +757,16 @@ export default function AdminBloggers() {
               <thead>
                 <tr style={{ background:"#f8fafc" }}>
                   {[
-                    { l:"#",           w:48  },
-                    { l:"Blogger",     w:"auto" },
-                    { l:"Handle",      w:130 },
-                    { l:"Followers",   w:100 },
-                    { l:"Reyting",     w:90  },
-                    { l:"Platformalar",w:140 },
-                    { l:"Holat",       w:130 },
-                    { l:"Amallar",     w:100 },
+                    { l:"#",             w:48  },
+                    { l:"Blogger",       w:"auto" },
+                    { l:"Rol",           w:110 },
+                    { l:"Handle",        w:130 },
+                    { l:"Followers",     w:100 },
+                    { l:"Reyting",       w:90  },
+                    { l:"Platformalar",  w:140 },
+                    { l:"Oxirgi kirish", w:130 },
+                    { l:"Holat",         w:130 },
+                    { l:"Amallar",       w:100 },
                   ].map((h, i) => (
                     <th key={i} style={{ padding:"11px 14px", textAlign:"left", fontSize:10, fontWeight:800, color:"#94a3b8", textTransform:"uppercase", letterSpacing:"0.07em", borderBottom:"1.5px solid #f1f5f9", width:h.w, whiteSpace:"nowrap" }}>
                       {h.l}
@@ -773,7 +776,7 @@ export default function AdminBloggers() {
               </thead>
               <tbody>
                 {pageData.length === 0 ? (
-                  <tr><td colSpan={8} style={{ textAlign:"center", padding:"56px", color:"#cbd5e1", fontSize:14, fontWeight:600 }}>
+                  <tr><td colSpan={9} style={{ textAlign:"center", padding:"56px", color:"#cbd5e1", fontSize:14, fontWeight:600 }}>
                     Blogger topilmadi
                   </td></tr>
                 ) : pageData.map((b, idx) => {
@@ -823,6 +826,29 @@ export default function AdminBloggers() {
                         </div>
                       </td>
 
+                      {/* Rol */}
+                      <td style={{ padding:"12px 14px" }}>
+                        {(() => {
+                          const role = u?.role;
+                          if (role === "blogger") return (
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"#eef2ff", color:"#4338ca", border:"1px solid #c7d2fe", padding:"3px 10px", borderRadius:99, fontSize:11, fontWeight:700, whiteSpace:"nowrap" }}>
+                              Blogger
+                            </span>
+                          );
+                          if (role === "business") return (
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"#fff7ed", color:"#c2410c", border:"1px solid #fed7aa", padding:"3px 10px", borderRadius:99, fontSize:11, fontWeight:700, whiteSpace:"nowrap" }}>
+                              Biznesmen
+                            </span>
+                          );
+                          if (role === "admin") return (
+                            <span style={{ display:"inline-flex", alignItems:"center", gap:4, background:"#fef2f2", color:"#991b1b", border:"1px solid #fca5a5", padding:"3px 10px", borderRadius:99, fontSize:11, fontWeight:700, whiteSpace:"nowrap" }}>
+                              Admin
+                            </span>
+                          );
+                          return <span style={{ color:"#cbd5e1", fontSize:12 }}>{role || "—"}</span>;
+                        })()}
+                      </td>
+
                       {/* Handle */}
                       <td style={{ padding:"12px 14px" }}>
                         <span style={{ fontSize:13, fontWeight:600, color:"#475569", background:"#f1f5f9", padding:"3px 9px", borderRadius:7 }}>
@@ -848,6 +874,20 @@ export default function AdminBloggers() {
                       {/* Platforms */}
                       <td style={{ padding:"12px 14px" }}>
                         <PlatformIcons platforms={b.platforms} size={24} gap={5} />
+                      </td>
+
+                      {/* Last login */}
+                      <td style={{ padding:"12px 14px" }}>
+                        {b.lastLoginAt ? (
+                          <div>
+                            <div style={{ fontSize:12, fontWeight:700, color:"#374151" }}>{fmtDate(b.lastLoginAt)}</div>
+                            <div style={{ fontSize:10, color:"#9ca3af", marginTop:2 }}>
+                              {new Date(b.lastLoginAt).toLocaleTimeString("uz-UZ", { hour:"2-digit", minute:"2-digit" })}
+                            </div>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize:11, color:"#d1d5db", fontStyle:"italic" }}>Hali kirmagan</span>
+                        )}
                       </td>
 
                       {/* Status + quick unblock/unfreeze */}
