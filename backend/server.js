@@ -1,4 +1,5 @@
 const http = require('http');
+const path = require('path');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -115,6 +116,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { background-color: #6366f1; }',
 }));
 app.get('/api-docs.json', (req, res) => res.json(swaggerSpec));
+
+// ─── Static Files (local upload fallback) ────────────────────────────────────
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/v1', routes);

@@ -662,20 +662,8 @@ export default function Register() {
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: 52, height: 52, borderRadius: 16, marginBottom: 14,
-            background: 'linear-gradient(135deg,#C62828,#E53935)',
-            boxShadow: '0 8px 20px rgba(198,40,40,0.35)',
-          }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" style={{ width: 26, height: 26 }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: '#111827' }}>
-            Ad<span style={{ color: '#dc2626' }}>Bloger</span>
-          </h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#9ca3af' }}>Blogger va biznes platformasi</p>
+          <img src="/adbloggerlogo.jpg" alt="AdBlogger" style={{ height: 80, width: "auto", objectFit: "contain", marginBottom: 8 }} />
+          <p style={{ margin: 0, fontSize: 13, color: '#9ca3af' }}>Blogger va biznes platformasi</p>
         </div>
 
         {/* Card */}

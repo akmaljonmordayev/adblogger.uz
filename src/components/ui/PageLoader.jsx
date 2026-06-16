@@ -20,12 +20,8 @@ export default function PageLoader() {
       <div style={{ ...styles.blob, bottom:"10%", left: "40%", background: "oklch(0.6 0.25 260 / 0.08)", animationDelay: "0.7s" }} />
 
       <div style={styles.card}>
-        {/* Logo dot */}
-        <div style={styles.dotWrap}>
-          <div style={styles.dotRing} />
-          <div style={styles.dotRing2} />
-          <div style={styles.dotCore} />
-        </div>
+        {/* Logo */}
+        <img src="/adbloggerlogo.jpg" alt="AdBlogger" style={{ height: 72, width: "auto", objectFit: "contain", animation: "corePulse 1.6s ease-in-out infinite" }} />
 
         {/* Animated letters */}
         <div style={styles.wordRow}>
@@ -109,36 +105,6 @@ const styles = {
     border:         "1.5px solid rgba(255,255,255,0.9)",
     boxShadow:      "0 20px 60px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)",
     minWidth:       280,
-  },
-  dotWrap: {
-    position: "relative",
-    width:    52,
-    height:   52,
-    display:  "flex",
-    alignItems:     "center",
-    justifyContent: "center",
-  },
-  dotRing: {
-    position:     "absolute",
-    inset:        0,
-    borderRadius: "50%",
-    border:       "2.5px solid oklch(0.6 0.25 260 / 0.25)",
-    animation:    "ringPing 1.6s ease-out infinite",
-  },
-  dotRing2: {
-    position:     "absolute",
-    inset:        6,
-    borderRadius: "50%",
-    border:       "2px solid oklch(0.6 0.25 260 / 0.18)",
-    animation:    "ringPing 1.6s ease-out 0.4s infinite",
-  },
-  dotCore: {
-    width:        22,
-    height:       22,
-    borderRadius: "50%",
-    background:   "linear-gradient(135deg, oklch(0.6 0.25 260), #dc2626)",
-    boxShadow:    "0 4px 16px oklch(0.6 0.25 260 / 0.4)",
-    animation:    "corePulse 1.6s ease-in-out infinite",
   },
   wordRow: {
     display: "flex",

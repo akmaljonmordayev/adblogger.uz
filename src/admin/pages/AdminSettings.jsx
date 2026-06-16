@@ -259,7 +259,7 @@ export default function AdminSettings() {
     try {
       const formData = new FormData();
       formData.append("avatar", pendingFile);
-      const res = await api.patch("/profile/avatar", formData);
+      const res = await api.patch("/profile/avatar", formData, { headers: { "Content-Type": undefined } });
       const updated = res.data.data || res.data.user;
       if (updated) setUser({ ...storeUser, ...updated });
       toast.success("Avatar yangilandi");
@@ -821,7 +821,7 @@ export default function AdminSettings() {
                             ["Platforma",          "ADBlogger Admin v1.0"],
                             ["Backend",            "Node.js + Express"],
                             ["Ma'lumotlar ombori", "MongoDB Atlas"],
-                            ["Fayl saqlash",       "Cloudinary"],
+                            ["Fayl saqlash",       "Supabase Storage"],
                             ["API versiya",        "v1"],
                             ["Server",             "Render.com"],
                           ].map(([label,val])=>(

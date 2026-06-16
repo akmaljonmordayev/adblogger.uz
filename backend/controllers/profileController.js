@@ -20,8 +20,8 @@ exports.updateProfile = catchAsync(async (req, res, next) => {
 exports.updateAvatar = catchAsync(async (req, res, next) => {
   if (!req.file) return next(new AppError('Rasm yuklanmadi.', 400));
 
-  const avatarUrl = req.file.secure_url || req.file.path;
-  if (!avatarUrl) return next(new AppError('Cloudinary URL olinmadi.', 500));
+  const avatarUrl = req.file.path;
+  if (!avatarUrl) return next(new AppError('Rasm URL olinmadi.', 500));
 
   const user = await User.findByIdAndUpdate(
     req.user._id,
