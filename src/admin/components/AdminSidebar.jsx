@@ -160,15 +160,17 @@ const AdminSidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
         gap: 10,
         justifyContent: collapsed && !isMobile ? "center" : "flex-start",
       }}>
-        {/* Logo icon */}
-        <img src="/adbloggerlogo.jpg" alt="adblogger" style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, objectFit: "cover" }} />
-
-        {(!collapsed || isMobile) && (
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px", lineHeight: 1 }}>
-              ad<span style={{ color: "#ef4444" }}>blogger</span>
+        {/* Logo */}
+        {collapsed && !isMobile ? (
+          <div style={{ background: "#fff", borderRadius: 8, padding: "3px 5px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <img src="/adbloggerlogo.jpg" alt="AdBlogger" style={{ height: 26, width: "auto", objectFit: "contain" }} />
+          </div>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flex: 1, minWidth: 0, gap: 8 }}>
+            <div style={{ background: "#fff", borderRadius: 10, padding: "4px 8px", display: "inline-flex", alignItems: "center" }}>
+              <img src="/adbloggerlogo.jpg" alt="AdBlogger" style={{ height: 30, width: "auto", objectFit: "contain" }} />
             </div>
-            <div style={{ fontSize: 9, fontWeight: 600, color: C.textMuted, letterSpacing: "1.5px", textTransform: "uppercase", marginTop: 2 }}>
+            <div style={{ fontSize: 9, fontWeight: 600, color: C.textMuted, letterSpacing: "1.5px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
               Admin panel
             </div>
           </div>

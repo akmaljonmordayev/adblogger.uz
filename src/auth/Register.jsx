@@ -662,11 +662,8 @@ export default function Register() {
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <img src="/adbloggerlogo.jpg" alt="adblogger" style={{ width: 64, height: 64, borderRadius: 18, objectFit: "cover", marginBottom: 14, boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }} />
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: '#111827' }}>
-            ad<span style={{ color: '#dc2626' }}>blogger</span>
-          </h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#9ca3af' }}>Blogger va biznes platformasi</p>
+          <img src="/adbloggerlogo.jpg" alt="AdBlogger" style={{ height: 80, width: "auto", objectFit: "contain", marginBottom: 8 }} />
+          <p style={{ margin: 0, fontSize: 13, color: '#9ca3af' }}>Blogger va biznes platformasi</p>
         </div>
 
         {/* Card */}

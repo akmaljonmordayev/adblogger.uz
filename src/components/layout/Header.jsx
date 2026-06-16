@@ -37,22 +37,13 @@ function Logo() {
   return (
     <NavLink
       to="/"
-      style={{
-        textDecoration: "none", flexShrink: 0,
-        display: "flex", alignItems: "center", gap: 9,
-      }}
+      style={{ textDecoration: "none", flexShrink: 0, display: "flex", alignItems: "center" }}
     >
-      <img src="/adbloggerlogo.jpg" alt="adblogger" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} />
-      <span style={{
-        fontFamily: "'Syne', sans-serif",
-        fontWeight: 800, fontSize: 21,
-        letterSpacing: "-0.6px", lineHeight: 1,
-      }}>
-        <span style={{ color: "#e74c3c" }}>ad</span>
-        <span style={{ color: "#111827" }}>blo</span>
-        <span style={{ color: "#e74c3c", textShadow: "0 0 12px rgba(231,76,60,0.3)" }}>gg</span>
-        <span style={{ color: "#111827" }}>er</span>
-      </span>
+      <img
+        src="/adbloggerlogo.jpg"
+        alt="AdBlogger"
+        style={{ height: 42, width: "auto", objectFit: "contain", flexShrink: 0 }}
+      />
     </NavLink>
   );
 }

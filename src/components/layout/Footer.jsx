@@ -186,15 +186,10 @@ export default function Footer() {
       <div className="relative z-10 max-w-6xl mx-auto px-6 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
         {/* ── BRAND ── */}
         <div className={revealClass("delay-0")}>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-3"
-          >
-            <img src="/adbloggerlogo.jpg" alt="adblogger" style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} />
-            <span className="font-extrabold text-3xl tracking-tight leading-none">
-              <span className="text-white">ad</span>
-              <span className="text-yellow-300">blogger</span>
-            </span>
+          <Link to="/" className="inline-block">
+            <div style={{ background: "#fff", borderRadius: 14, padding: "6px 12px", display: "inline-flex", alignItems: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+              <img src="/adbloggerlogo.jpg" alt="AdBlogger" style={{ height: 48, width: "auto", objectFit: "contain" }} />
+            </div>
           </Link>
           <p className="text-xs text-red-100/60 leading-relaxed mt-3 max-w-[220px]">
             O'zbekistonning birinchi blogger marketplace platformasi. 500+
