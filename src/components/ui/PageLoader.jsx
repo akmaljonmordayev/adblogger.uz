@@ -20,11 +20,11 @@ export default function PageLoader() {
       <div style={{ ...styles.blob, bottom:"10%", left: "40%", background: "oklch(0.6 0.25 260 / 0.08)", animationDelay: "0.7s" }} />
 
       <div style={styles.card}>
-        {/* Logo dot */}
+        {/* Logo */}
         <div style={styles.dotWrap}>
           <div style={styles.dotRing} />
           <div style={styles.dotRing2} />
-          <div style={styles.dotCore} />
+          <img src="/adbloggerlogo.jpg" alt="adblogger" style={{ width: 40, height: 40, borderRadius: 12, objectFit: "cover", position: "relative", zIndex: 1, animation: "corePulse 1.6s ease-in-out infinite" }} />
         </div>
 
         {/* Animated letters */}
@@ -112,8 +112,8 @@ const styles = {
   },
   dotWrap: {
     position: "relative",
-    width:    52,
-    height:   52,
+    width:    60,
+    height:   60,
     display:  "flex",
     alignItems:     "center",
     justifyContent: "center",

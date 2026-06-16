@@ -181,13 +181,9 @@ export default function ProfilePendingApproval() {
           {/* Logo */}
           <div style={{ textAlign: "center", marginBottom: 24 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-              <div style={{ width: 32, height: 32, background: "linear-gradient(135deg,#C62828,#E53935)", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" style={{ width: 18, height: 18 }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
+              <img src="/adbloggerlogo.jpg" alt="adblogger" style={{ width: 32, height: 32, borderRadius: 9, objectFit: "cover" }} />
               <span style={{ fontSize: 20, fontWeight: 900, color: "#111827" }}>
-                Ad<span style={{ color: "#dc2626" }}>Bloger</span>
+                ad<span style={{ color: "#dc2626" }}>blogger</span>
               </span>
             </div>
           </div>

@@ -161,15 +161,7 @@ const AdminSidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
         justifyContent: collapsed && !isMobile ? "center" : "flex-start",
       }}>
         {/* Logo icon */}
-        <div style={{
-          width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-          background: "linear-gradient(135deg,#ef4444,#b91c1c)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 13, fontWeight: 900, color: "#fff",
-          boxShadow: "0 4px 12px rgba(239,68,68,0.4)",
-        }}>
-          A
-        </div>
+        <img src="/adbloggerlogo.jpg" alt="adblogger" style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, objectFit: "cover" }} />
 
         {(!collapsed || isMobile) && (
           <div style={{ flex: 1, minWidth: 0 }}>

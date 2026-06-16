@@ -42,28 +42,7 @@ function Logo() {
         display: "flex", alignItems: "center", gap: 9,
       }}
     >
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="logoGrad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#ff4b2b"/>
-            <stop offset="100%" stopColor="#c0392b"/>
-          </linearGradient>
-          <linearGradient id="shineGrad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.25)"/>
-            <stop offset="100%" stopColor="rgba(255,255,255,0)"/>
-          </linearGradient>
-        </defs>
-        <rect width="36" height="36" rx="10" fill="url(#logoGrad)"/>
-        <rect width="36" height="18" rx="10" fill="url(#shineGrad)"/>
-        <path d="M9 22 C9 14 27 14 27 22" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.35"/>
-        <path d="M12 22 C12 16.5 24 16.5 24 22" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.6"/>
-        <path d="M15 22 C15 19 21 19 21 22" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.9"/>
-        <circle cx="18" cy="24" r="2.2" fill="white"/>
-        <text x="18" y="11" textAnchor="middle" fill="white"
-          style={{ fontSize: 7, fontWeight: 800, fontFamily: "sans-serif", letterSpacing: "0.5px" }}>
-          AD
-        </text>
-      </svg>
+      <img src="/adbloggerlogo.jpg" alt="adblogger" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} />
       <span style={{
         fontFamily: "'Syne', sans-serif",
         fontWeight: 800, fontSize: 21,

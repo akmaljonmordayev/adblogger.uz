@@ -188,10 +188,13 @@ export default function Footer() {
         <div className={revealClass("delay-0")}>
           <Link
             to="/"
-            className="inline-block font-extrabold text-3xl tracking-tight leading-none"
+            className="inline-flex items-center gap-3"
           >
-            <span className="text-white">ad</span>
-            <span className="text-yellow-300">Blogger</span>
+            <img src="/adbloggerlogo.jpg" alt="adblogger" style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} />
+            <span className="font-extrabold text-3xl tracking-tight leading-none">
+              <span className="text-white">ad</span>
+              <span className="text-yellow-300">blogger</span>
+            </span>
           </Link>
           <p className="text-xs text-red-100/60 leading-relaxed mt-3 max-w-[220px]">
             O'zbekistonning birinchi blogger marketplace platformasi. 500+

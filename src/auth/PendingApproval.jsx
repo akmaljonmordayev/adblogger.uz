@@ -157,10 +157,13 @@ export default function PendingApproval() {
         <div className="p-10">
           {/* Logo */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold">
-              <span style={{ color: "#dc2626" }}>Blog</span>
-              <span style={{ color: "#f59e0b" }}>Hub</span>
-            </h1>
+            <div className="inline-flex items-center gap-2">
+              <img src="/adbloggerlogo.jpg" alt="adblogger" style={{ width: 36, height: 36, borderRadius: 9, objectFit: "cover" }} />
+              <h1 className="text-2xl font-bold">
+                <span style={{ color: "#111827" }}>ad</span>
+                <span style={{ color: "#dc2626" }}>blogger</span>
+              </h1>
+            </div>
           </div>
 
           {/* Frozen account badge */}
