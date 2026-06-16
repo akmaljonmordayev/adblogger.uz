@@ -14,7 +14,7 @@ exports.getAllBloggers = catchAsync(async (req, res) => {
     req.query
   )
     .filter()
-    .search(['handle'])
+    .search(['handle', 'bio', 'categories', 'platforms', 'location'])
     .sort()
     .limitFields()
     .paginate();

@@ -1,11 +1,13 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import api from "../../services/api";
 import {
   LuSearch, LuMapPin, LuFlame, LuMenu, LuX,
   LuUser, LuPlus, LuHouse, LuUsers, LuTag,
   LuDollarSign, LuMail, LuBadgeCheck, LuTrendingUp,
   LuLogOut, LuLayoutDashboard, LuChevronDown,
-  LuHeart, LuBell, LuMessageCircle,
+  LuHeart, LuBell, LuMessageCircle, LuBookOpen,
+  LuMegaphone, LuLoader,
 } from "react-icons/lu";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useNotificationStore, playNotificationSound } from "../../store/useNotificationStore";
@@ -53,8 +55,13 @@ function Logo() {
 export default function Header() {
   const navigate = useNavigate();
   const [open, setOpen]           = useState(false);
-  const [search, setSearch]       = useState("");
+  const [search, setSearch]             = useState("");
   const [mobileSearch, setMobileSearch] = useState("");
+  const [searchResults, setSearchResults] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showDropdown, setShowDropdown]   = useState(false);
+  const searchRef   = useRef(null);
+  const debounceRef = useRef(null);
   const [scrolled, setScrolled]   = useState(false);
   const [hidden, setHidden]       = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -112,10 +119,32 @@ export default function Header() {
     setShowLogout(true);
   };
 
+  /* ── Global search ── */
+  const fetchResults = useCallback(async (q) => {
+    if (!q.trim()) { setSearchResults(null); setSearchLoading(false); return; }
+    setSearchLoading(true);
+    try {
+      const res = await api.get(`/search?q=${encodeURIComponent(q)}&limit=4`);
+      setSearchResults(res.data.data);
+    } catch { setSearchResults(null); }
+    setSearchLoading(false);
+  }, []);
+
+  const handleSearchChange = (val) => {
+    setSearch(val);
+    setShowDropdown(true);
+    clearTimeout(debounceRef.current);
+    if (!val.trim()) { setSearchResults(null); return; }
+    debounceRef.current = setTimeout(() => fetchResults(val), 350);
+  };
+
+  const closeDropdown = () => { setShowDropdown(false); };
+
   const handleSearch = (e) => {
     e.preventDefault();
     const q = search.trim();
     if (!q) return;
+    closeDropdown();
     setOpen(false);
     navigate(`/blogerlar?q=${encodeURIComponent(q)}`);
   };
@@ -127,6 +156,22 @@ export default function Header() {
     setOpen(false);
     navigate(`/blogerlar?q=${encodeURIComponent(q)}`);
   };
+
+  const handleResultClick = (path) => {
+    closeDropdown();
+    setSearch("");
+    setOpen(false);
+    navigate(path);
+  };
+
+  /* Close dropdown on outside click */
+  useEffect(() => {
+    const handler = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) closeDropdown();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   useEffect(() => {
     const handler = (e) => {
@@ -368,35 +413,158 @@ export default function Header() {
           <Logo />
 
           {/* SEARCH */}
-          <form className="search-bar" onSubmit={handleSearch} style={{
-            flex: 1, maxWidth: 440,
-            display: "flex", alignItems: "center",
-            background: "#f3f4f6", borderRadius: 12,
-            border: "1.5px solid transparent", overflow: "hidden",
-            transition: "border-color 0.2s, box-shadow 0.2s, background 0.2s",
-          }}
-            onFocus={e => { e.currentTarget.style.borderColor = "rgba(220,38,38,0.3)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(220,38,38,0.08)"; e.currentTarget.style.background = "#fff"; }}
-            onBlur={e => { e.currentTarget.style.borderColor = "transparent"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.background = "#f3f4f6"; }}
-          >
-            <LuSearch size={15} style={{ marginLeft: 13, color: "#9ca3af", flexShrink: 0 }} />
-            <input
-              value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Bloger, kategoriya, platforma..."
-              style={{ flex: 1, border: "none", background: "transparent", padding: "11px 8px", fontSize: 13.5, color: "#111827", outline: "none" }}
-            />
-            {search && (
-              <button type="button" onClick={() => setSearch("")} style={{ background: "none", border: "none", cursor: "pointer", padding: "0 6px", color: "#9ca3af", display: "flex", alignItems: "center" }}>
-                <LuX size={13} />
+          <div ref={searchRef} className="search-bar" style={{ flex: 1, maxWidth: 460, position: "relative" }}>
+            <form onSubmit={handleSearch} style={{
+              display: "flex", alignItems: "center",
+              background: "#f3f4f6", borderRadius: 12,
+              border: `1.5px solid ${showDropdown && search ? "rgba(220,38,38,0.35)" : "transparent"}`,
+              overflow: "hidden",
+              transition: "border-color 0.2s, box-shadow 0.2s, background 0.2s",
+              boxShadow: showDropdown && search ? "0 0 0 3px rgba(220,38,38,0.08)" : "none",
+              background: showDropdown && search ? "#fff" : "#f3f4f6",
+            }}>
+              {searchLoading
+                ? <LuLoader size={15} style={{ marginLeft: 13, color: "#dc2626", flexShrink: 0, animation: "spin 1s linear infinite" }} />
+                : <LuSearch size={15} style={{ marginLeft: 13, color: "#9ca3af", flexShrink: 0 }} />
+              }
+              <input
+                value={search}
+                onChange={e => handleSearchChange(e.target.value)}
+                onFocus={() => search.trim() && setShowDropdown(true)}
+                placeholder="Blogger, kategoriya, platforma, elon..."
+                style={{ flex: 1, border: "none", background: "transparent", padding: "11px 8px", fontSize: 13.5, color: "#111827", outline: "none" }}
+              />
+              {search && (
+                <button type="button" onClick={() => { setSearch(""); setSearchResults(null); setShowDropdown(false); }}
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: "0 6px", color: "#9ca3af", display: "flex", alignItems: "center" }}>
+                  <LuX size={13} />
+                </button>
+              )}
+              <button type="submit" style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", border: "none", cursor: "pointer", padding: "0 18px", height: "100%", minHeight: 44, color: "#fff", display: "flex", alignItems: "center", gap: 5, fontSize: 13, fontWeight: 600, flexShrink: 0, transition: "opacity 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
+                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+              >
+                <LuSearch size={14} />
+                <span className="hidden-sm">Qidirish</span>
               </button>
+            </form>
+
+            {/* ── Search Dropdown ── */}
+            {showDropdown && search.trim() && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
+                background: "#fff", borderRadius: 14, boxShadow: "0 12px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
+                border: "1.5px solid #f1f5f9", zIndex: 9999, overflow: "hidden",
+                animation: "fadeUpIn 0.15s ease",
+              }}>
+                {searchLoading && !searchResults && (
+                  <div style={{ padding: "20px 16px", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+                    <LuLoader size={18} style={{ animation: "spin 1s linear infinite", display: "inline-block" }} />
+                    <span style={{ marginLeft: 8 }}>Qidirilmoqda...</span>
+                  </div>
+                )}
+
+                {searchResults && (() => {
+                  const { bloggers = [], blogs = [], ads = [] } = searchResults;
+                  const total = bloggers.length + blogs.length + ads.length;
+                  if (total === 0) return (
+                    <div style={{ padding: "20px 16px", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+                      <div style={{ fontSize: 28, marginBottom: 6 }}>🔍</div>
+                      "<b>{search}</b>" bo'yicha hech narsa topilmadi
+                    </div>
+                  );
+
+                  return (
+                    <div>
+                      {/* Bloggerlar */}
+                      {bloggers.length > 0 && (
+                        <div>
+                          <div style={{ padding: "10px 14px 4px", fontSize: 10, fontWeight: 700, color: "#94a3b8", letterSpacing: "1px", textTransform: "uppercase" }}>
+                            <LuUsers size={10} style={{ marginRight: 4, verticalAlign: "middle" }} />Bloggerlar
+                          </div>
+                          {bloggers.map(b => {
+                            const name = b.user ? `${b.user.firstName || ""} ${b.user.lastName || ""}`.trim() : b.handle;
+                            return (
+                              <button key={b._id} onClick={() => handleResultClick(`/blogerlar/${b._id}`)}
+                                style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", border: "none", background: "none", cursor: "pointer", textAlign: "left", transition: "background 0.15s" }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#fef2f2"}
+                                onMouseLeave={e => e.currentTarget.style.background = "none"}
+                              >
+                                <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: "linear-gradient(135deg,#dc2626,#b91c1c)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700 }}>
+                                  {b.user?.avatar ? <img src={b.user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : name[0]}
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
+                                  <div style={{ fontSize: 11, color: "#94a3b8" }}>@{b.handle} · {(b.categories || []).slice(0,2).join(", ")}</div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Bloglar */}
+                      {blogs.length > 0 && (
+                        <div style={{ borderTop: bloggers.length ? "1px solid #f1f5f9" : "none" }}>
+                          <div style={{ padding: "10px 14px 4px", fontSize: 10, fontWeight: 700, color: "#94a3b8", letterSpacing: "1px", textTransform: "uppercase" }}>
+                            <LuBookOpen size={10} style={{ marginRight: 4, verticalAlign: "middle" }} />Bloglar
+                          </div>
+                          {blogs.map(b => (
+                            <button key={b._id} onClick={() => handleResultClick(`/blog/${b.slug || b._id}`)}
+                              style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", border: "none", background: "none", cursor: "pointer", textAlign: "left", transition: "background 0.15s" }}
+                              onMouseEnter={e => e.currentTarget.style.background = "#fef2f2"}
+                              onMouseLeave={e => e.currentTarget.style.background = "none"}
+                            >
+                              <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, overflow: "hidden", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                {b.coverImage ? <img src={b.coverImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <LuBookOpen size={14} color="#94a3b8" />}
+                              </div>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.title}</div>
+                                <div style={{ fontSize: 11, color: "#94a3b8" }}>{b.category}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* E'lonlar */}
+                      {ads.length > 0 && (
+                        <div style={{ borderTop: (bloggers.length || blogs.length) ? "1px solid #f1f5f9" : "none" }}>
+                          <div style={{ padding: "10px 14px 4px", fontSize: 10, fontWeight: 700, color: "#94a3b8", letterSpacing: "1px", textTransform: "uppercase" }}>
+                            <LuMegaphone size={10} style={{ marginRight: 4, verticalAlign: "middle" }} />E'lonlar
+                          </div>
+                          {ads.map(a => (
+                            <button key={a._id} onClick={() => handleResultClick(`/elonlar/${a._id}`)}
+                              style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", border: "none", background: "none", cursor: "pointer", textAlign: "left", transition: "background 0.15s" }}
+                              onMouseEnter={e => e.currentTarget.style.background = "#fef2f2"}
+                              onMouseLeave={e => e.currentTarget.style.background = "none"}
+                            >
+                              <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, overflow: "hidden", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                {a.coverImage ? <img src={a.coverImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <LuMegaphone size={14} color="#94a3b8" />}
+                              </div>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.title || a.companyName}</div>
+                                <div style={{ fontSize: 11, color: "#94a3b8" }}>{(a.platforms || []).join(", ")}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* "Hammasini ko'rish" */}
+                      <button onClick={() => handleResultClick(`/blogerlar?q=${encodeURIComponent(search)}`)}
+                        style={{ width: "100%", padding: "10px 14px", border: "none", borderTop: "1px solid #f1f5f9", background: "#fafafa", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "#dc2626", transition: "background 0.15s" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "#fef2f2"}
+                        onMouseLeave={e => e.currentTarget.style.background = "#fafafa"}
+                      >
+                        <LuSearch size={12} /> "{search}" bo'yicha barcha bloggerlarni ko'rish
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
             )}
-            <button type="submit" style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", border: "none", cursor: "pointer", padding: "0 18px", height: "100%", minHeight: 44, color: "#fff", display: "flex", alignItems: "center", gap: 5, fontSize: 13, fontWeight: 600, flexShrink: 0, transition: "opacity 0.2s" }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-            >
-              <LuSearch size={14} />
-              <span className="hidden-sm">Qidirish</span>
-            </button>
-          </form>
+          </div>
 
           {/* DESKTOP NAV */}
           <ul className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 2, listStyle: "none", margin: 0, padding: 0, flexShrink: 0 }}>
