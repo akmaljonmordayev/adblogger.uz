@@ -37,13 +37,21 @@ function Logo() {
   return (
     <NavLink
       to="/"
-      style={{ textDecoration: "none", flexShrink: 0, display: "flex", alignItems: "center" }}
+      style={{ textDecoration: "none", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}
     >
-      <img
-        src="/adbloggerlogo.jpg"
-        alt="AdBlogger"
-        style={{ height: 42, width: "auto", objectFit: "contain", flexShrink: 0 }}
-      />
+      {/* AB icon — faqat yuqori qismi (icon) ko'rinsin */}
+      <div style={{ width: 38, height: 38, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: "1.5px solid #f1f5f9" }}>
+        <img
+          src="/adbloggerlogo.jpg"
+          alt="AdBlogger"
+          style={{ width: "100%", height: "170%", objectFit: "cover", objectPosition: "top center", display: "block" }}
+        />
+      </div>
+      {/* Matn */}
+      <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.5px", lineHeight: 1 }}>
+        <span style={{ color: "#dc2626" }}>Ad</span>
+        <span style={{ color: "#111827" }}>Blogger</span>
+      </span>
     </NavLink>
   );
 }
