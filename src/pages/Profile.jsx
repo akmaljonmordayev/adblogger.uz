@@ -275,11 +275,11 @@ export default function Profile() {
       if (blogCoverFile) fd.append("coverImage", blogCoverFile);
 
       if (editBlog) {
-        const res = await api.patch(`/blogs/${editBlog._id}`, fd, { headers:{ "Content-Type":"multipart/form-data" } });
+        const res = await api.patch(`/blogs/${editBlog._id}`, fd, { headers:{ "Content-Type": undefined } });
         setMyBlogs(prev => prev.map(b => b._id === editBlog._id ? res.data.data : b));
         toast.success("Blog yangilandi");
       } else {
-        const res = await api.post("/blogs", fd, { headers:{ "Content-Type":"multipart/form-data" } });
+        const res = await api.post("/blogs", fd, { headers:{ "Content-Type": undefined } });
         setMyBlogs(prev => [res.data.data, ...prev]);
         toast.success("Blog yuborildi! Admin tasdiqidan keyin e'lon qilinadi");
       }
@@ -1829,6 +1829,9 @@ export default function Profile() {
                   {myBlogs.map(b => (
                     <div key={b._id} style={{ border:"1.5px solid #f1f5f9", borderRadius:14, padding:"16px 18px", background:"#fff" }}>
                       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
+                        {b.coverImage && (
+                          <img src={b.coverImage} alt="" style={{ width:72, height:52, objectFit:"cover", borderRadius:8, flexShrink:0, border:"1.5px solid #f1f5f9" }}/>
+                        )}
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6, flexWrap:"wrap" }}>
                             <BlogStatusBadge s={b.status || "pending"}/>
