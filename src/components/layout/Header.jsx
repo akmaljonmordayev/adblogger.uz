@@ -124,7 +124,7 @@ export default function Header() {
     if (!q.trim()) { setSearchResults(null); setSearchLoading(false); return; }
     setSearchLoading(true);
     try {
-      const res = await api.get(`/search?q=${encodeURIComponent(q)}&limit=4`);
+      const res = await api.get(`/search?q=${encodeURIComponent(q)}&limit=4`, { _skipToast: true });
       setSearchResults(res.data.data);
     } catch { setSearchResults(null); }
     setSearchLoading(false);
