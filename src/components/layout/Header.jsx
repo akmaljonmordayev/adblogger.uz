@@ -413,15 +413,16 @@ export default function Header() {
           <Logo />
 
           {/* SEARCH */}
-          <div ref={searchRef} className="search-bar" style={{ flex: 1, maxWidth: 460, position: "relative" }}>
+          <div ref={searchRef} className="search-bar" style={{ flex: 1, maxWidth: 440, position: "relative" }}>
             <form onSubmit={handleSearch} style={{
+              width: "100%",
               display: "flex", alignItems: "center",
-              background: "#f3f4f6", borderRadius: 12,
-              border: `1.5px solid ${showDropdown && search ? "rgba(220,38,38,0.35)" : "transparent"}`,
+              background: showDropdown && search.trim() ? "#fff" : "#f3f4f6",
+              borderRadius: 12,
+              border: `1.5px solid ${showDropdown && search.trim() ? "rgba(220,38,38,0.3)" : "transparent"}`,
+              boxShadow: showDropdown && search.trim() ? "0 0 0 3px rgba(220,38,38,0.08)" : "none",
               overflow: "hidden",
-              transition: "border-color 0.2s, box-shadow 0.2s, background 0.2s",
-              boxShadow: showDropdown && search ? "0 0 0 3px rgba(220,38,38,0.08)" : "none",
-              background: showDropdown && search ? "#fff" : "#f3f4f6",
+              transition: "all 0.2s",
             }}>
               {searchLoading
                 ? <LuLoader size={15} style={{ marginLeft: 13, color: "#dc2626", flexShrink: 0, animation: "spin 1s linear infinite" }} />
