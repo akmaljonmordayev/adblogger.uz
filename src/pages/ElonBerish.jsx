@@ -715,8 +715,10 @@ export default function ElonBerish() {
       if (imageItems.length > 0) {
         const fd = new FormData();
         imageItems.forEach(item => fd.append("images", item.file));
+        // Content-Type ni undefined qilib qo'yamiz — axios FormData uchun
+        // boundary bilan to'g'ri header o'rnatadi
         const uploadRes = await api.post("/upload", fd, {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: { "Content-Type": undefined },
         });
         imageUrls = uploadRes.data.urls || [];
       }
