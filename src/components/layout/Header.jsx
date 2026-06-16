@@ -35,12 +35,16 @@ const NAV = [
 /* ─────────────── LOGO ─────────────── */
 function Logo() {
   return (
-    <NavLink to="/" style={{ textDecoration: "none", flexShrink: 0, display: "flex", alignItems: "center" }}>
+    <NavLink to="/" style={{ textDecoration: "none", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
       <img
         src="/adbloggerlogo.jpg"
         alt="AdBlogger"
-        style={{ height: 48, width: "auto", objectFit: "contain", flexShrink: 0, display: "block" }}
+        style={{ height: 40, width: "auto", objectFit: "contain", flexShrink: 0, display: "block" }}
       />
+      <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.4px", lineHeight: 1, whiteSpace: "nowrap" }}>
+        <span style={{ color: "#dc2626" }}>Ad</span>
+        <span style={{ color: "#111827" }}>Blogger</span>
+      </span>
     </NavLink>
   );
 }
