@@ -3,6 +3,7 @@ const router = express.Router();
 const pc = require('../controllers/profileController');
 const { protect } = require('../middleware/auth');
 const { uploadAvatar } = require('../config/cloudinary');
+const resolveFileUrl = require('../middleware/resolveFileUrl');
 const AppError = require('../utils/appError');
 
 
@@ -72,6 +73,6 @@ router.patch('/avatar', (req, res, next) => {
     }
     next();
   });
-}, pc.updateAvatar);
+}, resolveFileUrl('avatars'), pc.updateAvatar);
 
 module.exports = router;

@@ -375,7 +375,7 @@ export default function Profile() {
     catch { /* */ } finally { setLoadingTab(false); }
   };
 
-  // ── Avatar: canvas orqali resize + compress → base64 ─────────
+  // ── Avatar: canvas resize + compress → FormData → multipart ─────────
   const handleAvatarChange = e => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -389,15 +389,14 @@ export default function Profile() {
 
     reader.onload = evt => {
       const img = new Image();
-      img.onload = async () => {
-        // Canvas: max 600x600, kvadrat crop markaz
+      img.onload = () => {
+        // Canvas: 600x600 kvadrat crop markaz
         const SIZE = 600;
         const canvas = document.createElement("canvas");
         canvas.width  = SIZE;
         canvas.height = SIZE;
         const ctx = canvas.getContext("2d");
 
-        // cover-fill: kichik tomoniga qarab scale
         const scale = Math.max(SIZE / img.width, SIZE / img.height);
         const w = img.width  * scale;
         const h = img.height * scale;
@@ -405,19 +404,26 @@ export default function Profile() {
         const y = (SIZE - h) / 2;
         ctx.drawImage(img, x, y, w, h);
 
-        // JPEG 0.82 sifat — ~50-150 KB chiqadi
-        const base64 = canvas.toDataURL("image/jpeg", 0.82);
-
-        try {
-          const r = await api.patch("/profile/avatar", { avatar: base64 });
-          setUser(r.data.data);
-          toast.success("Avatar yangilandi!");
-        } catch (err) {
-          toast.error(err?.response?.data?.message || "Avatar yuklashda xatolik");
-        } finally {
-          setAvatarLoading(false);
-          e.target.value = "";
-        }
+        // toBlob → FormData → multipart/form-data (Supabase/S3/local uchun)
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            toast.error("Rasm konvertatsiyada xatolik");
+            setAvatarLoading(false);
+            return;
+          }
+          const fd = new FormData();
+          fd.append("avatar", blob, "avatar.jpg");
+          try {
+            const r = await api.patch("/profile/avatar", fd, { headers: { "Content-Type": undefined } });
+            setUser(r.data.data);
+            toast.success("Avatar yangilandi!");
+          } catch (err) {
+            toast.error(err?.response?.data?.message || "Avatar yuklashda xatolik");
+          } finally {
+            setAvatarLoading(false);
+            e.target.value = "";
+          }
+        }, "image/jpeg", 0.82);
       };
       img.onerror = () => {
         toast.error("Rasm o'qishda xatolik");
@@ -441,7 +447,7 @@ export default function Profile() {
     const fd = new FormData(); fd.append("logo", file);
     setLogoLoading(true);
     try {
-      const r = await api.patch("/business/me/logo", fd, { headers:{ "Content-Type":"multipart/form-data" } });
+      const r = await api.patch("/business/me/logo", fd, { headers: { "Content-Type": undefined } });
       const d = r.data.data;
       setBusinessProfile(d);
       setBizForm(p => ({ ...p, logo: d.logo || "" }));

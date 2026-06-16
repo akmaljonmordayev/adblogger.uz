@@ -3,6 +3,7 @@ const router  = express.Router();
 const bc      = require('../controllers/blogController');
 const { protect, optionalAuth, restrictTo } = require('../middleware/auth');
 const { uploadBlogImage } = require('../config/cloudinary');
+const resolveFileUrl = require('../middleware/resolveFileUrl');
 const upload = uploadBlogImage;
 
 /* ── Public ───────────────────────────────────────────────────────────────── */
@@ -16,7 +17,7 @@ router.get('/', optionalAuth, bc.getAllBlogs);
 router.get('/my', protect, bc.getMyBlogs);
 
 // POST /api/v1/blogs — create blog
-router.post('/', protect, upload.single('coverImage'), bc.createUserBlog);
+router.post('/', protect, upload.single('coverImage'), resolveFileUrl('blogs'), bc.createUserBlog);
 
 /* ── Single blog (public + optional auth for isLiked) ──────────────────── */
 
@@ -26,7 +27,7 @@ router.get('/:slugOrId', optionalAuth, bc.getBlog);
 /* ── Blog actions ──────────────────────────────────────────────────────── */
 
 // PATCH  /api/v1/blogs/:id — update own blog
-router.patch('/:id', protect, upload.single('coverImage'), bc.updateUserBlog);
+router.patch('/:id', protect, upload.single('coverImage'), resolveFileUrl('blogs'), bc.updateUserBlog);
 
 // DELETE /api/v1/blogs/:id — delete own blog
 router.delete('/:id', protect, bc.deleteUserBlog);
@@ -48,9 +49,9 @@ router.post('/:id/comments/:commentId/like', protect, bc.likeComment);
 /* ── Admin ─────────────────────────────────────────────────────────────────── */
 
 router.get('/admin/all', protect, restrictTo('admin'), bc.adminGetAllBlogs);
-router.post('/admin', protect, restrictTo('admin'), upload.single('coverImage'), bc.createBlog);
+router.post('/admin', protect, restrictTo('admin'), upload.single('coverImage'), resolveFileUrl('blogs'), bc.createBlog);
 router.patch('/admin/:id/status', protect, restrictTo('admin'), bc.updateBlogStatus);
-router.patch('/admin/:id', protect, restrictTo('admin'), upload.single('coverImage'), bc.updateBlog);
+router.patch('/admin/:id', protect, restrictTo('admin'), upload.single('coverImage'), resolveFileUrl('blogs'), bc.updateBlog);
 router.delete('/admin/:id', protect, restrictTo('admin'), bc.deleteBlog);
 
 module.exports = router;

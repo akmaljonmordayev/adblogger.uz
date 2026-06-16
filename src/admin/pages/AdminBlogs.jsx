@@ -268,21 +268,24 @@ function EditModal({ blog, onClose, onSave }) {
     isPublished: blog?.isPublished || false,
     status:      blog?.status      || "pending",
   });
+  const [coverFile, setCoverFile] = useState(null);
   const [saving, setSaving] = useState(false);
+  const fileRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await onSave(blog._id, {
-        title:       form.title,
-        category:    form.category,
-        excerpt:     form.excerpt,
-        content:     form.content,
-        tags:        form.tags,
-        isPublished: form.isPublished,
-        status:      form.status,
-      });
+      const fd = new FormData();
+      fd.append("title",       form.title);
+      fd.append("category",    form.category);
+      fd.append("excerpt",     form.excerpt);
+      fd.append("content",     form.content);
+      fd.append("tags",        form.tags);
+      fd.append("isPublished", form.isPublished ? "true" : "false");
+      fd.append("status",      form.status);
+      if (coverFile) fd.append("coverImage", coverFile);
+      await onSave(blog._id, fd);
       onClose();
     } finally {
       setSaving(false);
@@ -339,11 +342,32 @@ function EditModal({ blog, onClose, onSave }) {
               onChange={e => setForm(p => ({ ...p, content: e.target.value }))} required />
           </FormField>
 
-          <FormField label="Teglar (vergul bilan)">
-            <input style={inp()} value={form.tags}
-              onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
-              placeholder="marketing, reklama" />
-          </FormField>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 4 }}>
+            <FormField label="Teglar (vergul bilan)">
+              <input style={inp()} value={form.tags}
+                onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
+                placeholder="marketing, reklama" />
+            </FormField>
+            <FormField label="Muqova rasm (o'zgartirish)">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                style={{ ...inp(), display: "flex", alignItems: "center", gap: 8, cursor: "pointer", border: coverFile ? `1.5px solid ${T.successBd}` : `1.5px solid ${T.border}`, background: coverFile ? T.successBg : T.surfaceUp, color: coverFile ? T.success : T.textMuted, fontWeight: 600 }}
+              >
+                <LuImage size={14} />
+                {coverFile ? coverFile.name.slice(0, 18) + "..." : (blog?.coverImage ? "Rasmni almashtirish" : "Rasm tanlash")}
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
+                onChange={e => setCoverFile(e.target.files?.[0] || null)} />
+            </FormField>
+          </div>
+
+          {blog?.coverImage && !coverFile && (
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontSize: 11.5, color: T.textDim, marginBottom: 6, fontWeight: 600 }}>Hozirgi rasm:</p>
+              <img src={blog.coverImage} alt="" style={{ height: 72, borderRadius: 8, objectFit: "cover", border: `1px solid ${T.border}` }} />
+            </div>
+          )}
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4 }}>
             <button type="button" onClick={onClose} style={{ padding: "10px 22px", border: `1.5px solid ${T.border}`, borderRadius: 12, background: T.surface, color: T.textMuted, fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>
@@ -380,7 +404,7 @@ function CreateModal({ onClose, onCreated }) {
       fd.append("status",      form.status);
       fd.append("isPublished", form.status === "approved" ? "true" : "false");
       if (coverFile) fd.append("coverImage", coverFile);
-      const res = await api.post("/blogs/admin", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      const res = await api.post("/blogs/admin", fd, { headers: { "Content-Type": undefined } });
       onCreated(res.data.data);
       onClose();
     } catch {
@@ -595,7 +619,10 @@ export default function AdminBlogs() {
   /* ── Edit save ── */
   const handleEditSave = async (id, data) => {
     try {
-      await api.patch(`/blogs/admin/${id}`, data);
+      const isFormData = data instanceof FormData;
+      await api.patch(`/blogs/admin/${id}`, data, {
+        headers: isFormData ? { "Content-Type": undefined } : {},
+      });
       queryClient.invalidateQueries({ queryKey: ["admin-blogs"] });
       toast.success("Blog yangilandi");
     } catch {
