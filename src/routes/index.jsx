@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import MainLayout    from "../layouts/MainLayout";
 import { ROUTE_PATHS } from "../config/constants";
 import PageLoader    from "../components/ui/PageLoader";
+import ChunkErrorPage from "../pages/ChunkErrorPage";
 
 // Pages — lazy loaded
 const Home          = lazy(() => import("../pages/Home"));
@@ -63,84 +64,91 @@ export const router = createBrowserRouter([
   {
     path: "/",
     element: <MainLayout />,
+    errorElement: <ChunkErrorPage />,
     children: [
-      { path: ROUTE_PATHS.HOME,           element: wrap(<Home />) },
+      { path: ROUTE_PATHS.HOME,           element: wrap(<Home />),           errorElement: <ChunkErrorPage /> },
 
       // Blogerlar
-      { path: ROUTE_PATHS.BLOGGERS,       element: wrap(<Bloggers />) },
-      { path: ROUTE_PATHS.BLOGGER_DETAIL, element: wrap(<BloggerDetail />) },
+      { path: ROUTE_PATHS.BLOGGERS,       element: wrap(<Bloggers />),       errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.BLOGGER_DETAIL, element: wrap(<BloggerDetail />),  errorElement: <ChunkErrorPage /> },
 
       // Katalog
-      { path: ROUTE_PATHS.CATEGORIES,     element: wrap(<Categories />) },
-      { path: ROUTE_PATHS.PRICING,        element: wrap(<Pricing />) },
-      { path: ROUTE_PATHS.CONTACT,        element: wrap(<Contact />) },
+      { path: ROUTE_PATHS.CATEGORIES,     element: wrap(<Categories />),     errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.PRICING,        element: wrap(<Pricing />),        errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.CONTACT,        element: wrap(<Contact />),        errorElement: <ChunkErrorPage /> },
 
       // E'lonlar
-      { path: ROUTE_PATHS.ADS,            element: wrap(<Ads />) },
-      { path: ROUTE_PATHS.AD_DETAIL,      element: wrap(<AdDetail />) },
-      { path: ROUTE_PATHS.ELON_BERISH,    element: wrap(<ElonBerish />) },
+      { path: ROUTE_PATHS.ADS,            element: wrap(<Ads />),            errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.AD_DETAIL,      element: wrap(<AdDetail />),       errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.ELON_BERISH,    element: wrap(<ElonBerish />),     errorElement: <ChunkErrorPage /> },
 
       // Blog
-      { path: ROUTE_PATHS.BLOGS,          element: wrap(<Blogs />) },
-      { path: ROUTE_PATHS.BLOG_DETAIL,    element: wrap(<BlogDetail />) },
+      { path: ROUTE_PATHS.BLOGS,          element: wrap(<Blogs />),          errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.BLOG_DETAIL,    element: wrap(<BlogDetail />),     errorElement: <ChunkErrorPage /> },
 
       // Kompaniya
-      { path: ROUTE_PATHS.ABOUT,          element: wrap(<About />) },
-      { path: ROUTE_PATHS.BLOGER_BOLISH,  element: wrap(<BlogerBolish />) },
+      { path: ROUTE_PATHS.ABOUT,          element: wrap(<About />),          errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.BLOGER_BOLISH,  element: wrap(<BlogerBolish />),   errorElement: <ChunkErrorPage /> },
 
       // Huquqiy
-      { path: ROUTE_PATHS.PRIVACY,        element: wrap(<Privacy />) },
-      { path: ROUTE_PATHS.TERMS,          element: wrap(<Terms />) },
-      { path: ROUTE_PATHS.COOKIES,        element: wrap(<Cookies />) },
-      { path: ROUTE_PATHS.FAQ,            element: wrap(<FAQ />) },
+      { path: ROUTE_PATHS.PRIVACY,        element: wrap(<Privacy />),        errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.TERMS,          element: wrap(<Terms />),          errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.COOKIES,        element: wrap(<Cookies />),        errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.FAQ,            element: wrap(<FAQ />),            errorElement: <ChunkErrorPage /> },
 
       // Auth & foydalanuvchi
-      { path: ROUTE_PATHS.LOGIN,          element: wrap(<Auth />) },
-      { path: ROUTE_PATHS.REGISTER,       element: wrap(<Auth />) },
-      { path: ROUTE_PATHS.PROFILE,        element: wrap(<Profile />) },
-      { path: ROUTE_PATHS.WISHLIST,         element: wrap(<Wishlist />) },
-      { path: ROUTE_PATHS.NOTIFICATIONS,   element: wrap(<Notifications />) },
-      { path: ROUTE_PATHS.MY_APPLICATIONS, element: wrap(<MyApplications />) },
+      { path: ROUTE_PATHS.LOGIN,          element: wrap(<Auth />),           errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.REGISTER,       element: wrap(<Auth />),           errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.PROFILE,        element: wrap(<Profile />),        errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.WISHLIST,         element: wrap(<Wishlist />),       errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.NOTIFICATIONS,   element: wrap(<Notifications />),  errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.MY_APPLICATIONS, element: wrap(<MyApplications />), errorElement: <ChunkErrorPage /> },
     ],
   },
   {
     path: "/admin",
     element: wrap(<AdminLayout />),
+    errorElement: <ChunkErrorPage />,
     children: [
-      { index: true,                                    element: wrap(<AdminDashboard />) },
-      { path: ROUTE_PATHS.ADMIN_DASHBOARD,              element: wrap(<AdminDashboard />) },
-      { path: ROUTE_PATHS.ADMIN_USERS,                  element: wrap(<AdminUsers />) },
-      { path: ROUTE_PATHS.ADMIN_BLOGGERS,               element: wrap(<AdminBloggers />) },
-      { path: ROUTE_PATHS.ADMIN_ADS,                    element: wrap(<AdminAds />) },
-      { path: ROUTE_PATHS.ADMIN_BLOGS,                  element: wrap(<AdminBlogs />) },
-      { path: ROUTE_PATHS.ADMIN_CATEGORIES,             element: wrap(<AdminCategories />) },
-      { path: ROUTE_PATHS.ADMIN_CONTACT,                element: wrap(<AdminContact />) },
-      { path: ROUTE_PATHS.ADMIN_FAQ,                    element: wrap(<AdminFAQ />) },
-      { path: ROUTE_PATHS.ADMIN_SETTINGS,               element: wrap(<AdminSettings />) },
-      { path: ROUTE_PATHS.ADMIN_APPLICATIONS,           element: wrap(<AdminApplications />) },
-      { path: ROUTE_PATHS.ADMIN_BUSINESSMEN,            element: wrap(<AdminBusinessmen />) },
-      { path: "/admin/statistics",                element: wrap(<AdminStatistics />) },
-      { path: ROUTE_PATHS.ADMIN_COMMENTS,         element: wrap(<AdminComments />) },
+      { index: true,                         element: wrap(<AdminDashboard />),    errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.ADMIN_DASHBOARD,   element: wrap(<AdminDashboard />),    errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.ADMIN_USERS,       element: wrap(<AdminUsers />),        errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.ADMIN_BLOGGERS,    element: wrap(<AdminBloggers />),     errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.ADMIN_ADS,         element: wrap(<AdminAds />),          errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.ADMIN_BLOGS,       element: wrap(<AdminBlogs />),        errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.ADMIN_CATEGORIES,  element: wrap(<AdminCategories />),   errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.ADMIN_CONTACT,     element: wrap(<AdminContact />),      errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.ADMIN_FAQ,         element: wrap(<AdminFAQ />),          errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.ADMIN_SETTINGS,    element: wrap(<AdminSettings />),     errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.ADMIN_APPLICATIONS,element: wrap(<AdminApplications />), errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.ADMIN_BUSINESSMEN, element: wrap(<AdminBusinessmen />),  errorElement: <ChunkErrorPage /> },
+      { path: "/admin/statistics",           element: wrap(<AdminStatistics />),   errorElement: <ChunkErrorPage /> },
+      { path: ROUTE_PATHS.ADMIN_COMMENTS,    element: wrap(<AdminComments />),     errorElement: <ChunkErrorPage /> },
     ],
   },
   {
     path: ROUTE_PATHS.ADMIN_LOGIN,
     element: wrap(<AdminLogin />),
+    errorElement: <ChunkErrorPage />,
   },
   {
     path: "/tasdiqlash-kutilmoqda",
     element: wrap(<PendingApproval />),
+    errorElement: <ChunkErrorPage />,
   },
   {
     path: "/profil-toldirish",
     element: wrap(<CompleteProfile />),
+    errorElement: <ChunkErrorPage />,
   },
   {
     path: "/profil-tasdiqlash-kutilmoqda",
     element: wrap(<ProfilePendingApproval />),
+    errorElement: <ChunkErrorPage />,
   },
   {
     path: "*",
     element: wrap(<NotFound />),
+    errorElement: <ChunkErrorPage />,
   },
 ]);
