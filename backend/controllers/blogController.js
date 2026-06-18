@@ -222,7 +222,7 @@ exports.adminGetAllComments = catchAsync(async (req, res) => {
         as: 'commentUser',
       },
     },
-    { $unwind: { path: '$commentUser', preserveNullAndEmpty: true } },
+    { $unwind: { path: '$commentUser', preserveNullAndEmptyArrays: true } },
     {
       $project: {
         _id: '$comments._id',
