@@ -201,60 +201,42 @@ exports.likeComment = catchAsync(async (req, res, next) => {
 
 // GET /api/v1/blogs/admin/comments
 exports.adminGetAllComments = catchAsync(async (req, res) => {
-  const page   = Math.max(parseInt(req.query.page)  || 1, 1);
-  const limit  = Math.min(parseInt(req.query.limit) || 20, 100);
-  const skip   = (page - 1) * limit;
-  const search = req.query.search ? req.query.search.trim() : '';
-  const sort   = req.query.sort === 'oldest' ? 1 : -1;
+  const page    = Math.max(parseInt(req.query.page)  || 1, 1);
+  const limit   = Math.min(parseInt(req.query.limit) || 20, 100);
+  const skip    = (page - 1) * limit;
+  const search  = req.query.search ? req.query.search.trim().toLowerCase() : '';
+  const sortDir = req.query.sort === 'oldest' ? 1 : -1;
 
-  const matchStage = search
-    ? [{ $match: { 'comments.text': { $regex: search, $options: 'i' } } }]
-    : [];
+  const blogs = await BlogPost.find({ 'comments.0': { $exists: true } })
+    .select('title slug comments')
+    .populate('comments.user', 'firstName lastName avatar role');
 
-  const basePipeline = [
-    { $unwind: '$comments' },
-    ...matchStage,
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'comments.user',
-        foreignField: '_id',
-        as: 'commentUser',
-      },
-    },
-    { $unwind: { path: '$commentUser', preserveNullAndEmptyArrays: true } },
-    {
-      $project: {
-        _id: '$comments._id',
-        text: '$comments.text',
-        createdAt: '$comments.createdAt',
-        likesCount: { $size: { $ifNull: ['$comments.likes', []] } },
-        blogId: '$_id',
-        blogTitle: '$title',
-        blogSlug: '$slug',
-        user: {
-          _id: '$commentUser._id',
-          firstName: '$commentUser.firstName',
-          lastName: '$commentUser.lastName',
-          avatar: '$commentUser.avatar',
-          role: '$commentUser.role',
-        },
-      },
-    },
-    { $sort: { createdAt: sort } },
-  ];
+  const allComments = [];
+  for (const blog of blogs) {
+    for (const comment of blog.comments) {
+      if (search && !comment.text.toLowerCase().includes(search)) continue;
+      allComments.push({
+        _id:        comment._id,
+        text:       comment.text,
+        createdAt:  comment.createdAt,
+        likesCount: comment.likes?.length || 0,
+        blogId:     blog._id,
+        blogTitle:  blog.title,
+        blogSlug:   blog.slug,
+        user:       comment.user,
+      });
+    }
+  }
 
-  const [data, countResult] = await Promise.all([
-    BlogPost.aggregate([...basePipeline, { $skip: skip }, { $limit: limit }]),
-    BlogPost.aggregate([...basePipeline, { $count: 'total' }]),
-  ]);
+  allComments.sort((a, b) => sortDir * (new Date(a.createdAt) - new Date(b.createdAt)));
 
-  const total = countResult[0]?.total || 0;
+  const total = allComments.length;
+  const data  = allComments.slice(skip, skip + limit);
 
   res.status(200).json({
-    success: true,
+    success:    true,
     total,
-    totalPages: Math.ceil(total / limit),
+    totalPages: Math.ceil(total / limit) || 1,
     page,
     data,
   });
