@@ -226,8 +226,8 @@ function Pagination({ page, totalPages, total, setPage }) {
 }
 
 /* ── Delete Confirm Modal ── */
-function DeleteModal({ text, onClose, onConfirm, loading }) {
-  if (!text && text !== 0) return null;
+function DeleteModal({ item, text, onClose, onConfirm, loading }) {
+  if (!item) return null;
   return (
     <div onClick={onClose} style={{
       position: "fixed", inset: 0, zIndex: 1001,
@@ -409,7 +409,7 @@ function BlogCommentsTab() {
       {viewing && (
         <ViewModal item={viewing} fields={viewing.extra} onClose={() => setViewing(null)} />
       )}
-      <DeleteModal text={deleting?.text} onClose={() => setDel(null)} loading={deleteMut.isLoading}
+      <DeleteModal item={deleting} text={deleting?.text} onClose={() => setDel(null)} loading={deleteMut.isLoading}
         onConfirm={() => deleteMut.mutate({ blogId: deleting.blogId, commentId: deleting._id })} />
     </>
   );
@@ -500,7 +500,7 @@ function BloggerReviewsTab() {
       {viewing && (
         <ViewModal item={viewing} fields={viewing.extra} onClose={() => setViewing(null)} />
       )}
-      <DeleteModal text={deleting?.comment} onClose={() => setDel(null)} loading={deleteMut.isLoading}
+      <DeleteModal item={deleting} text={deleting?.comment} onClose={() => setDel(null)} loading={deleteMut.isLoading}
         onConfirm={() => deleteMut.mutate(deleting._id)} />
     </>
   );
@@ -604,7 +604,7 @@ function SiteReviewsTab() {
       {viewing && (
         <ViewModal item={viewing} fields={viewing.extra} onClose={() => setViewing(null)} />
       )}
-      <DeleteModal text={deleting?.comment} onClose={() => setDel(null)} loading={deleteMut.isLoading}
+      <DeleteModal item={deleting} text={deleting?.comment} onClose={() => setDel(null)} loading={deleteMut.isLoading}
         onConfirm={() => deleteMut.mutate(deleting._id)} />
     </>
   );
