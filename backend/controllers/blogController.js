@@ -197,6 +197,69 @@ exports.likeComment = catchAsync(async (req, res, next) => {
   res.status(200).json({ success: true, liked: !already, likesCount: comment.likes.length });
 });
 
+/* ── Admin Comments ───────────────────────────────────────────────────────── */
+
+// GET /api/v1/blogs/admin/comments
+exports.adminGetAllComments = catchAsync(async (req, res) => {
+  const page   = Math.max(parseInt(req.query.page)  || 1, 1);
+  const limit  = Math.min(parseInt(req.query.limit) || 20, 100);
+  const skip   = (page - 1) * limit;
+  const search = req.query.search ? req.query.search.trim() : '';
+  const sort   = req.query.sort === 'oldest' ? 1 : -1;
+
+  const matchStage = search
+    ? [{ $match: { 'comments.text': { $regex: search, $options: 'i' } } }]
+    : [];
+
+  const basePipeline = [
+    { $unwind: '$comments' },
+    ...matchStage,
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'comments.user',
+        foreignField: '_id',
+        as: 'commentUser',
+      },
+    },
+    { $unwind: { path: '$commentUser', preserveNullAndEmpty: true } },
+    {
+      $project: {
+        _id: '$comments._id',
+        text: '$comments.text',
+        createdAt: '$comments.createdAt',
+        likesCount: { $size: { $ifNull: ['$comments.likes', []] } },
+        blogId: '$_id',
+        blogTitle: '$title',
+        blogSlug: '$slug',
+        user: {
+          _id: '$commentUser._id',
+          firstName: '$commentUser.firstName',
+          lastName: '$commentUser.lastName',
+          avatar: '$commentUser.avatar',
+          role: '$commentUser.role',
+        },
+      },
+    },
+    { $sort: { createdAt: sort } },
+  ];
+
+  const [data, countResult] = await Promise.all([
+    BlogPost.aggregate([...basePipeline, { $skip: skip }, { $limit: limit }]),
+    BlogPost.aggregate([...basePipeline, { $count: 'total' }]),
+  ]);
+
+  const total = countResult[0]?.total || 0;
+
+  res.status(200).json({
+    success: true,
+    total,
+    totalPages: Math.ceil(total / limit),
+    page,
+    data,
+  });
+});
+
 /* ── User CRUD ───────────────────────────────────────────────────────────── */
 
 // POST /api/v1/blogs

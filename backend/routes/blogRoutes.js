@@ -49,6 +49,7 @@ router.post('/:id/comments/:commentId/like', protect, bc.likeComment);
 /* ── Admin ─────────────────────────────────────────────────────────────────── */
 
 router.get('/admin/all', protect, restrictTo('admin'), bc.adminGetAllBlogs);
+router.get('/admin/comments', protect, restrictTo('admin'), bc.adminGetAllComments);
 router.post('/admin', protect, restrictTo('admin'), upload.single('coverImage'), resolveFileUrl('blogs'), bc.createBlog);
 router.patch('/admin/:id/status', protect, restrictTo('admin'), bc.updateBlogStatus);
 router.patch('/admin/:id', protect, restrictTo('admin'), upload.single('coverImage'), resolveFileUrl('blogs'), bc.updateBlog);
