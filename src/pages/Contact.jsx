@@ -177,7 +177,7 @@ const Contact = () => {
             <p className="text-white/50 text-[11px] tracking-widest uppercase mb-3">Ijtimoiy tarmoqlar</p>
             <div className="flex gap-2">
               {[
-                { Icon: FaTelegramPlane, href: "#" },
+                { Icon: FaTelegramPlane, href: "https://t.me/adbloggeruz" },
                 { Icon: FaInstagram,     href: "https://www.instagram.com/adblogger.uz?igsh=MXEwcW9yYnd4bGxq&utm_source=qr" },
               ].map(({ Icon, href }, i) => (
                 <motion.a key={i} href={href} target="_blank" rel="noopener noreferrer"

@@ -205,7 +205,7 @@ export default function Footer() {
           </div>
 
           <div className="flex gap-2 mt-4">
-            <SocialBtn href="#" label="Telegram" color="red">
+            <SocialBtn href="https://t.me/adbloggeruz" label="Telegram" color="red" target="_blank" rel="noopener noreferrer">
               <svg fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.088 14.42l-2.948-.924c-.64-.203-.653-.64.136-.953l11.527-4.444c.533-.194 1.002.131.759.149z" />
               </svg>
