@@ -71,6 +71,44 @@ exports.deleteReview = catchAsync(async (req, res, next) => {
   res.status(204).json({ success: true, data: null });
 });
 
+/* ── Admin ─────────────────────────────────────────────────────────────────── */
+
+// GET /api/v1/admin/reviews
+exports.adminGetAllReviews = catchAsync(async (req, res) => {
+  const page    = Math.max(parseInt(req.query.page)  || 1, 1);
+  const limit   = Math.min(parseInt(req.query.limit) || 20, 100);
+  const skip    = (page - 1) * limit;
+  const search  = req.query.search ? req.query.search.trim() : '';
+  const sortDir = req.query.sort === 'oldest' ? 1 : -1;
+
+  const filter = search ? { comment: { $regex: search, $options: 'i' } } : {};
+
+  const [reviews, total] = await Promise.all([
+    Review.find(filter)
+      .populate('reviewer', 'firstName lastName avatar role')
+      .populate({ path: 'blogger', populate: { path: 'user', select: 'firstName lastName avatar' } })
+      .sort({ createdAt: sortDir })
+      .skip(skip)
+      .limit(limit),
+    Review.countDocuments(filter),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    total,
+    totalPages: Math.ceil(total / limit) || 1,
+    page,
+    data: reviews,
+  });
+});
+
+// DELETE /api/v1/admin/reviews/:id
+exports.adminDeleteReview = catchAsync(async (req, res, next) => {
+  const review = await Review.findByIdAndDelete(req.params.id);
+  if (!review) return next(new AppError('Sharh topilmadi.', 404));
+  res.status(204).json({ success: true, data: null });
+});
+
 // POST /api/v1/bloggers/:bloggerId/reviews/:id/like
 exports.toggleLike = catchAsync(async (req, res, next) => {
   const review = await Review.findById(req.params.id);

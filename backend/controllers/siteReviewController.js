@@ -59,6 +59,54 @@ exports.createReview = catchAsync(async (req, res, next) => {
   res.status(201).json({ success: true, data: review });
 });
 
+/* ── Admin ─────────────────────────────────────────────────────────────────── */
+
+// GET /api/v1/admin/site-reviews
+exports.adminGetAll = catchAsync(async (req, res) => {
+  const page    = Math.max(parseInt(req.query.page)  || 1, 1);
+  const limit   = Math.min(parseInt(req.query.limit) || 20, 100);
+  const skip    = (page - 1) * limit;
+  const search  = req.query.search ? req.query.search.trim() : '';
+  const sortDir = req.query.sort === 'oldest' ? 1 : -1;
+
+  const filter = search ? { comment: { $regex: search, $options: 'i' } } : {};
+
+  const [reviews, total] = await Promise.all([
+    SiteReview.find(filter)
+      .populate('user', 'firstName lastName avatar role')
+      .sort({ createdAt: sortDir })
+      .skip(skip)
+      .limit(limit),
+    SiteReview.countDocuments(filter),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    total,
+    totalPages: Math.ceil(total / limit) || 1,
+    page,
+    data: reviews,
+  });
+});
+
+// PATCH /api/v1/admin/site-reviews/:id/status
+exports.adminUpdateStatus = catchAsync(async (req, res, next) => {
+  const review = await SiteReview.findByIdAndUpdate(
+    req.params.id,
+    { isApproved: req.body.isApproved },
+    { new: true }
+  ).populate('user', 'firstName lastName avatar role');
+  if (!review) return next(new AppError('Sharh topilmadi.', 404));
+  res.status(200).json({ success: true, data: review });
+});
+
+// DELETE /api/v1/admin/site-reviews/:id
+exports.adminDelete = catchAsync(async (req, res, next) => {
+  const review = await SiteReview.findByIdAndDelete(req.params.id);
+  if (!review) return next(new AppError('Sharh topilmadi.', 404));
+  res.status(204).json({ success: true, data: null });
+});
+
 // PUT /api/v1/site-reviews/my — Protected: update my review
 exports.updateMyReview = catchAsync(async (req, res, next) => {
   const { rating, comment } = req.body;

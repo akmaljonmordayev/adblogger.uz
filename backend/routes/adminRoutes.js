@@ -11,9 +11,11 @@ const categoryController = require('../controllers/categoryController');
 const faqController      = require('../controllers/faqController');
 const careerController   = require('../controllers/careerController');
 const contactController  = require('../controllers/contactController');
-const campaignController  = require('../controllers/campaignController');
-const businessController  = require('../controllers/businessController');
-const { uploadBlogImage } = require('../config/cloudinary');
+const campaignController    = require('../controllers/campaignController');
+const businessController    = require('../controllers/businessController');
+const reviewController      = require('../controllers/reviewController');
+const siteReviewController  = require('../controllers/siteReviewController');
+const { uploadBlogImage }   = require('../config/cloudinary');
 
 router.use(protect, restrictTo('admin'));
 
@@ -102,5 +104,14 @@ router.get('/campaigns', campaignController.adminGetAllCampaigns);
 
 // ── Businesses ─────────────────────────────────────────────────────────────────
 router.get('/businesses', businessController.adminGetAll);
+
+// ── Blogger Reviews ────────────────────────────────────────────────────────────
+router.get('/reviews',        reviewController.adminGetAllReviews);
+router.delete('/reviews/:id', reviewController.adminDeleteReview);
+
+// ── Site Reviews ───────────────────────────────────────────────────────────────
+router.get('/site-reviews',                siteReviewController.adminGetAll);
+router.patch('/site-reviews/:id/status',   siteReviewController.adminUpdateStatus);
+router.delete('/site-reviews/:id',         siteReviewController.adminDelete);
 
 module.exports = router;

@@ -86,11 +86,24 @@ export const adminContactsService = {
   remove: (id) => api.delete(`/admin/contacts/${id}`).then((r) => r.data),
 };
 
-// ── Comments ───────────────────────────────────────────────────────────────────
+// ── Blog Comments ──────────────────────────────────────────────────────────────
 export const adminCommentsService = {
   getAll: (params) => api.get("/blogs/admin/comments", { params }).then((r) => r.data),
   remove: (blogId, commentId) =>
     api.delete(`/blogs/${blogId}/comments/${commentId}`).then((r) => r.data),
+};
+
+// ── Blogger Reviews ────────────────────────────────────────────────────────────
+export const adminReviewsService = {
+  getAll:  (params) => api.get("/admin/reviews", { params }).then((r) => r.data),
+  remove:  (id)     => api.delete(`/admin/reviews/${id}`).then((r) => r.data),
+};
+
+// ── Site Reviews ───────────────────────────────────────────────────────────────
+export const adminSiteReviewsService = {
+  getAll:       (params)             => api.get("/admin/site-reviews", { params }).then((r) => r.data),
+  updateStatus: (id, isApproved)     => api.patch(`/admin/site-reviews/${id}/status`, { isApproved }).then((r) => r.data),
+  remove:       (id)                 => api.delete(`/admin/site-reviews/${id}`).then((r) => r.data),
 };
 
 // ── Campaigns ──────────────────────────────────────────────────────────────────
