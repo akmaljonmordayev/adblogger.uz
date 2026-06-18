@@ -55,6 +55,7 @@ const AdminFAQ         = lazy(() => import("../admin/pages/AdminFAQ"));
 const AdminSettings    = lazy(() => import("../admin/pages/AdminSettings"));
 const AdminApplications  = lazy(() => import("../admin/pages/AdminApplications"));
 const AdminBusinessmen   = lazy(() => import("../admin/pages/AdminBusinessmen"));
+const AdminComments      = lazy(() => import("../admin/pages/AdminComments"));
 
 const wrap = (el) => <Suspense fallback={<PageLoader />}>{el}</Suspense>;
 
@@ -118,7 +119,8 @@ export const router = createBrowserRouter([
       { path: ROUTE_PATHS.ADMIN_SETTINGS,               element: wrap(<AdminSettings />) },
       { path: ROUTE_PATHS.ADMIN_APPLICATIONS,           element: wrap(<AdminApplications />) },
       { path: ROUTE_PATHS.ADMIN_BUSINESSMEN,            element: wrap(<AdminBusinessmen />) },
-      { path: "/admin/statistics", element: wrap(<AdminStatistics />) },
+      { path: "/admin/statistics",                element: wrap(<AdminStatistics />) },
+      { path: ROUTE_PATHS.ADMIN_COMMENTS,         element: wrap(<AdminComments />) },
     ],
   },
   {

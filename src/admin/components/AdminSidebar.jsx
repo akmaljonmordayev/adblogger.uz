@@ -8,7 +8,7 @@ import {
   PiMegaphoneSimpleDuotone,
   PiArticleDuotone,
   PiTagDuotone,
-PiEnvelopeOpenDuotone,
+  PiEnvelopeOpenDuotone,
   PiSealQuestionDuotone,
   PiGearSixDuotone,
   PiSignOutDuotone,
@@ -18,6 +18,7 @@ PiEnvelopeOpenDuotone,
   PiClipboardTextDuotone,
   PiBriefcaseDuotone,
   PiChartBarDuotone,
+  PiChatCircleDuotone,
 } from "react-icons/pi";
 import LogoutModal from "../../components/ui/LogoutModal";
 
@@ -50,6 +51,7 @@ const NAV_GROUPS = [
     items: [
       { label: "E'lonlar",         path: ROUTE_PATHS.ADMIN_ADS,        Icon: PiMegaphoneSimpleDuotone },
       { label: "Blog",             path: ROUTE_PATHS.ADMIN_BLOGS,      Icon: PiArticleDuotone         },
+      { label: "Izohlar",          path: ROUTE_PATHS.ADMIN_COMMENTS,   Icon: PiChatCircleDuotone      },
       { label: "Kategoriyalar",    path: ROUTE_PATHS.ADMIN_CATEGORIES, Icon: PiTagDuotone             },
     ],
   },
@@ -151,7 +153,7 @@ const AdminSidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
 
       {/* ── Logo row ── */}
       <div style={{
-        height: 58,
+        height: 64,
         display: "flex",
         alignItems: "center",
         padding: collapsed && !isMobile ? "0 12px" : "0 16px",
@@ -162,17 +164,30 @@ const AdminSidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
       }}>
         {/* Logo */}
         {collapsed && !isMobile ? (
-          <div style={{ background: "#fff", borderRadius: 8, padding: "3px 5px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <img src="/adbloggerlogo.jpg" alt="AdBlogger" style={{ height: 26, width: "auto", objectFit: "contain" }} />
-          </div>
+          <div style={{
+            width: 38, height: 38, borderRadius: 8, flexShrink: 0,
+            background: "#fff",
+            backgroundImage: "url('/adbloggerlogo.jpg')",
+            backgroundSize: "58px auto",
+            backgroundPosition: "center top",
+            backgroundRepeat: "no-repeat",
+          }} />
         ) : (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flex: 1, minWidth: 0, gap: 8 }}>
-            <div style={{ background: "#fff", borderRadius: 10, padding: "4px 8px", display: "inline-flex", alignItems: "center" }}>
-              <img src="/adbloggerlogo.jpg" alt="AdBlogger" style={{ height: 30, width: "auto", objectFit: "contain" }} />
-            </div>
-            <div style={{ fontSize: 9, fontWeight: 600, color: C.textMuted, letterSpacing: "1.5px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
-              Admin panel
-            </div>
+          <div style={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0, gap: 10 }}>
+            {/* Icon only — crop top 63% of image using background */}
+            <div style={{
+              width: 38, height: 38, borderRadius: 8, flexShrink: 0,
+              background: "#fff",
+              backgroundImage: "url('/adbloggerlogo.jpg')",
+              backgroundSize: "58px auto",
+              backgroundPosition: "center -2px",
+              backgroundRepeat: "no-repeat",
+            }} />
+            {/* Brand text */}
+            <span style={{ fontSize: 19, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.3px", whiteSpace: "nowrap" }}>
+              <span style={{ color: "#ef4444" }}>Ad</span>
+              <span style={{ color: "#ffffff" }}>Blogger</span>
+            </span>
           </div>
         )}
 

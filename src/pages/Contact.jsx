@@ -176,8 +176,12 @@ const Contact = () => {
             <div className="h-px bg-white/20 my-5" />
             <p className="text-white/50 text-[11px] tracking-widest uppercase mb-3">Ijtimoiy tarmoqlar</p>
             <div className="flex gap-2">
-              {[FaTelegramPlane, FaInstagram].map((Icon, i) => (
-                <motion.a key={i} href="#" whileHover={{ y: -2, backgroundColor: 'rgba(255,255,255,0.28)' }}
+              {[
+                { Icon: FaTelegramPlane, href: "#" },
+                { Icon: FaInstagram,     href: "https://www.instagram.com/adblogger.uz?igsh=MXEwcW9yYnd4bGxq&utm_source=qr" },
+              ].map(({ Icon, href }, i) => (
+                <motion.a key={i} href={href} target="_blank" rel="noopener noreferrer"
+                  whileHover={{ y: -2, backgroundColor: 'rgba(255,255,255,0.28)' }}
                   className="w-10 h-10 rounded-xl bg-white/12 flex items-center justify-center text-white transition-all">
                   <Icon size={17}/>
                 </motion.a>

@@ -55,4 +55,5 @@ export const ROUTE_PATHS = {
   ADMIN_SETTINGS:       "/admin/settings",
   ADMIN_APPLICATIONS:   "/admin/applications",
   ADMIN_STATISTICS:     "/admin/statistics",
+  ADMIN_COMMENTS:       "/admin/comments",
 };

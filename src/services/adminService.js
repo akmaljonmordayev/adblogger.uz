@@ -86,6 +86,13 @@ export const adminContactsService = {
   remove: (id) => api.delete(`/admin/contacts/${id}`).then((r) => r.data),
 };
 
+// ── Comments ───────────────────────────────────────────────────────────────────
+export const adminCommentsService = {
+  getAll: (params) => api.get("/blogs/admin/comments", { params }).then((r) => r.data),
+  remove: (blogId, commentId) =>
+    api.delete(`/blogs/${blogId}/comments/${commentId}`).then((r) => r.data),
+};
+
 // ── Campaigns ──────────────────────────────────────────────────────────────────
 export const adminCampaignsService = {
   getAll: (params) => api.get("/admin/campaigns", { params }).then((r) => r.data),
