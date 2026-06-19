@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import SEO from "../components/SEO";
 import {
@@ -409,32 +410,32 @@ export default function BloggerDetail() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
 
-  const [blogger, setBlogger]         = useState(null);
-  const [reviews, setReviews]         = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState(null);
+  const [reviews, setReviews]           = useState([]);
   const [activeTab, setActiveTab]       = useState("pricing");
   const [inWishlist, setInWishlist]     = useState(false);
   const [isOrderOpen, setIsOrderOpen]   = useState(false);
   const [isMsgOpen, setIsMsgOpen]       = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState(null);
 
+  const { data: _qData, isLoading: loading, isError } = useQuery({
+    queryKey: ["blogger-detail", id],
+    queryFn: async () => {
+      const [bRes, rRes] = await Promise.all([
+        api.get(`/bloggers/${id}`),
+        api.get(`/bloggers/${id}/reviews`),
+      ]);
+      return { blogger: bRes.data.data, reviews: rRes.data.data || [] };
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!id,
+  });
+  const blogger = _qData?.blogger;
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    Promise.all([
-      api.get(`/bloggers/${id}`),
-      api.get(`/bloggers/${id}/reviews`),
-    ])
-      .then(([bRes, rRes]) => {
-        const b = bRes.data.data;
-        setBlogger(b);
-        setSelectedPlatform(b?.platforms?.[0] || null);
-        setReviews(rRes.data.data || []);
-      })
-      .catch(err => setError(err.response?.data?.message || err.message || "Xatolik"))
-      .finally(() => setLoading(false));
-  }, [id]);
+    if (_qData?.reviews) setReviews(_qData.reviews);
+  }, [_qData]);
+  useEffect(() => {
+    if (blogger?.platforms?.[0] && !selectedPlatform) setSelectedPlatform(blogger.platforms[0]);
+  }, [blogger]);
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("adb_wishlist") || "[]");
@@ -466,11 +467,11 @@ export default function BloggerDetail() {
   };
 
   if (loading) return <Spinner />;
-  if (error) return (
+  if (isError) return (
     <div style={{ maxWidth: 520, margin: "80px auto", textAlign: "center", padding: "0 20px" }}>
       <div style={{ fontSize: 52, marginBottom: 16 }}>😕</div>
       <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>Blogger topilmadi</div>
-      <div style={{ fontSize: 14, color: "#64748b", marginBottom: 28 }}>{error}</div>
+      <div style={{ fontSize: 14, color: "#64748b", marginBottom: 28 }}>Ma'lumot yuklanishda xatolik yuz berdi</div>
       <Link to="/blogerlar" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#dc2626", fontWeight: 700, textDecoration: "none", fontSize: 14 }}>
         <LuArrowLeft size={16} /> Blogerlar ro'yxatiga qaytish
       </Link>

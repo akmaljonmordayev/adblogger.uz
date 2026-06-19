@@ -18,6 +18,10 @@ export default defineConfig({
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) return 'vendor';
             if (id.includes('framer-motion') || id.includes('antd')) return 'ui';
             if (id.includes('@tanstack')) return 'query';
+            if (id.includes('react-icons')) return 'icons';
+            if (id.includes('gsap')) return 'gsap';
+            if (id.includes('leaflet')) return 'maps';
+            if (id.includes('socket.io') || id.includes('engine.io')) return 'socket';
           }
         },
       },

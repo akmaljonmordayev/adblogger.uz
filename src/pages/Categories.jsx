@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import SEO, { breadcrumbSchema } from "../components/SEO";
 import {
@@ -48,55 +49,44 @@ function barWidth(count, max) {
 export default function CategoriesPage() {
   const [search, setSearch] = useState("");
   const [hovered, setHovered] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [totalBloggers, setTotalBloggers] = useState(0);
   const navigate = useNavigate();
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { data: _data, isLoading: loading } = useQuery({
+    queryKey: ["categories-page"],
+    queryFn: async () => {
       const [catRes, blogRes] = await Promise.all([
         api.get("/categories"),
         api.get("/bloggers"),
       ]);
       const cats = catRes.data.data || [];
       const bloggers = blogRes.data.data || [];
-
-      /* Har bir kategoriya uchun blogger soni (barcha kategoriyalarini hisobga olib) */
       const countMap = {};
       bloggers.forEach(b => {
         (b.categories || []).forEach(catName => {
           if (catName) countMap[catName] = (countMap[catName] || 0) + 1;
         });
       });
+      return {
+        categories: cats.map(cat => ({ ...cat, bloggerCount: countMap[cat.name] || 0 })),
+        totalBloggers: bloggers.length,
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
-      const enriched = cats.map(cat => ({
-        ...cat,
-        bloggerCount: countMap[cat.name] || 0,
-      }));
+  const categories = _data?.categories || [];
+  const totalBloggers = _data?.totalBloggers || 0;
 
-      setCategories(enriched);
-      setTotalBloggers(bloggers.length);
-    } catch {
-      setCategories([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-
-  const filtered = categories.filter(c =>
+  const filtered = useMemo(() => categories.filter(c =>
     (c.name || "").toLowerCase().includes(search.toLowerCase()) ||
     getUzName(c).toLowerCase().includes(search.toLowerCase()) ||
     (c.description || "").toLowerCase().includes(search.toLowerCase())
-  );
+  ), [categories, search]);
 
   const maxCount = Math.max(...categories.map(c => c.bloggerCount || 0), 1);
-  const topCategories = [...categories]
+  const topCategories = useMemo(() => [...categories]
     .sort((a, b) => (b.bloggerCount || 0) - (a.bloggerCount || 0))
-    .slice(0, 6);
+    .slice(0, 6), [categories]);
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", background: "#fafafa", minHeight: "100vh" }}>

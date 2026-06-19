@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import {
   LuBell, LuCheck, LuCheckCheck, LuMegaphone,
@@ -40,25 +41,25 @@ export default function Notifications() {
   const { token } = useAuthStore();
   const { decrement: decrementStore, clearAll: clearAllStore } = useNotificationStore();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const res = await api.get("/notifications");
-      setNotifications(res.data.data || []);
-    } catch {
-      toast.error("Bildirishnomalarni yuklashda xatolik");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: _fetchedNotifs, isLoading: loading } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => api.get("/notifications").then(res => res.data.data || []),
+    staleTime: 60_000,
+    enabled: !!token,
+    onError: () => toast.error("Bildirishnomalarni yuklashda xatolik"),
+  });
 
   useEffect(() => {
     if (!token) { navigate("/kirish"); return; }
-    fetchNotifications();
-  }, [token, navigate, fetchNotifications]);
+  }, [token, navigate]);
+
+  useEffect(() => {
+    if (_fetchedNotifs) setNotifications(_fetchedNotifs);
+  }, [_fetchedNotifs]);
 
   // Real-time: yangi notification kelsa ro'yxat boshiga qo'shish
   useEffect(() => {
@@ -67,12 +68,14 @@ export default function Notifications() {
       setNotifications(prev => {
         // Takrorlanishning oldini olish
         if (prev.some(n => n._id === notif._id)) return prev;
-        return [notif, ...prev];
+        const updated = [notif, ...prev];
+        queryClient.setQueryData(["notifications"], updated);
+        return updated;
       });
     };
     socket.on('new_notification', handler);
     return () => socket.off('new_notification', handler);
-  }, []);
+  }, [queryClient]);
 
   const markRead = async (id) => {
     setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
@@ -85,24 +88,28 @@ export default function Notifications() {
   };
 
   const markAllRead = async () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    const updated = notifications.map(n => ({ ...n, read: true }));
+    setNotifications(updated);
+    queryClient.setQueryData(["notifications"], updated);
     clearAllStore();
     try {
       await api.patch("/notifications/read-all");
     } catch {
       toast.error("Xatolik yuz berdi");
-      fetchNotifications();
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     }
   };
 
   const deleteNotification = async (id, e) => {
     e.preventDefault();
     e.stopPropagation();
-    setNotifications(prev => prev.filter(n => n._id !== id));
+    const updated = notifications.filter(n => n._id !== id);
+    setNotifications(updated);
+    queryClient.setQueryData(["notifications"], updated);
     try {
       await api.delete(`/notifications/${id}`);
     } catch {
-      fetchNotifications();
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     }
   };
 

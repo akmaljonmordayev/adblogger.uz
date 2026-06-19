@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import SEO from "../components/SEO";
 import api from "../services/api";
@@ -159,11 +160,6 @@ export default function BlogDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [post, setPost]           = useState(null);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState(null);
-  const [related, setRelated]     = useState([]);
-
   const [liked, setLiked]         = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [likeLoading, setLikeLoading] = useState(false);
@@ -178,36 +174,30 @@ export default function BlogDetail() {
   const { user: authUser } = useAuthStore();
   const currentUserId = authUser?._id || null;
 
-  /* ── fetch blog ── */
-  const fetchPost = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await api.get(`/blogs/${id}`);
-      const data = res.data.data;
-      setPost(data);
-      setLiked(data.isLiked || false);
-      setLikesCount(data.likesCount || 0);
-      setComments(data.comments || []);
-      setCommentsCount(data.commentsCount || 0);
+  const { data: post, isLoading: loading, isError } = useQuery({
+    queryKey: ["blog", id],
+    queryFn: () => api.get(`/blogs/${id}`).then(res => res.data.data),
+    staleTime: 10 * 60 * 1000,
+    enabled: !!id,
+  });
 
-      // fetch related
-      if (data.category) {
-        try {
-          const rel = await api.get("/blogs", {
-            params: { category: data.category, limit: 4, sort: "-views" },
-          });
-          setRelated((rel.data.data || []).filter(p => p._id !== data._id).slice(0, 3));
-        } catch {}
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || "Blog topilmadi.");
-    } finally {
-      setLoading(false);
+  const { data: related = [] } = useQuery({
+    queryKey: ["blog-related", post?.category, id],
+    queryFn: () =>
+      api.get("/blogs", { params: { category: post.category, limit: 4, sort: "-views" } })
+        .then(res => (res.data.data || []).filter(p => p._id !== id).slice(0, 3)),
+    staleTime: 10 * 60 * 1000,
+    enabled: !!post?.category,
+  });
+
+  useEffect(() => {
+    if (post) {
+      setLiked(post.isLiked || false);
+      setLikesCount(post.likesCount || 0);
+      setComments(post.comments || []);
+      setCommentsCount(post.commentsCount || 0);
     }
-  }, [id]);
-
-  useEffect(() => { fetchPost(); }, [fetchPost]);
+  }, [post]);
 
   /* ── like ── */
   const handleLike = async () => {
@@ -412,12 +402,12 @@ export default function BlogDetail() {
   }
 
   /* ── error ── */
-  if (error) {
+  if (isError) {
     return (
       <div style={{ fontFamily: "'Inter',sans-serif", maxWidth: 860, margin: "0 auto", padding: "80px 24px", textAlign: "center" }}>
         <LuCircleAlert size={48} style={{ color: "#dc2626", marginBottom: 16 }} />
         <h2 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>Blog topilmadi</h2>
-        <p style={{ color: "#64748b", marginBottom: 24 }}>{error}</p>
+        <p style={{ color: "#64748b", marginBottom: 24 }}>Ma'lumot yuklanishda xatolik yuz berdi</p>
         <Link to="/blog" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 24px", background: "#dc2626", color: "#fff", borderRadius: 10, textDecoration: "none", fontWeight: 700 }}>
           <LuArrowLeft size={14} /> Bloglarga qaytish
         </Link>

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import SEO from "../components/SEO";
 import {
@@ -144,6 +145,7 @@ export default function Profile() {
   const [campaigns,    setCampaigns]    = useState([]);
   const [wishlist,     setWishlist]     = useState([]);
   const [loadingTab,   setLoadingTab]   = useState(false);
+  const queryClient = useQueryClient();
   const [bloggerProfile,  setBloggerProfile]  = useState(null);
   const [businessProfile, setBusinessProfile] = useState(null);
   const [showLogout,   setShowLogout]   = useState(false);
@@ -153,7 +155,6 @@ export default function Profile() {
 
   // My blogs
   const [myBlogs,       setMyBlogs]       = useState([]);
-  const [blogsLoading,  setBlogsLoading]  = useState(false);
   const [showBlogForm,  setShowBlogForm]  = useState(false);
   const [editBlog,      setEditBlog]      = useState(null);  // blog being edited
   const [blogSaving,    setBlogSaving]    = useState(false);
@@ -212,11 +213,33 @@ export default function Profile() {
     if (user.role === "blogger"  && !bloggerProfile)  fetchBloggerProfile();
   }, [user]);
 
+  // React Query — tab data
+  const { data: _adsData, isLoading: adsLoading } = useQuery({
+    queryKey: ["my-ads"],
+    queryFn: () => api.get("/ads/user/my-ads").then(r => r.data.data || []),
+    enabled: tab === "my-ads",
+    staleTime: 2 * 60 * 1000,
+  });
+  useEffect(() => { if (_adsData) setMyAds(_adsData); }, [_adsData]);
+
+  const { data: _campaignsData, isLoading: campaignsLoading } = useQuery({
+    queryKey: ["my-campaigns"],
+    queryFn: () => api.get("/campaigns/my").then(r => r.data.data || []),
+    enabled: tab === "campaigns",
+    staleTime: 2 * 60 * 1000,
+  });
+  useEffect(() => { if (_campaignsData) setCampaigns(_campaignsData); }, [_campaignsData]);
+
+  const { data: _blogsData, isLoading: blogsLoading } = useQuery({
+    queryKey: ["my-blogs"],
+    queryFn: () => api.get("/blogs/my").then(r => r.data.data || []),
+    enabled: tab === "my-blogs",
+    staleTime: 2 * 60 * 1000,
+  });
+  useEffect(() => { if (_blogsData) setMyBlogs(_blogsData); }, [_blogsData]);
+
   // Load tab data
   useEffect(() => {
-    if (tab === "my-ads")    fetchMyAds();
-    if (tab === "campaigns") fetchCampaigns();
-    if (tab === "my-blogs")  fetchMyBlogs();
     if (tab === "wishlist") {
       setWishlist(JSON.parse(localStorage.getItem("adb_wishlist") || "[]"));
     }
@@ -224,17 +247,6 @@ export default function Profile() {
     if (tab === "business" && user?.role === "business") fetchBusinessProfile();
   }, [tab]);
 
-  const fetchMyBlogs = async () => {
-    setBlogsLoading(true);
-    try {
-      const res = await api.get("/blogs/my");
-      setMyBlogs(res.data.data || []);
-    } catch {
-      setMyBlogs([]);
-    } finally {
-      setBlogsLoading(false);
-    }
-  };
 
   const openCreateBlog = () => {
     setEditBlog(null);
@@ -362,18 +374,6 @@ export default function Profile() {
     finally { setLoadingTab(false); }
   };
 
-  const fetchMyAds = async () => {
-    setLoadingTab(true);
-    try { const r = await api.get("/ads/user/my-ads"); setMyAds(r.data.data || []); }
-    catch { toast.error("E'lonlarni yuklashda xatolik"); }
-    finally { setLoadingTab(false); }
-  };
-
-  const fetchCampaigns = async () => {
-    setLoadingTab(true);
-    try { const r = await api.get("/campaigns/my"); setCampaigns(r.data.data || []); }
-    catch { /* */ } finally { setLoadingTab(false); }
-  };
 
   // ── Avatar: canvas resize + compress → FormData → multipart ─────────
   const handleAvatarChange = e => {
@@ -1491,7 +1491,7 @@ export default function Profile() {
                   <LuPlus size={14}/> Yangi e'lon
                 </Link>
               </div>
-              {loadingTab ? (
+              {adsLoading ? (
                 <div style={{ display:"flex", justifyContent:"center", alignItems:"center", padding:"60px 0" }}><LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/></div>
               ) : myAds.length===0 ? (
                 <div style={{ textAlign:"center", padding:"60px 20px" }}>
@@ -1890,7 +1890,7 @@ export default function Profile() {
           {tab === "campaigns" && (
             <div>
               <SectionTitle sub="Faol va tugallangan kampaniyalar">Kampaniyalarim</SectionTitle>
-              {loadingTab ? (
+              {campaignsLoading ? (
                 <div style={{ display:"flex", justifyContent:"center", alignItems:"center", padding:"60px 0" }}><LuLoader size={32} className="spin" style={{ color:"#dc2626" }}/></div>
               ) : campaigns.length===0 ? (
                 <div style={{ textAlign:"center", padding:"60px 20px" }}>
