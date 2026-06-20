@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../services/api";
+import MiniLoader from "../../components/ui/MiniLoader";
 import { useAuthStore } from "../../store/useAuthStore";
 import { toast } from "../../components/ui/toast";
 import {
@@ -796,10 +797,7 @@ export default function AdminSettings() {
                   </div>
 
                   {statsLoading ? (
-                    <Card style={{ textAlign:"center", padding:56 }}>
-                      <LuLoader size={28} color={T.indigo} style={{ animation:"spin 1s linear infinite", margin:"0 auto 12px" }}/>
-                      <div style={{ color:T.textMuted, fontSize:14 }}>Statistika yuklanmoqda...</div>
-                    </Card>
+                    <MiniLoader height={300} />
                   ) : stats ? (
                     <>
                       <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:14 }}>

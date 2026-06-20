@@ -7,6 +7,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTE_PATHS } from "../config/constants";
 import { CATEGORY_LABEL, CATEGORY_GRADIENT } from "../config/categories";
 import { LuSlidersHorizontal, LuX, LuUsers, LuLoader, LuArrowUpDown, LuChevronLeft, LuChevronRight, LuSearch } from "react-icons/lu";
+import MiniLoader from "../components/ui/MiniLoader";
 import api from "../services/api";
 
 /* ── Eski nomlar mos kelishi uchun ─────────────────────────── */
@@ -362,12 +363,7 @@ export default function Blogger() {
           </div>
 
           {/* Loading */}
-          {loading && (
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 300 }}>
-              <LuLoader size={32} style={{ color: "#dc2626", animation: "spin 1s linear infinite" }} />
-              <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
-            </div>
-          )}
+          {loading && <MiniLoader height={300} />}
 
           {/* Error */}
           {error && !loading && (

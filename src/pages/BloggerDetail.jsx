@@ -12,6 +12,7 @@ import {
 } from "react-icons/lu";
 import { FaInstagram, FaYoutube, FaTelegram, FaTiktok } from "react-icons/fa";
 import { toast } from "../components/ui/toast";
+import PageLoader from "../components/ui/PageLoader";
 import api from "../services/api";
 import orderService from "../services/orderService";
 import { useAuthStore } from "../store/useAuthStore";
@@ -44,16 +45,6 @@ function stars(rating) {
       style={{ color: i < Math.round(rating) ? "#f59e0b" : "#d1d5db", fill: i < Math.round(rating) ? "#f59e0b" : "none" }}
     />
   ));
-}
-
-/* ─── Loading ────────────────────────────────────────────── */
-function Spinner() {
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-      <LuLoader size={36} style={{ color: "#dc2626", animation: "spin 1s linear infinite" }} />
-      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
-    </div>
-  );
 }
 
 /* ─── StarPicker ─────────────────────────────────────────── */
@@ -466,7 +457,7 @@ export default function BloggerDetail() {
     }
   };
 
-  if (loading) return <Spinner />;
+  if (loading) return <PageLoader />;
   if (isError) return (
     <div style={{ maxWidth: 520, margin: "80px auto", textAlign: "center", padding: "0 20px" }}>
       <div style={{ fontSize: 52, marginBottom: 16 }}>😕</div>

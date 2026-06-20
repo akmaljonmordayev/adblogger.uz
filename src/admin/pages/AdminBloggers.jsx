@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "../../components/ui/toast";
 import { adminBloggersService, adminUsersService } from "../../services/adminService";
+import MiniLoader from "../../components/ui/MiniLoader";
 import { FiInstagram, FiYoutube } from "react-icons/fi";
 import { BsTiktok, BsTelegram } from "react-icons/bs";
 import {
@@ -747,10 +748,7 @@ export default function AdminBloggers() {
       {/* ── Table ── */}
       <div style={{ background:"#fff", borderRadius:18, border:"1.5px solid #e9ecf2", overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
         {loading ? (
-          <div style={{ display:"flex", justifyContent:"center", alignItems:"center", height:260, flexDirection:"column", gap:12 }}>
-            <div style={{ width:34, height:34, border:"3px solid #e9ecf2", borderTopColor:"#6366f1", borderRadius:"50%", animation:"ab-spin 0.8s linear infinite" }}/>
-            <span style={{ fontSize:13, color:"#94a3b8", fontWeight:600 }}>Yuklanmoqda…</span>
-          </div>
+          <MiniLoader height={300} />
         ) : (
           <div style={{ overflowX:"auto" }}>
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13, minWidth:800 }}>

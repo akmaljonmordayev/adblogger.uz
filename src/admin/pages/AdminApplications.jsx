@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import api from "../../services/api";
+import MiniLoader from "../../components/ui/MiniLoader";
 import { toast } from "../../components/ui/toast";
 import { useAdminSocket } from "../../hooks/useSocket";
 import {
@@ -394,9 +395,8 @@ export default function AdminApplications() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={8} style={{ textAlign: "center", padding: 48, color: "#6b7280" }}>
-                    <LuLoader style={{ fontSize: 28, animation: "spin 1s linear infinite", display: "block", margin: "0 auto 10px" }} />
-                    Yuklanmoqda…
+                  <tr><td colSpan={8} style={{ padding: 0 }}>
+                    <MiniLoader height={200} />
                   </td></tr>
                 ) : applications.length === 0 ? (
                   <tr><td colSpan={8} style={{ textAlign: "center", padding: 56, color: "#9ca3af" }}>

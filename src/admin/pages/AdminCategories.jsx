@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "../../components/ui/toast";
 import { adminCategoriesService, adminBloggersService } from "../../services/adminService";
+import MiniLoader from "../../components/ui/MiniLoader";
 import { CATEGORY_LABEL } from "../../config/categories";
 import {
   LuLoader, LuSearch, LuPlus, LuPencil, LuTrash2,
@@ -485,10 +486,7 @@ export default function AdminCategories() {
         </div>
 
         {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 20px", gap: 14 }}>
-            <LuLoader size={32} className="spin" style={{ color: T.red }} />
-            <p style={{ color: T.textDim, fontSize: 13.5, margin: 0, fontWeight: 600 }}>Yuklanmoqda...</p>
-          </div>
+          <MiniLoader height={300} />
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "72px 20px" }}>
             <div style={{ fontSize: 52, marginBottom: 14 }}>🏷️</div>

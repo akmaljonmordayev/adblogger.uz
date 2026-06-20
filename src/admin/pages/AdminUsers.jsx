@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "../../components/ui/toast";
 import { adminUsersService } from "../../services/adminService";
 import { LuSearch, LuRefreshCw, LuEye, LuLoader, LuChevronLeft, LuChevronRight, LuTrash2 } from "react-icons/lu";
+import MiniLoader from "../../components/ui/MiniLoader";
 
 const ROLE_LABELS = { user: "Foydalanuvchi", blogger: "Blogger", business: "Biznesmen", admin: "Admin" };
 const ROLE_COLORS = {
@@ -240,9 +241,8 @@ export default function AdminUsers() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={7} style={{ textAlign: "center", padding: 40, color: "#6b7280" }}>
-                    <LuLoader style={{ fontSize: 24, animation: "spin 1s linear infinite", display: "block", margin: "0 auto 8px" }} />
-                    Yuklanmoqda…
+                  <tr><td colSpan={7} style={{ padding: 0 }}>
+                    <MiniLoader height={200} />
                   </td></tr>
                 ) : users.length === 0 ? (
                   <tr><td colSpan={7} style={{ textAlign: "center", padding: 40, color: "#9ca3af", fontSize: 14 }}>Foydalanuvchi topilmadi</td></tr>

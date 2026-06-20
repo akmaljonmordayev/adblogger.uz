@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
+import PageLoader from "../components/ui/PageLoader";
 import {
   LuBell, LuCheck, LuCheckCheck, LuMegaphone,
   LuUserCheck, LuBriefcase, LuStar, LuInfo, LuMail,
@@ -118,20 +119,7 @@ export default function Notifications() {
     ? notifications.filter(n => !n.read)
     : notifications;
 
-  if (loading) {
-    return (
-      <div style={{ maxWidth: 700, margin: "0 auto", padding: "40px 20px" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {[1, 2, 3].map(i => (
-            <div key={i} style={{
-              height: 80, borderRadius: 14, background: "#f1f5f9",
-              animation: "pulse 1.5s ease-in-out infinite",
-            }} />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <PageLoader />;
 
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", maxWidth: 700, margin: "0 auto", padding: "0 20px 60px" }}>

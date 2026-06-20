@@ -11,6 +11,7 @@ import {
   LuUsers, LuBuilding2, LuMapPin, LuStar, LuBadgeCheck,
   LuTrendingUp, LuEye, LuFilter, LuPlus, LuLoader, LuUser, LuFileText,
 } from "react-icons/lu";
+import MiniLoader from "../components/ui/MiniLoader";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
 import applicationService from "../services/applicationService";
@@ -659,12 +660,7 @@ export default function Ads() {
       </div>
 
       {/* ── LOADING ── */}
-      {loading && (
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 300 }}>
-          <LuLoader size={32} style={{ color: "#dc2626", animation: "spin 1s linear infinite" }} />
-          <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
-        </div>
-      )}
+      {loading && <MiniLoader height={300} />}
 
       {/* ── ERROR ── */}
       {error && !loading && (

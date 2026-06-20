@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import MiniLoader from "../../components/ui/MiniLoader";
 import {
   LuSearch, LuEye, LuTrash2, LuCheck, LuX, LuLoader,
   LuChevronLeft, LuChevronRight, LuRefreshCw,
@@ -541,10 +542,7 @@ export default function AdminAds() {
         </div>
 
         {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "72px 20px", gap: 14 }}>
-            <LuLoader size={32} className="spin" style={{ color: T.red }} />
-            <p style={{ color: T.textDim, fontSize: 13.5, margin: 0, fontWeight: 600 }}>Yuklanmoqda...</p>
-          </div>
+          <MiniLoader height={300} />
         ) : ads.length === 0 ? (
           <div style={{ textAlign: "center", padding: "72px 20px" }}>
             <div style={{ fontSize: 52, marginBottom: 14 }}>📋</div>

@@ -34,6 +34,7 @@ import {
 } from "react-icons/pi";
 import api from "../services/api";
 import { toast } from "../components/ui/toast";
+import PageLoader from "../components/ui/PageLoader";
 import { useAuthStore } from "../store/useAuthStore";
 import applicationService from "../services/applicationService";
 
@@ -215,12 +216,7 @@ export default function AdDetail() {
   };
 
   /* ── Loading ── */
-  if (loading) return (
-    <div style={{display:"flex",justifyContent:"center",alignItems:"center",height:360,fontFamily:"'Inter',sans-serif"}}>
-      <PiSpinnerGapDuotone size={36} style={{color:"#dc2626",animation:"spin 0.8s linear infinite"}}/>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
-  );
+  if (loading) return <PageLoader />;
 
   if (!ad) return null;
 
