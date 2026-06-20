@@ -11,7 +11,8 @@ const orderService = {
   block:       (orderId)              => api.post(`/blogger-orders/${orderId}/block`).then(r => r.data),
   unblock:     (orderId)              => api.delete(`/blogger-orders/${orderId}/block`).then(r => r.data),
   deleteOrder:    (orderId)            => api.delete(`/blogger-orders/${orderId}`).then(r => r.data),
-  signContract:   (orderId)            => api.patch(`/blogger-orders/${orderId}/sign`).then(r => r.data),
+  signContract:     (orderId)           => api.patch(`/blogger-orders/${orderId}/sign`).then(r => r.data),
+  updateContract:   (orderId, data)    => api.patch(`/blogger-orders/${orderId}/contract`, data).then(r => r.data),
 };
 
 export default orderService;

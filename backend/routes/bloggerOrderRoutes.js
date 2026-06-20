@@ -11,6 +11,7 @@ router.patch('/:orderId/messages/:msgId',         protect, ctrl.editMessage);
 router.delete('/:orderId/messages/:msgId',        protect, ctrl.deleteMessage);
 router.patch('/:orderId/status',                  protect, ctrl.updateStatus);
 router.patch('/:orderId/sign',                    protect, ctrl.signContract);
+router.patch('/:orderId/contract',               protect, ctrl.updateContract);
 router.delete('/:orderId',                        protect, ctrl.deleteOrder);
 router.post('/:orderId/block',                    protect, ctrl.blockUser);
 router.delete('/:orderId/block',                  protect, ctrl.unblockUser);

@@ -313,16 +313,52 @@ function Bubble({ msg, myId, appId, onEdited, onDeleted, service=applicationServ
   );
 }
 
-/* ─── OrderContractCard ───────────────────────────────────────────── */
-function OrderContractCard({ app, myId, contractSigned, onSigned }) {
-  const isBlogger = String(app.adOwner?._id||app.adOwner) === myId;
-  const [signing, setSigning] = useState(false);
+const ALL_SERVICES = ['Post','Story','Reel','Video','Live','Unboxing'];
 
-  const serviceLabels = { Post:"Post", Story:"Story", Reel:"Reel", Video:"Video", Live:"Live", Unboxing:"Unboxing" };
-  const services = app.services || [];
-  const budget   = app.budget || 0;
-  const project  = app._projectName || app.projectName || "";
-  const brief    = app.brief || "";
+/* ─── OrderContractCard ───────────────────────────────────────────── */
+function OrderContractCard({ app, myId, contractSigned, onSigned, onContractUpdate }) {
+  const isBlogger = String(app.adOwner?._id||app.adOwner) === myId;
+  const signed    = contractSigned || app.contractSigned;
+
+  const [signing,  setSigning]  = useState(false);
+  const [editing,  setEditing]  = useState(false);
+  const [saving,   setSaving]   = useState(false);
+
+  // local editable state
+  const [editProject,  setEditProject]  = useState(app._projectName || app.projectName || "");
+  const [editBrief,    setEditBrief]    = useState(app.brief || "");
+  const [editServices, setEditServices] = useState(app.services || []);
+  const [editBudget,   setEditBudget]   = useState(app.budget || 0);
+
+  // sync when app prop changes (e.g. after socket update)
+  useEffect(()=>{
+    if(!editing){
+      setEditProject(app._projectName || app.projectName || "");
+      setEditBrief(app.brief || "");
+      setEditServices(app.services || []);
+      setEditBudget(app.budget || 0);
+    }
+  },[app, editing]);
+
+  const toggleService = (s) => setEditServices(p => p.includes(s) ? p.filter(x=>x!==s) : [...p,s]);
+
+  const handleSave = async () => {
+    if(!editBrief.trim()) return toast.error("Brief kiritilishi shart");
+    setSaving(true);
+    try {
+      await orderService.updateContract(app._id, {
+        projectName: editProject,
+        brief:       editBrief,
+        services:    editServices,
+        budget:      editBudget,
+      });
+      onContractUpdate?.({ projectName: editProject, brief: editBrief, services: editServices, budget: editBudget });
+      setEditing(false);
+      toast.success("Shartnoma yangilandi");
+    } catch(e) {
+      toast.error(e?.response?.data?.message || "Saqlashda xatolik");
+    } finally { setSaving(false); }
+  };
 
   const handleSign = async () => {
     setSigning(true);
@@ -335,11 +371,15 @@ function OrderContractCard({ app, myId, contractSigned, onSigned }) {
     } finally { setSigning(false); }
   };
 
-  const signed = contractSigned || app.contractSigned;
+  // display values
+  const project  = editProject;
+  const brief    = editBrief;
+  const services = editServices;
+  const budget   = editBudget;
 
   return (
     <div style={{
-      margin:"20px auto", maxWidth:460, width:"100%",
+      margin:"20px auto", maxWidth:480, width:"100%",
       borderRadius:18, overflow:"hidden",
       border: signed ? "1.5px solid #BBF7D0" : `1.5px solid ${C.border}`,
       boxShadow:"0 6px 28px rgba(0,0,0,.08)",
@@ -364,113 +404,201 @@ function OrderContractCard({ app, myId, contractSigned, onSigned }) {
             </div>
           </div>
         </div>
-        <span style={{
-          fontSize:11, fontWeight:700, borderRadius:99, padding:"4px 10px",
-          color: signed ? "#15803D" : "#D97706",
-          background: signed ? "#F0FDF4" : "#FFFBEB",
-          border: `1px solid ${signed ? "#BBF7D0" : "#FDE68A"}`,
-        }}>
-          {signed ? "✓ Imzolangan" : "Imzo kutilmoqda"}
-        </span>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          {/* Edit button — only for business (sender), only before signing */}
+          {!isBlogger && !signed && !editing && (
+            <button
+              onClick={()=>setEditing(true)}
+              style={{
+                width:30,height:30,borderRadius:8,border:"1px solid rgba(255,255,255,0.3)",
+                background:"rgba(255,255,255,0.15)",color:"#fff",cursor:"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center",
+                transition:"background .15s",
+              }}
+              title="Tahrirlash"
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.25)"}
+              onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.15)"}
+            >
+              <LuPencil size={13}/>
+            </button>
+          )}
+          <span style={{
+            fontSize:11, fontWeight:700, borderRadius:99, padding:"4px 10px",
+            color: signed ? "#15803D" : "#D97706",
+            background: signed ? "#F0FDF4" : "#FFFBEB",
+            border: `1px solid ${signed ? "#BBF7D0" : "#FDE68A"}`,
+            whiteSpace:"nowrap",
+          }}>
+            {signed ? "✓ Imzolangan" : "Imzo kutilmoqda"}
+          </span>
+        </div>
       </div>
 
       {/* Body */}
       <div style={{padding:"16px 18px", display:"flex", flexDirection:"column", gap:12}}>
-        {/* Project name */}
-        {project && (
-          <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
-            <div style={{width:32,height:32,borderRadius:8,background:"#F0F4FF",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <LuBriefcase size={14} style={{color:"#3B82F6"}}/>
-            </div>
-            <div>
-              <div style={{fontSize:11,color:C.dim,fontWeight:600,marginBottom:1}}>Loyiha / Brend</div>
-              <div style={{fontSize:13.5,fontWeight:700,color:C.text}}>{project}</div>
-            </div>
-          </div>
-        )}
 
-        {/* Services */}
-        {services.length > 0 && (
-          <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
-            <div style={{width:32,height:32,borderRadius:8,background:"#FFF5F5",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <LuPackage size={14} style={{color:C.red}}/>
-            </div>
+        {editing ? (
+          /* ─── Edit form ─── */
+          <>
             <div>
-              <div style={{fontSize:11,color:C.dim,fontWeight:600,marginBottom:5}}>Xizmat turlari</div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                {services.map(s=>(
-                  <span key={s} style={{
-                    fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:99,
-                    background:C.redLight, color:C.red,
-                    border:`1px solid ${C.redBd}`,
-                  }}>{serviceLabels[s]||s}</span>
-                ))}
+              <div style={{fontSize:11,color:C.dim,fontWeight:700,marginBottom:5}}>LOYIHA / BREND NOMI</div>
+              <input
+                value={editProject}
+                onChange={e=>setEditProject(e.target.value)}
+                placeholder="Masalan: 'Poytaxt' o'quv markazi"
+                style={{
+                  width:"100%",padding:"10px 12px",borderRadius:10,
+                  border:`1.5px solid ${C.border}`,fontSize:13.5,
+                  outline:"none",boxSizing:"border-box",fontFamily:"inherit",color:C.text,
+                  transition:"border-color .2s",
+                }}
+                onFocus={e=>e.target.style.borderColor=C.red}
+                onBlur={e=>e.target.style.borderColor=C.border}
+              />
+            </div>
+
+            <div>
+              <div style={{fontSize:11,color:C.dim,fontWeight:700,marginBottom:5}}>XIZMAT TURLARI</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                {ALL_SERVICES.map(s=>{
+                  const sel = editServices.includes(s);
+                  return (
+                    <button key={s} type="button" onClick={()=>toggleService(s)} style={{
+                      padding:"5px 14px",borderRadius:99,fontSize:12.5,fontWeight:700,
+                      border: sel ? `2px solid ${C.red}` : `1.5px solid ${C.border}`,
+                      background: sel ? C.redLight : "#F7F8FA",
+                      color: sel ? C.red : C.sub,
+                      cursor:"pointer",transition:"all .15s",
+                    }}>{s}</button>
+                  );
+                })}
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Budget */}
-        {budget > 0 && (
-          <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
-            <div style={{width:32,height:32,borderRadius:8,background:"#F0FDF4",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <LuDollarSign size={14} style={{color:"#16A34A"}}/>
-            </div>
             <div>
-              <div style={{fontSize:11,color:C.dim,fontWeight:600,marginBottom:1}}>Taxminiy narx</div>
-              <div style={{fontSize:14,fontWeight:800,color:"#16A34A"}}>{budget.toLocaleString()} so'm</div>
+              <div style={{fontSize:11,color:C.dim,fontWeight:700,marginBottom:5}}>BRIEF / MAQSAD *</div>
+              <textarea
+                value={editBrief}
+                onChange={e=>setEditBrief(e.target.value)}
+                rows={3}
+                placeholder="Reklama haqida qisqacha ma'lumot, maqsad va linklar..."
+                style={{
+                  width:"100%",padding:"10px 12px",borderRadius:10,
+                  border:`1.5px solid ${C.border}`,fontSize:13.5,resize:"vertical",
+                  outline:"none",boxSizing:"border-box",fontFamily:"inherit",color:C.text,
+                  transition:"border-color .2s",
+                }}
+                onFocus={e=>e.target.style.borderColor=C.red}
+                onBlur={e=>e.target.style.borderColor=C.border}
+              />
             </div>
-          </div>
-        )}
 
-        {/* Brief */}
-        {brief && (
-          <div style={{padding:"12px 14px",borderRadius:12,background:"#F7F8FA",border:`1px solid ${C.border}`}}>
-            <div style={{fontSize:11,color:C.dim,fontWeight:600,marginBottom:6}}>Brief / Maqsad</div>
-            <div style={{fontSize:13.5,color:C.text,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{brief}</div>
-          </div>
-        )}
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={handleSave} disabled={saving} style={{
+                flex:1,padding:"11px",borderRadius:11,border:"none",
+                background:`linear-gradient(135deg,${C.red},${C.redDark})`,
+                color:"#fff",fontWeight:700,fontSize:13,cursor:saving?"not-allowed":"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center",gap:5,
+                opacity:saving?0.7:1,
+              }}>
+                {saving?<LuLoader size={13} style={{animation:"spin .8s linear infinite"}}/>:<LuCheck size={13}/>}
+                Saqlash
+              </button>
+              <button onClick={()=>setEditing(false)} style={{
+                flex:1,padding:"11px",borderRadius:11,
+                border:`1.5px solid ${C.border}`,background:"#fff",
+                color:C.sub,fontWeight:600,fontSize:13,cursor:"pointer",
+              }}>Bekor</button>
+            </div>
+          </>
+        ) : (
+          /* ─── View mode ─── */
+          <>
+            {/* Project name */}
+            {project && (
+              <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+                <div style={{width:32,height:32,borderRadius:8,background:"#F0F4FF",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <LuBriefcase size={14} style={{color:"#3B82F6"}}/>
+                </div>
+                <div>
+                  <div style={{fontSize:11,color:C.dim,fontWeight:600,marginBottom:1}}>Loyiha / Brend</div>
+                  <div style={{fontSize:13.5,fontWeight:700,color:C.text}}>{project}</div>
+                </div>
+              </div>
+            )}
 
-        {/* Sign button — only for blogger when not signed */}
-        {isBlogger && !signed && (
-          <button
-            onClick={handleSign}
-            disabled={signing}
-            style={{
-              width:"100%", padding:"13px", borderRadius:12, border:"none",
-              background:`linear-gradient(135deg,#16A34A,#15803D)`,
-              color:"#fff", fontWeight:800, fontSize:14, cursor:signing?"not-allowed":"pointer",
-              display:"flex", alignItems:"center", justifyContent:"center", gap:8,
-              boxShadow:"0 4px 16px rgba(22,163,74,.35)",
-              opacity: signing ? 0.7 : 1, transition:"opacity .2s",
-            }}
-          >
-            {signing
-              ? <LuLoader size={15} style={{animation:"spin .8s linear infinite"}}/>
-              : <LuHandshake size={16}/>
-            }
-            {signing ? "Imzolanmoqda..." : "Shartnomani Imzolash"}
-          </button>
-        )}
+            {/* Services */}
+            {services.length > 0 && (
+              <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+                <div style={{width:32,height:32,borderRadius:8,background:"#FFF5F5",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <LuPackage size={14} style={{color:C.red}}/>
+                </div>
+                <div>
+                  <div style={{fontSize:11,color:C.dim,fontWeight:600,marginBottom:5}}>Xizmat turlari</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                    {services.map(s=>(
+                      <span key={s} style={{
+                        fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:99,
+                        background:C.redLight,color:C.red,border:`1px solid ${C.redBd}`,
+                      }}>{s}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
-        {/* Signed status */}
-        {signed && (
-          <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:12,background:"#F0FDF4",border:"1px solid #BBF7D0"}}>
-            <LuCircleCheck size={16} style={{color:"#16A34A",flexShrink:0}}/>
-            <span style={{fontSize:13,fontWeight:600,color:"#15803D"}}>
-              Shartnoma imzolandi — hamkorlik boshlandi! 🎉
-            </span>
-          </div>
-        )}
+            {/* Budget */}
+            {budget > 0 && (
+              <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+                <div style={{width:32,height:32,borderRadius:8,background:"#F0FDF4",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <LuDollarSign size={14} style={{color:"#16A34A"}}/>
+                </div>
+                <div>
+                  <div style={{fontSize:11,color:C.dim,fontWeight:600,marginBottom:1}}>Taxminiy narx</div>
+                  <div style={{fontSize:14,fontWeight:800,color:"#16A34A"}}>{Number(budget).toLocaleString()} so'm</div>
+                </div>
+              </div>
+            )}
 
-        {/* Business user waiting text */}
-        {!isBlogger && !signed && (
-          <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:12,background:"#FFFBEB",border:"1px solid #FDE68A"}}>
-            <LuCalendar size={15} style={{color:"#D97706",flexShrink:0}}/>
-            <span style={{fontSize:13,fontWeight:600,color:"#92400E"}}>
-              Blogger shartnomani ko'rib chiqmoqda...
-            </span>
-          </div>
+            {/* Brief */}
+            {brief && (
+              <div style={{padding:"12px 14px",borderRadius:12,background:"#F7F8FA",border:`1px solid ${C.border}`}}>
+                <div style={{fontSize:11,color:C.dim,fontWeight:600,marginBottom:6}}>Brief / Maqsad</div>
+                <div style={{fontSize:13.5,color:C.text,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{brief}</div>
+              </div>
+            )}
+
+            {/* Sign button — only for blogger when not signed */}
+            {isBlogger && !signed && (
+              <button onClick={handleSign} disabled={signing} style={{
+                width:"100%",padding:"13px",borderRadius:12,border:"none",
+                background:`linear-gradient(135deg,#16A34A,#15803D)`,
+                color:"#fff",fontWeight:800,fontSize:14,cursor:signing?"not-allowed":"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+                boxShadow:"0 4px 16px rgba(22,163,74,.35)",
+                opacity:signing?0.7:1,transition:"opacity .2s",
+              }}>
+                {signing ? <LuLoader size={15} style={{animation:"spin .8s linear infinite"}}/> : <LuHandshake size={16}/>}
+                {signing ? "Imzolanmoqda..." : "Shartnomani Imzolash"}
+              </button>
+            )}
+
+            {/* Signed */}
+            {signed && (
+              <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:12,background:"#F0FDF4",border:"1px solid #BBF7D0"}}>
+                <LuCircleCheck size={16} style={{color:"#16A34A",flexShrink:0}}/>
+                <span style={{fontSize:13,fontWeight:600,color:"#15803D"}}>Shartnoma imzolandi — hamkorlik boshlandi! 🎉</span>
+              </div>
+            )}
+
+            {/* Business waiting */}
+            {!isBlogger && !signed && (
+              <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:12,background:"#FFFBEB",border:"1px solid #FDE68A"}}>
+                <LuCalendar size={15} style={{color:"#D97706",flexShrink:0}}/>
+                <span style={{fontSize:13,fontWeight:600,color:"#92400E"}}>Blogger shartnomani ko'rib chiqmoqda...</span>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -655,6 +783,7 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
   const [theyBlockedMe, setTheyBlockedMe] = useState(false);
   const [blockLoading,  setBlockLoading]  = useState(false);
   const [contractSigned, setContractSigned] = useState(app.contractSigned || false);
+  const [contractData, setContractData] = useState(app);
   const msgsRef  = useRef(null);
   const inputRef = useRef(null);
   const isOwner  = String(app.adOwner?._id||app.adOwner) === myId;
@@ -709,18 +838,21 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
     const onRead     = p=>{ const cid=p[idKey]||p.applicationId||p.orderId; if(String(cid)!==String(app._id)) return; setMessages(prev=>prev.map(m=>String(m.sender?._id||m.sender)===myId?{...m,isRead:true}:m)); };
     const onBlocked      = p=>{ const cid=p.applicationId||p.orderId; if(String(cid)===String(app._id)) setTheyBlockedMe(true); };
     const onUnblocked    = p=>{ const cid=p.applicationId||p.orderId; if(String(cid)===String(app._id)) setTheyBlockedMe(false); };
-    const onContractSign = p=>{ if(String(p.orderId)===String(app._id)){ setContractSigned(true); onStatusChange(app._id,'accepted'); } };
+    const onContractSign   = p=>{ if(String(p.orderId)===String(app._id)){ setContractSigned(true); onStatusChange(app._id,'accepted'); } };
+    const onContractUpdate = p=>{ if(String(p.orderId)===String(app._id)) setContractData(prev=>({...prev,...p.updates})); };
 
     s.on(newMsgEvt,onNewMsg); s.on(editedEvt,onEdited); s.on(deletedEvt,onDeleted);
     s.on(statusEvt,onStatus); s.on(readEvt,onRead);
     s.on('user_blocked',onBlocked); s.on('user_unblocked',onUnblocked);
     s.on('contract_signed',onContractSign);
+    s.on('contract_updated',onContractUpdate);
     return ()=>{
       s.emit(leaveEvt,app._id);
       s.off(newMsgEvt,onNewMsg); s.off(editedEvt,onEdited); s.off(deletedEvt,onDeleted);
       s.off(statusEvt,onStatus); s.off(readEvt,onRead);
       s.off('user_blocked',onBlocked); s.off('user_unblocked',onUnblocked);
       s.off('contract_signed',onContractSign);
+      s.off('contract_updated',onContractUpdate);
     };
   },[app._id,onStatusChange,scrollDown,isOrder,newMsgEvt,editedEvt,deletedEvt,statusEvt,readEvt,joinEvt,leaveEvt]);
 
@@ -874,10 +1006,11 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
         {/* Show contract card for orders, application card for applications */}
         {app._isOrder ? (
           <OrderContractCard
-            app={app}
+            app={contractData}
             myId={myId}
             contractSigned={contractSigned}
             onSigned={()=>{ setContractSigned(true); onStatusChange(app._id,'accepted'); }}
+            onContractUpdate={updates=>setContractData(prev=>({...prev,...updates}))}
           />
         ) : (
           <ApplicationCard

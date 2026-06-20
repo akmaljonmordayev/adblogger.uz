@@ -36,12 +36,15 @@ exports.createOrder = catchAsync(async (req, res, next) => {
   if ((bloggerUser?.blockedUsers || []).some(id => String(id) === businessId))
     return next(new AppError("Bu blogger sizni bloklagan", 403));
 
+  const parsedServices = Array.isArray(services) ? services : (services ? [services] : []);
+  const isContractOrder = parsedServices.length > 0; // OrderModal (with services) vs QuickChatModal
+
   const order = await BloggerOrder.create({
     blogger:        bloggerId,
     business:       businessId,
     bloggerProfile: bloggerProfile._id,
     projectName:    projectName?.trim() || '',
-    services:       Array.isArray(services) ? services : (services ? [services] : []),
+    services:       parsedServices,
     platforms:      Array.isArray(platforms) ? platforms : (platforms ? [platforms] : []),
     brief:          brief.trim(),
     budget:         Number(budget) || 0,
@@ -50,12 +53,15 @@ exports.createOrder = catchAsync(async (req, res, next) => {
     bloggerUnread:  1,
   });
 
-  // Dastlabki xabar sifatida brief ni saqlash
-  await ChatMessage.create({
-    order:   order._id,
-    sender:  req.user._id,
-    text:    brief.trim(),
-  });
+  // Shartnoma uchun dastlabki xabar yaratmaymiz — contract card ko'rsatadi.
+  // Faqat quick message (servissiz) da oddiy xabar sifatida saqlaymiz.
+  if (!isContractOrder) {
+    await ChatMessage.create({
+      order:   order._id,
+      sender:  req.user._id,
+      text:    brief.trim(),
+    });
+  }
 
   // Blogger'ga notification
   const notif = await Notification.create({
@@ -309,6 +315,37 @@ exports.deleteOrder = catchAsync(async (req, res, next) => {
   }
 
   res.status(200).json({ success: true });
+});
+
+/* ── PATCH /api/v1/blogger-orders/:orderId/contract ── shartnomani tahrirlash ── */
+exports.updateContract = catchAsync(async (req, res, next) => {
+  const order = await BloggerOrder.findById(req.params.orderId);
+  if (!order) return next(new AppError('Buyurtma topilmadi', 404));
+
+  // Faqat business (shartnoma yuboruvchi) tahrirlaydi
+  if (String(order.business) !== String(req.user._id))
+    return next(new AppError("Ruxsat yo'q", 403));
+
+  if (order.contractSigned)
+    return next(new AppError('Imzolangan shartnomani tahrirlash mumkin emas', 400));
+
+  const { projectName, brief, services, budget } = req.body;
+  const updates = {};
+  if (projectName !== undefined) updates.projectName = projectName.trim();
+  if (brief !== undefined && brief.trim()) updates.brief = brief.trim();
+  if (services !== undefined) updates.services = Array.isArray(services) ? services : [services];
+  if (budget !== undefined) updates.budget = Number(budget) || 0;
+  if (updates.brief) updates.lastMessage = updates.brief.slice(0, 100);
+
+  const updated = await BloggerOrder.findByIdAndUpdate(order._id, updates, { new: true });
+
+  const io = req.app.get('io');
+  io.to(`order_${order._id}`).emit('contract_updated', {
+    orderId: String(order._id),
+    updates,
+  });
+
+  res.status(200).json({ success: true, data: updated });
 });
 
 /* ── PATCH /api/v1/blogger-orders/:orderId/sign ── shartnoma imzolash ── */
