@@ -164,29 +164,20 @@ const AdminSidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
       }}>
         {/* Logo */}
         {collapsed && !isMobile ? (
-          <div style={{
-            width: 38, height: 38, borderRadius: 8, flexShrink: 0,
-            background: "#fff",
-            backgroundImage: "url('/adbloggerlogo.jpg')",
-            backgroundSize: "58px auto",
-            backgroundPosition: "center top",
-            backgroundRepeat: "no-repeat",
-          }} />
+          <img
+            src="/logoWithoutbg.png"
+            alt="AdBlogger"
+            style={{ width: 38, height: 38, objectFit: "contain", flexShrink: 0 }}
+          />
         ) : (
-          <div style={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0, gap: 10 }}>
-            {/* Icon only — crop top 63% of image using background */}
-            <div style={{
-              width: 38, height: 38, borderRadius: 8, flexShrink: 0,
-              background: "#fff",
-              backgroundImage: "url('/adbloggerlogo.jpg')",
-              backgroundSize: "58px auto",
-              backgroundPosition: "center -2px",
-              backgroundRepeat: "no-repeat",
-            }} />
-            {/* Brand text */}
-            <span style={{ fontSize: 19, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.3px", whiteSpace: "nowrap" }}>
-              <span style={{ color: "#ef4444" }}>Ad</span>
-              <span style={{ color: "#ffffff" }}>Blogger</span>
+          <div style={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0, gap: 8 }}>
+            <img
+              src="/logoWithoutbg.png"
+              alt="AdBlogger"
+              style={{ height: 40, width: "auto", objectFit: "contain", flexShrink: 0 }}
+            />
+            <span style={{ fontSize: 19, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.3px", whiteSpace: "nowrap", color: "#ffffff" }}>
+              AdBlogger
             </span>
           </div>
         )}
