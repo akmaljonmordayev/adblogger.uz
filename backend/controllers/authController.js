@@ -468,7 +468,7 @@ exports.completeOnboarding = catchAsync(async (req, res, next) => {
   }
 
   if (user.role === 'blogger') {
-    const { bio, platforms, socialLinks, categories, services, followers, followersRange, pricing, location, website } = req.body;
+    const { bio, platforms, socialLinks, categories, services, platformFollowers, followersRange, pricing, location, website } = req.body;
     const blogger = await Blogger.findOne({ user: user._id });
     if (!blogger) return next(new AppError('Blogger profili topilmadi.', 404));
 
@@ -477,7 +477,12 @@ exports.completeOnboarding = catchAsync(async (req, res, next) => {
     if (socialLinks)     blogger.socialLinks   = { ...blogger.socialLinks.toObject?.() || blogger.socialLinks, ...socialLinks };
     if (categories)      blogger.categories    = Array.isArray(categories) ? categories : [categories];
     if (services)        blogger.services      = Array.isArray(services) ? services : [services];
-    if (followers !== undefined) blogger.followers = Number(followers) || 0;
+    if (platformFollowers) {
+      blogger.platformFollowers = { ...blogger.platformFollowers?.toObject?.() || {}, ...platformFollowers };
+      const pf = blogger.platformFollowers;
+      blogger.followers = (Number(pf.instagram) || 0) + (Number(pf.youtube) || 0) +
+                          (Number(pf.telegram) || 0) + (Number(pf.tiktok) || 0);
+    }
     if (followersRange)  blogger.followersRange = followersRange;
     if (pricing)         blogger.pricing       = { ...blogger.pricing?.toObject?.() || blogger.pricing, ...pricing };
     if (location)        blogger.location      = location;

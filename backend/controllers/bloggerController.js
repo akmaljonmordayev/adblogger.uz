@@ -57,7 +57,7 @@ exports.getMyProfile = catchAsync(async (req, res, next) => {
 // PATCH /api/v1/bloggers/my-profile
 exports.updateMyProfile = catchAsync(async (req, res, next) => {
   const allowedFields = [
-    'handle', 'bio', 'platforms', 'socialLinks', 'followers', 'followersRange',
+    'handle', 'bio', 'platforms', 'socialLinks', 'platformFollowers', 'followers', 'followersRange',
     'engagementRate', 'categories', 'services', 'pricing', 'portfolio', 'location',
     'language', 'gender', 'website', 'audienceAge', 'audienceGender',
   ];
@@ -66,6 +66,13 @@ exports.updateMyProfile = catchAsync(async (req, res, next) => {
   allowedFields.forEach((field) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
+
+  // Auto-compute total followers from platformFollowers
+  if (updates.platformFollowers) {
+    const pf = updates.platformFollowers;
+    updates.followers = (Number(pf.instagram) || 0) + (Number(pf.youtube) || 0) +
+                        (Number(pf.telegram) || 0) + (Number(pf.tiktok) || 0);
+  }
 
   const blogger = await Blogger.findOneAndUpdate(
     { user: req.user._id },

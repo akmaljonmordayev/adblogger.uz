@@ -183,7 +183,8 @@ export default function Profile() {
   // Blogger form
   const [bForm, setBForm] = useState({
     handle: "", bio: "", location: "", website: "", portfolio: "",
-    followers: "", followersRange: "", engagementRate: "",
+    platformFollowers: { instagram:"", youtube:"", telegram:"", tiktok:"" },
+    followersRange: "", engagementRate: "",
     audienceAge: "", audienceGender: "",
     platforms: [],
     socialLinks: { instagram:"", youtube:"", telegram:"", tiktok:"" },
@@ -352,7 +353,12 @@ export default function Profile() {
         location:       d.location || "",
         website:        d.website || "",
         portfolio:      d.portfolio || "",
-        followers:      d.followers || "",
+        platformFollowers: {
+          instagram: d.platformFollowers?.instagram || "",
+          youtube:   d.platformFollowers?.youtube   || "",
+          telegram:  d.platformFollowers?.telegram  || "",
+          tiktok:    d.platformFollowers?.tiktok    || "",
+        },
         followersRange: d.followersRange || "",
         engagementRate: d.engagementRate || "",
         audienceAge:    d.audienceAge || "",
@@ -502,9 +508,14 @@ export default function Profile() {
     if (!bForm.handle) { toast.error("Handle kiritilishi shart"); return; }
     setSaving(true);
     try {
+      const pf = bForm.platformFollowers || {};
+      // Only send platformFollowers for active platforms
+      const platformFollowers = {};
+      (bForm.platforms || []).forEach(p => { platformFollowers[p] = Number(pf[p]) || 0; });
+
       const payload = {
         ...bForm,
-        followers:      Number(bForm.followers) || 0,
+        platformFollowers,
         engagementRate: Number(bForm.engagementRate) || 0,
         pricing: {
           post:     Number(bForm.pricing.post)     || 0,
@@ -1066,21 +1077,39 @@ export default function Profile() {
 
                 {/* ── Auditoriya ── */}
                 <SectionTitle sub="Kanalingizdagi obunachilar haqida">Auditoriya statistikasi</SectionTitle>
-                <div className="grid-3col" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>
+
+                {/* Per-platform followers */}
+                {bForm.platforms.length > 0 && (
                   <FieldWrap>
-                    <Label><LuUsers size={12} style={{ marginRight:4 }}/>Obunachilar soni</Label>
-                    <input className="field-inp" style={inp()} type="number" value={bForm.followers}
-                      onChange={e=>setBForm(p=>({...p,followers:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="85000"/>
+                    <Label><LuUsers size={12} style={{ marginRight:4 }}/>Platformalar bo'yicha obunachilar</Label>
+                    <div style={{ display:"flex", flexDirection:"column", gap:10, marginTop:4 }}>
+                      {bForm.platforms.map(p => {
+                        const pl = PLATFORMS.find(x => x.id === p);
+                        if (!pl) return null;
+                        return (
+                          <div key={p} style={{ display:"flex", alignItems:"center", gap:10 }}>
+                            <div style={{ display:"flex", alignItems:"center", gap:6, minWidth:115, fontWeight:600, fontSize:13, color:"#374151", flexShrink:0 }}>
+                              <pl.Icon size={15} style={{ color: pl.color }} />
+                              {pl.label}
+                            </div>
+                            <input
+                              className="field-inp" style={{ ...inp(), flex:1 }}
+                              type="number" min={0} placeholder="masalan: 50000"
+                              value={bForm.platformFollowers?.[p] || ""}
+                              onChange={e => setBForm(prev => ({
+                                ...prev,
+                                platformFollowers: { ...prev.platformFollowers, [p]: e.target.value }
+                              }))}
+                              onFocus={onFocus} onBlur={onBlur}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
                   </FieldWrap>
-                  <FieldWrap>
-                    <Label>Followers oraliq</Label>
-                    <select className="field-inp" style={{ ...inp(), appearance:"none", cursor:"pointer" }}
-                      value={bForm.followersRange} onChange={e=>setBForm(p=>({...p,followersRange:e.target.value}))}
-                      onFocus={onFocus} onBlur={onBlur}>
-                      <option value="">Tanlang</option>
-                      {FOLLOWERS_RANGES.map(r=><option key={r} value={r}>{r}</option>)}
-                    </select>
-                  </FieldWrap>
+                )}
+
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginTop: bForm.platforms.length > 0 ? 0 : 0 }}>
                   <FieldWrap>
                     <Label><LuTrendingUp size={12} style={{ marginRight:4 }}/>Engagement rate (%)</Label>
                     <input className="field-inp" style={inp()} type="number" step="0.1" value={bForm.engagementRate}

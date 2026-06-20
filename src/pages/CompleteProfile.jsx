@@ -93,8 +93,7 @@ function BloggerForm({ onSubmit, loading }) {
   const [socialLinks, setSocialLinks] = useState({});
   const [categories, setCategories] = useState([]);
   const [services, setServices]     = useState([]);
-  const [followers, setFollowers]   = useState("");
-  const [followersRange, setFollowersRange] = useState("");
+  const [platformFollowers, setPlatformFollowers] = useState({});
   const [pricing, setPricing]       = useState({});
 
   const toggleArr = (arr, setArr, val) =>
@@ -104,7 +103,9 @@ function BloggerForm({ onSubmit, loading }) {
     e.preventDefault();
     if (platforms.length === 0) return toast.error("Kamida 1 ta platforma tanlang");
     if (categories.length === 0) return toast.error("Kamida 1 ta kategoriya tanlang");
-    onSubmit({ bio, platforms, socialLinks, categories, services, followers: Number(followers), followersRange, pricing });
+    const pf = {};
+    platforms.forEach(p => { pf[p] = Number(platformFollowers[p]) || 0; });
+    onSubmit({ bio, platforms, socialLinks, categories, services, platformFollowers: pf, pricing });
   };
 
   return (
@@ -163,19 +164,29 @@ function BloggerForm({ onSubmit, loading }) {
         </div>
       </Field>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
-        <Field label="Followers soni">
-          <input type="number" value={followers} onChange={e => setFollowers(e.target.value)}
-            placeholder="masalan: 50000" style={inp} min={0}
-          />
+      {platforms.length > 0 && (
+        <Field label="Har bir platformadagi obunachilar soni">
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {platforms.map(p => {
+              const pl = PLATFORMS.find(x => x.key === p);
+              return (
+                <div key={p} style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:6, minWidth:110, fontWeight:600, fontSize:13, color:"#374151" }}>
+                    <pl.Icon size={16} style={{ color: pl.color, flexShrink:0 }} />
+                    {pl.label}
+                  </div>
+                  <input
+                    type="number" min={0} placeholder="masalan: 50000"
+                    value={platformFollowers[p] || ""}
+                    onChange={e => setPlatformFollowers(prev => ({ ...prev, [p]: e.target.value }))}
+                    style={{ ...inp, flex:1 }}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </Field>
-        <Field label="Followers oralig'i">
-          <select value={followersRange} onChange={e => setFollowersRange(e.target.value)} style={{ ...inp, background:"#fff" }}>
-            <option value="">Tanlang...</option>
-            {FOLLOWERS_RANGES.map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
-        </Field>
-      </div>
+      )}
 
       <Field label="Narxlar (so'm)" hint="Ixtiyoriy — keyin ham to'ldirishingiz mumkin">
         <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>

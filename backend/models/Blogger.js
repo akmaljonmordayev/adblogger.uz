@@ -15,7 +15,13 @@ const bloggerSchema = new mongoose.Schema(
       telegram:  { type: String, default: '' },
       tiktok:    { type: String, default: '' },
     },
-    followers: { type: Number, default: 0 },
+    platformFollowers: {
+      instagram: { type: Number, default: 0 },
+      youtube:   { type: Number, default: 0 },
+      telegram:  { type: Number, default: 0 },
+      tiktok:    { type: Number, default: 0 },
+    },
+    followers: { type: Number, default: 0 }, // sum of platformFollowers (auto-computed)
     followersRange: {
       type: String,
       enum: ['1K-10K', '10K-50K', '50K-100K', '100K-500K', '500K-1M', '1M+'],
