@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LuSend, LuLoader, LuInbox, LuSendHorizontal,
@@ -103,7 +103,7 @@ function Av({ user, size=40, online=false }) {
 }
 
 /* ─── ConvRow ─────────────────────────────────────────────────────── */
-function ConvRow({ app, myId, isActive, onClick }) {
+const ConvRow = memo(function ConvRow({ app, myId, isActive, onClick }) {
   const other  = otherUser(app, myId);
   const isOwner = String(app.adOwner?._id||app.adOwner) === myId;
   const unread  = isOwner ? (app.ownerUnread||0) : (app.applicantUnread||0);
@@ -112,18 +112,7 @@ function ConvRow({ app, myId, isActive, onClick }) {
   return (
     <div
       onClick={onClick}
-      style={{
-        display:"flex", alignItems:"center", gap:12,
-        padding:"14px 16px", cursor:"pointer",
-        background: isActive
-          ? "linear-gradient(90deg,#FFF5F5 0%,#FFF8F8 100%)"
-          : "transparent",
-        borderLeft:`3px solid ${isActive ? C.red : "transparent"}`,
-        transition:"all .15s",
-        position:"relative",
-      }}
-      onMouseEnter={e=>{ if(!isActive){ e.currentTarget.style.background="#FAFBFC"; e.currentTarget.style.borderLeftColor=C.redBd; } }}
-      onMouseLeave={e=>{ if(!isActive){ e.currentTarget.style.background="transparent"; e.currentTarget.style.borderLeftColor="transparent"; } }}
+      className={`ma-convrow${isActive?" active":""}`}
     >
       <Av user={other} size={48} online={false}/>
       <div style={{flex:1, minWidth:0}}>
@@ -176,10 +165,10 @@ function ConvRow({ app, myId, isActive, onClick }) {
       </div>
     </div>
   );
-}
+});
 
 /* ─── Bubble ──────────────────────────────────────────────────────── */
-function Bubble({ msg, myId, appId, onEdited, onDeleted, service=applicationService }) {
+const Bubble = memo(function Bubble({ msg, myId, appId, onEdited, onDeleted, service=applicationService }) {
   const isMine   = String(msg.sender?._id||msg.sender) === myId;
   const [hover,   setHover]   = useState(false);
   const [editing, setEditing] = useState(false);
@@ -312,7 +301,7 @@ function Bubble({ msg, myId, appId, onEdited, onDeleted, service=applicationServ
       </div>
     </div>
   );
-}
+});
 
 const ALL_SERVICES = ['Post','Story','Reel','Video','Live','Unboxing'];
 
@@ -394,12 +383,8 @@ function OrderContractCard({ app, myId, contractSigned, onSigned, onContractUpda
   const budget   = editBudget;
 
   return (
-    <div style={{
-      margin:"20px auto", maxWidth:480, width:"100%",
-      borderRadius:18, overflow:"hidden",
-      border: signed ? "1.5px solid #BBF7D0" : `1.5px solid ${C.border}`,
-      boxShadow:"0 6px 28px rgba(0,0,0,.08)",
-      background:"#fff",
+    <div className="contract-card" style={{
+      border: signed ? "1.5px solid #BBF7D0" : cancelled ? "1.5px solid #D1D5DB" : `1.5px solid ${C.border}`,
     }}>
       {/* Header */}
       <div style={{
@@ -965,13 +950,7 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
     <div style={{display:"flex",flexDirection:"column",height:"100%",background:"#FAFBFC",position:"relative"}}>
 
       {/* Header */}
-      <div style={{
-        padding:"12px 18px", background:C.surface,
-        borderBottom:`1px solid ${C.border}`,
-        display:"flex", alignItems:"center", gap:12,
-        flexShrink:0, zIndex:2,
-        boxShadow:"0 1px 0 rgba(0,0,0,.04)",
-      }}>
+      <div className="chat-header">
         <button type="button" onClick={onBack} style={{
           background:"none",border:"none",cursor:"pointer",
           color:C.sub, padding:5, borderRadius:8,
@@ -995,7 +974,7 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
           </div>
         </div>
 
-        <div style={{display:"flex",alignItems:"center",gap:6}}>
+        <div className="chat-header-actions">
           {/* Status badge */}
           <span style={{
             fontSize:11, fontWeight:700, color:st.color, background:st.bg,
@@ -1070,11 +1049,7 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
       </div>
 
       {/* Messages */}
-      <div ref={msgsRef} style={{
-        flex:1, overflowY:"auto", overflowX:"hidden",
-        padding:"20px 20px", display:"flex", flexDirection:"column", gap:6,
-        scrollbarWidth:"thin", scrollbarColor:`${C.dim} transparent`,
-      }}>
+      <div ref={msgsRef} className="chat-messages">
         {/* Show contract card for orders, application card for applications */}
         {app._isOrder ? (
           <OrderContractCard
@@ -1286,6 +1261,8 @@ export default function MyApplications() {
 
   useEffect(()=>{ if(!token) navigate("/kirish"); },[token,navigate]);
 
+  const myId = String(user?._id||"");
+
   const loadReceived = useCallback(async()=>{ try{ const r=await applicationService.received(); setReceived(r.data||[]); }catch{} },[]);
   const loadSent     = useCallback(async()=>{ try{ const r=await applicationService.sent();     setSent(r.data||[]);     }catch{} },[]);
   const loadOrders   = useCallback(async()=>{ try{ const r=await orderService.myOrders();       setOrders(r.data||[]);   }catch{} },[]);
@@ -1293,14 +1270,39 @@ export default function MyApplications() {
   useEffect(()=>{
     if(!user?._id) return;
     const s = connectSocket(user._id);
-    const onLastMsg  = ({applicationId,message})=>{ const upd=arr=>arr.map(a=>a._id===applicationId?{...a,lastMessage:message?.text||'',lastMessageAt:message?.createdAt}:a); setReceived(p=>upd(p)); setSent(p=>upd(p)); };
-    const onOrderMsg = ({orderId,message})=>setOrders(p=>p.map(a=>a._id===orderId?{...a,lastMessage:message?.text||'',lastMessageAt:message?.createdAt}:a));
+    const onLastMsg = ({applicationId,message})=>{
+      const upd=arr=>arr.map(a=>{
+        if(a._id!==applicationId) return a;
+        const isOwner=String(a.adOwner?._id||a.adOwner)===myId;
+        const isViewing=selected?._id===applicationId;
+        return {
+          ...a,
+          lastMessage:message?.text||'',
+          lastMessageAt:message?.createdAt,
+          ownerUnread:    isOwner  && !isViewing ? (a.ownerUnread||0)+1    : a.ownerUnread,
+          applicantUnread:!isOwner && !isViewing ? (a.applicantUnread||0)+1: a.applicantUnread,
+        };
+      });
+      setReceived(p=>upd(p)); setSent(p=>upd(p));
+    };
+    const onOrderMsg = ({orderId,message})=>setOrders(p=>p.map(a=>{
+      if(a._id!==orderId) return a;
+      const isBlogger=String(a.blogger?._id||a.blogger)===myId;
+      const isViewing=selected?._id===orderId;
+      return {
+        ...a,
+        lastMessage:message?.text||'',
+        lastMessageAt:message?.createdAt,
+        bloggerUnread:  isBlogger  && !isViewing ? (a.bloggerUnread||0)+1  : a.bloggerUnread,
+        businessUnread: !isBlogger && !isViewing ? (a.businessUnread||0)+1 : a.businessUnread,
+      };
+    }));
     s.on('new_application',loadReceived);
     s.on('new_chat_message',onLastMsg);
     s.on('new_order',loadOrders);
     s.on('new_order_message',onOrderMsg);
     return ()=>{ s.off('new_application',loadReceived); s.off('new_chat_message',onLastMsg); s.off('new_order',loadOrders); s.off('new_order_message',onOrderMsg); };
-  },[user?._id,loadReceived,loadOrders]);
+  },[user?._id,loadReceived,loadOrders,selected,myId]);
 
   useEffect(()=>{
     if(!token) return;
@@ -1372,7 +1374,6 @@ export default function MyApplications() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[sent,received,initialAppId]);
 
-  const myId = String(user?._id||"");
   const receivedUnread = received.reduce((s,a)=>s+(a.ownerUnread||0),0);
   const sentUnread     = sent.reduce((s,a)=>s+(a.applicantUnread||0),0);
   const ordersUnread   = orders.reduce((s,o)=>{
@@ -1382,15 +1383,16 @@ export default function MyApplications() {
   const totalUnread = receivedUnread+sentUnread+ordersUnread;
 
   const rawList = tab==="received" ? received : tab==="sent" ? sent : orders;
-  const list = search.trim()
-    ? rawList.filter(app=>{
-        const other = tab==="orders"
-          ? (String((app.blogger?._id||app.blogger))===myId ? app.business : app.blogger)
-          : otherUser(app,myId);
-        const name=`${other?.firstName||""} ${other?.lastName||""}`.toLowerCase();
-        return name.includes(search.toLowerCase());
-      })
-    : rawList;
+  const list = useMemo(()=>{
+    if(!search.trim()) return rawList;
+    return rawList.filter(app=>{
+      const other = tab==="orders"
+        ? (String((app.blogger?._id||app.blogger))===myId ? app.business : app.blogger)
+        : otherUser(app,myId);
+      const name=`${other?.firstName||""} ${other?.lastName||""}`.toLowerCase();
+      return name.includes(search.toLowerCase());
+    });
+  },[rawList, search, tab, myId]);
 
   if(!token||!user) return null;
 
@@ -1401,31 +1403,54 @@ export default function MyApplications() {
   ];
 
   return (
-    <div style={{fontFamily:"'Inter',sans-serif",height:"calc(100vh - 72px)",display:"flex",flexDirection:"column"}}>
+    <div className="ma-root">
       <style>{`
-        @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-        ::-webkit-scrollbar{width:4px}
-        ::-webkit-scrollbar-track{background:transparent}
-        ::-webkit-scrollbar-thumb{background:#DDD;border-radius:99px}
-      `}</style>
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#DDD;border-radius:99px}
 
-      <div style={{
-        flex:1, display:"flex",
-        flexDirection:isMobile?"column":"row",
-        background:C.surface,
-        border:`1px solid ${C.border}`,
-        borderRadius:20, overflow:"hidden",
-        boxShadow:"0 4px 32px rgba(0,0,0,.07)",
-      }}>
+  .ma-root { height: calc(100vh - 72px); display:flex; flex-direction:column; font-family:'Inter',sans-serif; }
+  .ma-panel { flex:1; display:flex; flex-direction:row; background:#fff; border:1px solid #EDEEF0; border-radius:20px; overflow:hidden; box-shadow:0 4px 32px rgba(0,0,0,.07); }
+  .ma-sidebar { width:320px; border-right:1px solid #EDEEF0; display:flex; flex-direction:column; flex-shrink:0; background:#fff; }
+  .ma-chat { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .ma-tabs button { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 4px; border:none; cursor:pointer; border-radius:12px; transition:all .15s; }
+  .ma-convrow { display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer; transition:all .15s; border-left:3px solid transparent; position:relative; }
+  .ma-convrow:hover { background:#FAFBFC; border-left-color:#FFCDD2; }
+  .ma-convrow.active { background:linear-gradient(90deg,#FFF5F5,#FFF8F8); border-left-color:#E53935; }
+  .contract-card { margin:16px auto; width:calc(100% - 32px); max-width:480px; border-radius:18px; overflow:hidden; box-shadow:0 6px 28px rgba(0,0,0,.08); background:#fff; }
+  .chat-header { padding:12px 18px; background:#fff; border-bottom:1px solid #EDEEF0; display:flex; align-items:center; gap:12px; flex-shrink:0; z-index:2; box-shadow:0 1px 0 rgba(0,0,0,.04); }
+  .chat-header-actions { display:flex; align-items:center; gap:6px; flex-wrap:nowrap; }
+  .chat-status-btn { padding:5px 10px; font-size:11px; font-weight:700; border-radius:9px; cursor:pointer; display:flex; align-items:center; gap:3px; white-space:nowrap; }
+  .chat-messages { flex:1; overflow-y:auto; overflow-x:hidden; padding:16px 16px; display:flex; flex-direction:column; gap:6px; scrollbar-width:thin; scrollbar-color:#DDD transparent; }
+  .chat-input-area { padding:10px 14px; border-top:1px solid #EDEEF0; display:flex; gap:8px; align-items:flex-end; flex-shrink:0; background:#fff; z-index:2; }
+  .unread-dot { min-width:19px; height:19px; border-radius:99px; background:#E53935; color:#fff; font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; padding:0 5px; box-shadow:0 2px 6px rgba(229,57,53,.35); flex-shrink:0; }
+
+  @media(max-width:768px){
+    .ma-root { height:calc(100vh - 60px); }
+    .ma-panel { border-radius:0; border:none; box-shadow:none; border-radius:16px; }
+    .ma-sidebar { width:100%; border-right:none; }
+    .ma-sidebar.hidden { display:none; }
+    .ma-chat.hidden { display:none; }
+    .chat-header { padding:10px 12px; }
+    .chat-header-actions .chat-status-btn span { display:none; }
+    .chat-messages { padding:12px 10px; }
+    .chat-input-area { padding:8px 10px; }
+    .contract-card { margin:12px auto; width:calc(100% - 16px); }
+  }
+  @media(max-width:480px){
+    .ma-root { height:calc(100svh - 60px); }
+    .ma-panel { border-radius:12px; }
+    .chat-header-actions { gap:4px; }
+    .chat-status-btn { padding:4px 8px; }
+    .chat-messages { padding:10px 8px; }
+  }
+`}</style>
+
+      <div className="ma-panel">
 
         {/* ── Sidebar ── */}
-        <div style={{
-          width:isMobile?"100%":320,
-          borderRight:isMobile?"none":`1px solid ${C.border}`,
-          display:isMobile&&showChat?"none":"flex",
-          flexDirection:"column", flexShrink:0,
-          background:C.surface,
-        }}>
+        <div className={`ma-sidebar${(isMobile&&showChat)?" hidden":""}`} style={{display:"flex",flexDirection:"column"}}>
 
           {/* Sidebar header */}
           <div style={{padding:"18px 16px 12px",borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
@@ -1598,10 +1623,7 @@ export default function MyApplications() {
         </div>
 
         {/* ── Chat area ── */}
-        <div style={{
-          flex:1,display:isMobile&&!showChat?"none":"flex",
-          flexDirection:"column",minWidth:0,
-        }}>
+        <div className={`ma-chat${(isMobile&&!showChat)?" hidden":""}`}>
           {selected ? (
             <ChatPanel
               key={selected._id}
