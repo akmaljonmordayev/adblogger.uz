@@ -55,6 +55,7 @@ function mapBlogger(b) {
     rawPrice:      b.pricing?.post || 0,
     gradient:      CATEGORY_GRADIENTS[cat] ?? CATEGORY_GRADIENTS.Other,
     isVerified:    b.isVerified || false,
+    rating:        b.rating || 0,
   };
 }
 
