@@ -49,9 +49,9 @@ const BloggerCard = ({
   const badge = platformBadge[platform] ?? { bg: "#64748b", text: "#fff" };
 
   return (
-    <Link to={_id ? `/blogerlar/${_id}` : "#"} style={{ textDecoration: "none", display: "block", width: 300 }}>
+    <Link to={_id ? `/blogerlar/${_id}` : "#"} style={{ textDecoration: "none", display: "block", width: "100%" }}>
       <div style={{
-        width: 300,
+        width: "100%",
         background: "#fff",
         borderRadius: 20,
         border: "1px solid #f1f5f9",

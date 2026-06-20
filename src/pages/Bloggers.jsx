@@ -222,6 +222,10 @@ export default function Blogger() {
         }
         @media (max-width: 560px) {
           .bl-cards-grid { grid-template-columns: 1fr !important; }
+          .bl-topbar { flex-wrap: wrap; gap: 10px !important; }
+          .bl-topbar-right { width: 100%; justify-content: space-between !important; }
+          .bl-sort-select { width: 100% !important; max-width: none !important; }
+          .bl-mobile-btn { flex: 1; justify-content: center !important; }
         }
       `}</style>
 
@@ -298,37 +302,39 @@ export default function Blogger() {
           )}
 
           {/* Top bar */}
-          <div style={{
+          <div className="bl-topbar" style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            marginBottom: 16, paddingBottom: 14,
+            marginBottom: 16, paddingBottom: 14, gap: 8,
             borderBottom: "1px solid #f1f5f9",
             position: "sticky", top: 0, background: "#f8fafc", zIndex: 10,
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
               <LuUsers size={15} style={{ color: "#dc2626" }} />
               <span style={{ fontSize: 15, fontWeight: 800, color: "#0f172a" }}>Blogerlar</span>
               <span style={{
                 fontSize: 11, fontWeight: 700,
                 background: "#fef2f2", color: "#dc2626",
                 padding: "2px 8px", borderRadius: 20,
+                whiteSpace: "nowrap", flexShrink: 0,
               }}>
                 {loading ? "..." : `${bloggers.length} ta`}
               </span>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div className="bl-topbar-right" style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {/* Sort dropdown */}
-              <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <div style={{ position: "relative", display: "flex", alignItems: "center", flex: 1 }}>
                 <LuArrowUpDown size={13} style={{ position: "absolute", left: 10, color: "#64748b", pointerEvents: "none" }} />
                 <select
                   value={sortBy}
                   onChange={e => handleSortChange(e.target.value)}
+                  className="bl-sort-select"
                   style={{
                     appearance: "none", WebkitAppearance: "none",
                     background: "#fff", border: "1.5px solid #e2e8f0",
                     borderRadius: 10, padding: "7px 28px 7px 28px",
                     fontSize: 12.5, fontWeight: 600, color: "#374151",
-                    cursor: "pointer", outline: "none",
+                    cursor: "pointer", outline: "none", width: "100%",
                   }}
                 >
                   <option value="default">Saralash</option>
