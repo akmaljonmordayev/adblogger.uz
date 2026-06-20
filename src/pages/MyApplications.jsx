@@ -39,6 +39,7 @@ const ST = {
   rejected:   { label:"Rad etildi",   color:"#DC2626", bg:"#FEF2F2" },
   in_progress:{ label:"Jarayonda",    color:"#D97706", bg:"#FFFBEB" },
   completed:  { label:"Tugallandi",   color:"#15803D", bg:"#F0FDF4" },
+  cancelled:  { label:"Bekor qilindi",color:"#6B7280", bg:"#F3F4F6" },
 };
 
 const STICKER_ROWS = [
@@ -316,13 +317,28 @@ function Bubble({ msg, myId, appId, onEdited, onDeleted, service=applicationServ
 const ALL_SERVICES = ['Post','Story','Reel','Video','Live','Unboxing'];
 
 /* ─── OrderContractCard ───────────────────────────────────────────── */
-function OrderContractCard({ app, myId, contractSigned, onSigned, onContractUpdate }) {
+function OrderContractCard({ app, myId, contractSigned, onSigned, onContractUpdate, onCancelled, isCancelled }) {
   const isBlogger = String(app.adOwner?._id||app.adOwner) === myId;
   const signed    = contractSigned || app.contractSigned;
+  const cancelled = isCancelled || app.status === 'cancelled';
 
-  const [signing,  setSigning]  = useState(false);
-  const [editing,  setEditing]  = useState(false);
-  const [saving,   setSaving]   = useState(false);
+  const [signing,    setSigning]    = useState(false);
+  const [editing,    setEditing]    = useState(false);
+  const [saving,     setSaving]     = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+
+  const handleCancel = async () => {
+    setCancelling(true);
+    try {
+      await orderService.cancelContract(app._id);
+      onCancelled?.();
+      toast.success("Shartnoma bekor qilindi");
+      setConfirmCancel(false);
+    } catch(e) {
+      toast.error(e?.response?.data?.message || "Bekor qilishda xatolik");
+    } finally { setCancelling(false); }
+  };
 
   // local editable state
   const [editProject,  setEditProject]  = useState(app._projectName || app.projectName || "");
@@ -390,6 +406,8 @@ function OrderContractCard({ app, myId, contractSigned, onSigned, onContractUpda
         padding:"14px 18px",
         background: signed
           ? "linear-gradient(135deg,#16A34A,#15803D)"
+          : cancelled
+          ? "linear-gradient(135deg,#6B7280,#4B5563)"
           : `linear-gradient(135deg,${C.red},${C.redDark})`,
         display:"flex", alignItems:"center", justifyContent:"space-between",
       }}>
@@ -405,8 +423,8 @@ function OrderContractCard({ app, myId, contractSigned, onSigned, onContractUpda
           </div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:6}}>
-          {/* Edit button — only for business (sender), only before signing */}
-          {!isBlogger && !signed && !editing && (
+          {/* Edit button — only for business (sender), only before signing/cancelling */}
+          {!isBlogger && !signed && !cancelled && !editing && (
             <button
               onClick={()=>setEditing(true)}
               style={{
@@ -424,12 +442,12 @@ function OrderContractCard({ app, myId, contractSigned, onSigned, onContractUpda
           )}
           <span style={{
             fontSize:11, fontWeight:700, borderRadius:99, padding:"4px 10px",
-            color: signed ? "#15803D" : "#D97706",
-            background: signed ? "#F0FDF4" : "#FFFBEB",
-            border: `1px solid ${signed ? "#BBF7D0" : "#FDE68A"}`,
+            color:      signed ? "#15803D" : cancelled ? "#4B5563" : "#D97706",
+            background: signed ? "#F0FDF4" : cancelled ? "#F3F4F6" : "#FFFBEB",
+            border:     `1px solid ${signed ? "#BBF7D0" : cancelled ? "#D1D5DB" : "#FDE68A"}`,
             whiteSpace:"nowrap",
           }}>
-            {signed ? "✓ Imzolangan" : "Imzo kutilmoqda"}
+            {signed ? "✓ Imzolangan" : cancelled ? "✗ Bekor qilindi" : "Imzo kutilmoqda"}
           </span>
         </div>
       </div>
@@ -568,8 +586,8 @@ function OrderContractCard({ app, myId, contractSigned, onSigned, onContractUpda
               </div>
             )}
 
-            {/* Sign button — only for blogger when not signed */}
-            {isBlogger && !signed && (
+            {/* Sign button — only for blogger when not signed/cancelled */}
+            {isBlogger && !signed && !cancelled && (
               <button onClick={handleSign} disabled={signing} style={{
                 width:"100%",padding:"13px",borderRadius:12,border:"none",
                 background:`linear-gradient(135deg,#16A34A,#15803D)`,
@@ -591,12 +609,62 @@ function OrderContractCard({ app, myId, contractSigned, onSigned, onContractUpda
               </div>
             )}
 
+            {/* Cancelled */}
+            {cancelled && (
+              <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:12,background:"#F3F4F6",border:"1px solid #D1D5DB"}}>
+                <LuCircleX size={16} style={{color:"#6B7280",flexShrink:0}}/>
+                <span style={{fontSize:13,fontWeight:600,color:"#4B5563"}}>Shartnoma bekor qilindi.</span>
+              </div>
+            )}
+
             {/* Business waiting */}
-            {!isBlogger && !signed && (
+            {!isBlogger && !signed && !cancelled && (
               <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:12,background:"#FFFBEB",border:"1px solid #FDE68A"}}>
                 <LuCalendar size={15} style={{color:"#D97706",flexShrink:0}}/>
                 <span style={{fontSize:13,fontWeight:600,color:"#92400E"}}>Blogger shartnomani ko'rib chiqmoqda...</span>
               </div>
+            )}
+
+            {/* Cancel button — both parties, before signing only */}
+            {!signed && !cancelled && (
+              confirmCancel ? (
+                <div style={{display:"flex",gap:8,padding:"12px 14px",borderRadius:12,background:"#FEF2F2",border:`1px solid ${C.redBd}`}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700,color:C.red,marginBottom:4}}>Bekor qilishni tasdiqlang</div>
+                    <div style={{fontSize:12,color:C.sub}}>Shartnoma ikki tomonga ham bekor qilinadi.</div>
+                  </div>
+                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    <button onClick={handleCancel} disabled={cancelling} style={{
+                      padding:"7px 14px",borderRadius:9,border:"none",
+                      background:C.red,color:"#fff",fontWeight:700,fontSize:12,
+                      cursor:cancelling?"not-allowed":"pointer",
+                      display:"flex",alignItems:"center",gap:4,
+                      opacity:cancelling?0.7:1,
+                    }}>
+                      {cancelling ? <LuLoader size={11} style={{animation:"spin .8s linear infinite"}}/> : null}
+                      Ha
+                    </button>
+                    <button onClick={()=>setConfirmCancel(false)} style={{
+                      padding:"7px 14px",borderRadius:9,
+                      border:`1.5px solid ${C.border}`,background:"#fff",
+                      color:C.sub,fontWeight:600,fontSize:12,cursor:"pointer",
+                    }}>Yo'q</button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={()=>setConfirmCancel(true)} style={{
+                  width:"100%",padding:"10px",borderRadius:11,
+                  border:`1.5px solid ${C.redBd}`,background:C.redLight,
+                  color:C.red,fontWeight:700,fontSize:13,cursor:"pointer",
+                  display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+                  transition:"all .15s",
+                }}
+                  onMouseEnter={e=>{e.currentTarget.style.background="#FFE4E4";}}
+                  onMouseLeave={e=>{e.currentTarget.style.background=C.redLight;}}
+                >
+                  <LuX size={14}/> Shartnomani bekor qilish
+                </button>
+              )
             )}
           </>
         )}
@@ -782,8 +850,9 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
   const [iBlockedThem,  setIBlockedThem]  = useState(false);
   const [theyBlockedMe, setTheyBlockedMe] = useState(false);
   const [blockLoading,  setBlockLoading]  = useState(false);
-  const [contractSigned, setContractSigned] = useState(app.contractSigned || false);
-  const [contractData, setContractData] = useState(app);
+  const [contractSigned,   setContractSigned]   = useState(app.contractSigned || false);
+  const [contractCancelled,setContractCancelled] = useState(app.status === 'cancelled');
+  const [contractData,     setContractData]      = useState(app);
   const msgsRef  = useRef(null);
   const inputRef = useRef(null);
   const isOwner  = String(app.adOwner?._id||app.adOwner) === myId;
@@ -840,12 +909,14 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
     const onUnblocked    = p=>{ const cid=p.applicationId||p.orderId; if(String(cid)===String(app._id)) setTheyBlockedMe(false); };
     const onContractSign   = p=>{ if(String(p.orderId)===String(app._id)){ setContractSigned(true); onStatusChange(app._id,'accepted'); } };
     const onContractUpdate = p=>{ if(String(p.orderId)===String(app._id)) setContractData(prev=>({...prev,...p.updates})); };
+    const onContractCancel = p=>{ if(String(p.orderId)===String(app._id)){ setContractCancelled(true); onStatusChange(app._id,'cancelled'); } };
 
     s.on(newMsgEvt,onNewMsg); s.on(editedEvt,onEdited); s.on(deletedEvt,onDeleted);
     s.on(statusEvt,onStatus); s.on(readEvt,onRead);
     s.on('user_blocked',onBlocked); s.on('user_unblocked',onUnblocked);
     s.on('contract_signed',onContractSign);
     s.on('contract_updated',onContractUpdate);
+    s.on('contract_cancelled',onContractCancel);
     return ()=>{
       s.emit(leaveEvt,app._id);
       s.off(newMsgEvt,onNewMsg); s.off(editedEvt,onEdited); s.off(deletedEvt,onDeleted);
@@ -853,6 +924,7 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
       s.off('user_blocked',onBlocked); s.off('user_unblocked',onUnblocked);
       s.off('contract_signed',onContractSign);
       s.off('contract_updated',onContractUpdate);
+      s.off('contract_cancelled',onContractCancel);
     };
   },[app._id,onStatusChange,scrollDown,isOrder,newMsgEvt,editedEvt,deletedEvt,statusEvt,readEvt,joinEvt,leaveEvt]);
 
@@ -1009,7 +1081,9 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
             app={contractData}
             myId={myId}
             contractSigned={contractSigned}
+            isCancelled={contractCancelled}
             onSigned={()=>{ setContractSigned(true); onStatusChange(app._id,'accepted'); }}
+            onCancelled={()=>{ setContractCancelled(true); onStatusChange(app._id,'cancelled'); }}
             onContractUpdate={updates=>setContractData(prev=>({...prev,...updates}))}
           />
         ) : (

@@ -12,7 +12,7 @@ const bloggerOrderSchema = new mongoose.Schema(
     budget:         { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ['pending', 'read', 'accepted', 'rejected', 'in_progress', 'completed'],
+      enum: ['pending', 'read', 'accepted', 'rejected', 'cancelled', 'in_progress', 'completed'],
       default: 'pending',
     },
     lastMessage:    { type: String, default: '' },

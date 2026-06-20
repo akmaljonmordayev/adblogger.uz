@@ -398,6 +398,45 @@ exports.signContract = catchAsync(async (req, res, next) => {
   res.status(200).json({ success: true });
 });
 
+/* ── PATCH /api/v1/blogger-orders/:orderId/cancel ── shartnomani bekor qilish ── */
+exports.cancelContract = catchAsync(async (req, res, next) => {
+  const order = await BloggerOrder.findById(req.params.orderId);
+  if (!order) return next(new AppError('Buyurtma topilmadi', 404));
+  if (!isParticipant(order, req.user._id)) return next(new AppError("Ruxsat yo'q", 403));
+
+  if (order.contractSigned)
+    return next(new AppError('Imzolangan shartnomani bekor qilib bo\'lmaydi', 400));
+
+  if (order.status === 'cancelled')
+    return next(new AppError('Shartnoma allaqachon bekor qilingan', 400));
+
+  await BloggerOrder.findByIdAndUpdate(order._id, { status: 'cancelled' });
+
+  const myId      = String(req.user._id);
+  const isBlogger = myId === String(order.blogger);
+  const otherId   = isBlogger ? order.business : order.blogger;
+
+  const cancellerName = req.user.firstName + ' ' + req.user.lastName;
+
+  const notif = await Notification.create({
+    user:  otherId,
+    type:  'application_status',
+    title: 'Shartnoma bekor qilindi',
+    body:  `${cancellerName} hamkorlik shartnomani bekor qildi.`,
+    link:  '/mening-zayavkalarim',
+  });
+
+  const io = req.app.get('io');
+  io.to(`user_${otherId}`).emit('contract_cancelled', { orderId: String(order._id) });
+  io.to(`order_${order._id}`).emit('order_status_changed', {
+    orderId: String(order._id),
+    status:  'cancelled',
+  });
+  io.to(`user_${otherId}`).emit('new_notification', notif);
+
+  res.status(200).json({ success: true });
+});
+
 /* ── DELETE /api/v1/blogger-orders/:orderId/block ── blokdan chiqarish ── */
 exports.unblockUser = catchAsync(async (req, res, next) => {
   const order = await BloggerOrder.findById(req.params.orderId);
