@@ -313,6 +313,170 @@ function Bubble({ msg, myId, appId, onEdited, onDeleted, service=applicationServ
   );
 }
 
+/* ─── OrderContractCard ───────────────────────────────────────────── */
+function OrderContractCard({ app, myId, contractSigned, onSigned }) {
+  const isBlogger = String(app.adOwner?._id||app.adOwner) === myId;
+  const [signing, setSigning] = useState(false);
+
+  const serviceLabels = { Post:"Post", Story:"Story", Reel:"Reel", Video:"Video", Live:"Live", Unboxing:"Unboxing" };
+  const services = app.services || [];
+  const budget   = app.budget || 0;
+  const project  = app._projectName || app.projectName || "";
+  const brief    = app.brief || "";
+
+  const handleSign = async () => {
+    setSigning(true);
+    try {
+      await orderService.signContract(app._id);
+      onSigned();
+      toast.success("Shartnoma imzolandi! 🤝 Hamkorlik boshlandi");
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Imzolashda xatolik");
+    } finally { setSigning(false); }
+  };
+
+  const signed = contractSigned || app.contractSigned;
+
+  return (
+    <div style={{
+      margin:"20px auto", maxWidth:460, width:"100%",
+      borderRadius:18, overflow:"hidden",
+      border: signed ? "1.5px solid #BBF7D0" : `1.5px solid ${C.border}`,
+      boxShadow:"0 6px 28px rgba(0,0,0,.08)",
+      background:"#fff",
+    }}>
+      {/* Header */}
+      <div style={{
+        padding:"14px 18px",
+        background: signed
+          ? "linear-gradient(135deg,#16A34A,#15803D)"
+          : `linear-gradient(135deg,${C.red},${C.redDark})`,
+        display:"flex", alignItems:"center", justifyContent:"space-between",
+      }}>
+        <div style={{display:"flex", alignItems:"center", gap:8}}>
+          <div style={{width:34,height:34,borderRadius:9,background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <LuHandshake size={17} style={{color:"#fff"}}/>
+          </div>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,color:"#fff"}}>Hamkorlik Shartnomasi</div>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.75)",marginTop:1}}>
+              {new Date(app.createdAt).toLocaleDateString("uz-UZ",{day:"2-digit",month:"long",year:"numeric"})}
+            </div>
+          </div>
+        </div>
+        <span style={{
+          fontSize:11, fontWeight:700, borderRadius:99, padding:"4px 10px",
+          color: signed ? "#15803D" : "#D97706",
+          background: signed ? "#F0FDF4" : "#FFFBEB",
+          border: `1px solid ${signed ? "#BBF7D0" : "#FDE68A"}`,
+        }}>
+          {signed ? "✓ Imzolangan" : "Imzo kutilmoqda"}
+        </span>
+      </div>
+
+      {/* Body */}
+      <div style={{padding:"16px 18px", display:"flex", flexDirection:"column", gap:12}}>
+        {/* Project name */}
+        {project && (
+          <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+            <div style={{width:32,height:32,borderRadius:8,background:"#F0F4FF",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <LuBriefcase size={14} style={{color:"#3B82F6"}}/>
+            </div>
+            <div>
+              <div style={{fontSize:11,color:C.dim,fontWeight:600,marginBottom:1}}>Loyiha / Brend</div>
+              <div style={{fontSize:13.5,fontWeight:700,color:C.text}}>{project}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Services */}
+        {services.length > 0 && (
+          <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+            <div style={{width:32,height:32,borderRadius:8,background:"#FFF5F5",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <LuPackage size={14} style={{color:C.red}}/>
+            </div>
+            <div>
+              <div style={{fontSize:11,color:C.dim,fontWeight:600,marginBottom:5}}>Xizmat turlari</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                {services.map(s=>(
+                  <span key={s} style={{
+                    fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:99,
+                    background:C.redLight, color:C.red,
+                    border:`1px solid ${C.redBd}`,
+                  }}>{serviceLabels[s]||s}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Budget */}
+        {budget > 0 && (
+          <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+            <div style={{width:32,height:32,borderRadius:8,background:"#F0FDF4",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <LuDollarSign size={14} style={{color:"#16A34A"}}/>
+            </div>
+            <div>
+              <div style={{fontSize:11,color:C.dim,fontWeight:600,marginBottom:1}}>Taxminiy narx</div>
+              <div style={{fontSize:14,fontWeight:800,color:"#16A34A"}}>{budget.toLocaleString()} so'm</div>
+            </div>
+          </div>
+        )}
+
+        {/* Brief */}
+        {brief && (
+          <div style={{padding:"12px 14px",borderRadius:12,background:"#F7F8FA",border:`1px solid ${C.border}`}}>
+            <div style={{fontSize:11,color:C.dim,fontWeight:600,marginBottom:6}}>Brief / Maqsad</div>
+            <div style={{fontSize:13.5,color:C.text,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{brief}</div>
+          </div>
+        )}
+
+        {/* Sign button — only for blogger when not signed */}
+        {isBlogger && !signed && (
+          <button
+            onClick={handleSign}
+            disabled={signing}
+            style={{
+              width:"100%", padding:"13px", borderRadius:12, border:"none",
+              background:`linear-gradient(135deg,#16A34A,#15803D)`,
+              color:"#fff", fontWeight:800, fontSize:14, cursor:signing?"not-allowed":"pointer",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+              boxShadow:"0 4px 16px rgba(22,163,74,.35)",
+              opacity: signing ? 0.7 : 1, transition:"opacity .2s",
+            }}
+          >
+            {signing
+              ? <LuLoader size={15} style={{animation:"spin .8s linear infinite"}}/>
+              : <LuHandshake size={16}/>
+            }
+            {signing ? "Imzolanmoqda..." : "Shartnomani Imzolash"}
+          </button>
+        )}
+
+        {/* Signed status */}
+        {signed && (
+          <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:12,background:"#F0FDF4",border:"1px solid #BBF7D0"}}>
+            <LuCircleCheck size={16} style={{color:"#16A34A",flexShrink:0}}/>
+            <span style={{fontSize:13,fontWeight:600,color:"#15803D"}}>
+              Shartnoma imzolandi — hamkorlik boshlandi! 🎉
+            </span>
+          </div>
+        )}
+
+        {/* Business user waiting text */}
+        {!isBlogger && !signed && (
+          <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:12,background:"#FFFBEB",border:"1px solid #FDE68A"}}>
+            <LuCalendar size={15} style={{color:"#D97706",flexShrink:0}}/>
+            <span style={{fontSize:13,fontWeight:600,color:"#92400E"}}>
+              Blogger shartnomani ko'rib chiqmoqda...
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── ChatPanel ───────────────────────────────────────────────────── */
 /* ─── ApplicationCard ─────────────────────────────────────────────── */
 function ApplicationCard({ app, myId, onStatusChange, service }) {
@@ -490,6 +654,7 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
   const [iBlockedThem,  setIBlockedThem]  = useState(false);
   const [theyBlockedMe, setTheyBlockedMe] = useState(false);
   const [blockLoading,  setBlockLoading]  = useState(false);
+  const [contractSigned, setContractSigned] = useState(app.contractSigned || false);
   const msgsRef  = useRef(null);
   const inputRef = useRef(null);
   const isOwner  = String(app.adOwner?._id||app.adOwner) === myId;
@@ -508,9 +673,10 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
       setMessages(res.data||[]);
       setIBlockedThem(res.iBlockedThem||false);
       setTheyBlockedMe(res.theyBlockedMe||false);
+      if (isOrder && res.order?.contractSigned) setContractSigned(true);
     } catch { toast.error("Xabarlarni yuklashda xatolik"); }
     finally { setLoading(false); }
-  },[app._id, service]);
+  },[app._id, service, isOrder]);
 
   const handleBlock = useCallback(async () => {
     setBlockLoading(true);
@@ -541,17 +707,20 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
     const onDeleted  = p=>{ if(String(p[idKey])!==String(app._id)) return; setMessages(prev=>prev.map(m=>m._id===p.messageId?{...m,deleted:true}:m)); };
     const onStatus   = p=>{ const cid=p[idKey]||p.applicationId||p.orderId; if(String(cid)===String(app._id)) onStatusChange(app._id,p.status); };
     const onRead     = p=>{ const cid=p[idKey]||p.applicationId||p.orderId; if(String(cid)!==String(app._id)) return; setMessages(prev=>prev.map(m=>String(m.sender?._id||m.sender)===myId?{...m,isRead:true}:m)); };
-    const onBlocked  = p=>{ const cid=p.applicationId||p.orderId; if(String(cid)===String(app._id)) setTheyBlockedMe(true); };
-    const onUnblocked= p=>{ const cid=p.applicationId||p.orderId; if(String(cid)===String(app._id)) setTheyBlockedMe(false); };
+    const onBlocked      = p=>{ const cid=p.applicationId||p.orderId; if(String(cid)===String(app._id)) setTheyBlockedMe(true); };
+    const onUnblocked    = p=>{ const cid=p.applicationId||p.orderId; if(String(cid)===String(app._id)) setTheyBlockedMe(false); };
+    const onContractSign = p=>{ if(String(p.orderId)===String(app._id)){ setContractSigned(true); onStatusChange(app._id,'accepted'); } };
 
     s.on(newMsgEvt,onNewMsg); s.on(editedEvt,onEdited); s.on(deletedEvt,onDeleted);
     s.on(statusEvt,onStatus); s.on(readEvt,onRead);
     s.on('user_blocked',onBlocked); s.on('user_unblocked',onUnblocked);
+    s.on('contract_signed',onContractSign);
     return ()=>{
       s.emit(leaveEvt,app._id);
       s.off(newMsgEvt,onNewMsg); s.off(editedEvt,onEdited); s.off(deletedEvt,onDeleted);
       s.off(statusEvt,onStatus); s.off(readEvt,onRead);
       s.off('user_blocked',onBlocked); s.off('user_unblocked',onUnblocked);
+      s.off('contract_signed',onContractSign);
     };
   },[app._id,onStatusChange,scrollDown,isOrder,newMsgEvt,editedEvt,deletedEvt,statusEvt,readEvt,joinEvt,leaveEvt]);
 
@@ -702,8 +871,15 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
         padding:"20px 20px", display:"flex", flexDirection:"column", gap:6,
         scrollbarWidth:"thin", scrollbarColor:`${C.dim} transparent`,
       }}>
-        {/* Always show application card first */}
-        {!app._isOrder && (
+        {/* Show contract card for orders, application card for applications */}
+        {app._isOrder ? (
+          <OrderContractCard
+            app={app}
+            myId={myId}
+            contractSigned={contractSigned}
+            onSigned={()=>{ setContractSigned(true); onStatusChange(app._id,'accepted'); }}
+          />
+        ) : (
           <ApplicationCard
             app={app}
             myId={myId}

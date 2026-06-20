@@ -21,6 +21,8 @@ const bloggerOrderSchema = new mongoose.Schema(
     businessUnread:     { type: Number, default: 0 },
     deletedForBlogger:  { type: Boolean, default: false },
     deletedForBusiness: { type: Boolean, default: false },
+    contractSigned:     { type: Boolean, default: false },
+    contractSignedAt:   { type: Date },
   },
   { timestamps: true }
 );

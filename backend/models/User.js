@@ -40,6 +40,7 @@ const userSchema = new mongoose.Schema(
     onboardingStep: { type: Number, default: 1 }, // 1=pending, 2=profile fill, 3=complete, 4=fully active
     bio:         { type: String, default: '', maxlength: 500 },
     companyName: { type: String, default: '' },
+    collaborations: { type: Number, default: 0 },
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     passwordResetToken: String,
     passwordResetExpires: Date,

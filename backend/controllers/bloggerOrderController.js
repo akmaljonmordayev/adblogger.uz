@@ -311,6 +311,56 @@ exports.deleteOrder = catchAsync(async (req, res, next) => {
   res.status(200).json({ success: true });
 });
 
+/* ── PATCH /api/v1/blogger-orders/:orderId/sign ── shartnoma imzolash ── */
+exports.signContract = catchAsync(async (req, res, next) => {
+  const order = await BloggerOrder.findById(req.params.orderId);
+  if (!order) return next(new AppError('Buyurtma topilmadi', 404));
+
+  // Faqat blogger imzolaydi
+  if (String(order.blogger) !== String(req.user._id))
+    return next(new AppError("Ruxsat yo'q", 403));
+
+  if (order.contractSigned)
+    return next(new AppError('Shartnoma allaqachon imzolangan', 400));
+
+  await BloggerOrder.findByIdAndUpdate(order._id, {
+    contractSigned:   true,
+    contractSignedAt: new Date(),
+    status:           'accepted',
+  });
+
+  // Blogger hamkorlik +1
+  await Blogger.findOneAndUpdate(
+    { user: req.user._id },
+    { $inc: { 'stats.collaborations': 1, 'stats.totalCampaigns': 1 } }
+  );
+
+  // Business hamkorlik +1
+  await User.findByIdAndUpdate(order.business, { $inc: { collaborations: 1 } });
+
+  const notif = await Notification.create({
+    user:  order.business,
+    type:  'application_status',
+    title: 'Shartnoma imzolandi! 🤝',
+    body:  `Blogger hamkorlik shartnomangizni imzoladi. Loyihani boshlash mumkin!`,
+    link:  '/mening-zayavkalarim',
+  });
+
+  const io = req.app.get('io');
+  io.to(`user_${order.business}`).emit('contract_signed', {
+    orderId: String(order._id),
+    status:  'accepted',
+  });
+  io.to(`user_${order.business}`).emit('new_notification', notif);
+  io.to(`order_${order._id}`).emit('order_status_changed', {
+    orderId:        String(order._id),
+    status:         'accepted',
+    contractSigned: true,
+  });
+
+  res.status(200).json({ success: true });
+});
+
 /* ── DELETE /api/v1/blogger-orders/:orderId/block ── blokdan chiqarish ── */
 exports.unblockUser = catchAsync(async (req, res, next) => {
   const order = await BloggerOrder.findById(req.params.orderId);

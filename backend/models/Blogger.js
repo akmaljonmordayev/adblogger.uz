@@ -52,6 +52,7 @@ const bloggerSchema = new mongoose.Schema(
       totalCampaigns:      { type: Number, default: 0 },
       completedCampaigns:  { type: Number, default: 0 },
       totalEarnings:       { type: Number, default: 0 },
+      collaborations:      { type: Number, default: 0 },
     },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }

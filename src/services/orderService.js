@@ -10,7 +10,8 @@ const orderService = {
   status:    (orderId, status)        => api.patch(`/blogger-orders/${orderId}/status`, { status }).then(r => r.data),
   block:       (orderId)              => api.post(`/blogger-orders/${orderId}/block`).then(r => r.data),
   unblock:     (orderId)              => api.delete(`/blogger-orders/${orderId}/block`).then(r => r.data),
-  deleteOrder: (orderId)              => api.delete(`/blogger-orders/${orderId}`).then(r => r.data),
+  deleteOrder:    (orderId)            => api.delete(`/blogger-orders/${orderId}`).then(r => r.data),
+  signContract:   (orderId)            => api.patch(`/blogger-orders/${orderId}/sign`).then(r => r.data),
 };
 
 export default orderService;
