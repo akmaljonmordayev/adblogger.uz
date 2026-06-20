@@ -552,8 +552,8 @@ export default function CategoriesPage() {
       </section>
 
       {/* ══════ CTA ══════ */}
-      <section style={{ padding: "0 32px 80px", maxWidth: 1280, margin: "0 auto" }}>
-        <div style={{
+      <section className="cat-section" style={{ padding: "0 32px 80px", maxWidth: 1280, margin: "0 auto" }}>
+        <div className="cat-cta" style={{
           background: "linear-gradient(145deg,#1a0000 0%,#7f1d1d 40%,#dc2626 80%,#b91c1c 100%)",
           borderRadius: 28, padding: "56px 48px",
           position: "relative", overflow: "hidden", textAlign: "center",
@@ -562,7 +562,7 @@ export default function CategoriesPage() {
           <div style={{ position: "absolute", top: -100, right: -100, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle,rgba(255,255,255,0.05) 0%,transparent 70%)", pointerEvents: "none" }} />
 
           <div style={{ position: "relative", zIndex: 1 }}>
-            <div style={{
+            <div className="cat-cta-pill" style={{
               display: "inline-flex", alignItems: "center", gap: 7,
               background: "rgba(255,255,255,0.1)", backdropFilter: "blur(10px)",
               border: "1px solid rgba(255,255,255,0.18)", borderRadius: 100,
@@ -591,6 +591,7 @@ export default function CategoriesPage() {
             </p>
 
             <button
+              className="cat-cta-btn"
               onClick={() => navigate(ROUTE_PATHS.BLOGGERS)}
               style={{
                 display: "inline-flex", alignItems: "center", gap: 10,
@@ -629,14 +630,32 @@ export default function CategoriesPage() {
           .cat-grid { grid-template-columns: repeat(2,1fr) !important; }
           .cat-stats-grid { grid-template-columns: repeat(auto-fill,minmax(220px,1fr)) !important; }
         }
+        @media(max-width:600px){
+          .cat-hero { padding: 48px 20px 40px !important; }
+          .cat-hero h1 { font-size: clamp(26px,7vw,38px) !important; letter-spacing: -1px !important; }
+          .cat-hero p  { font-size: 14px !important; margin-bottom: 32px !important; }
+          .cat-hero-stats {
+            display: flex !important;
+            flex-direction: row !important;
+            width: 100% !important;
+            border-radius: 16px !important;
+          }
+          .cat-hero-stats > div {
+            flex: 1 !important;
+            padding: 14px 8px !important;
+            border-right: 1px solid rgba(255,255,255,0.08) !important;
+          }
+          .cat-hero-stats > div:last-child { border-right: none !important; }
+          .cat-cta { padding: 36px 20px !important; border-radius: 20px !important; }
+          .cat-cta-pill { font-size: 9px !important; padding: 5px 12px !important; letter-spacing: 1px !important; white-space: nowrap !important; }
+          .cat-cta h2 { font-size: clamp(22px,6vw,32px) !important; }
+          .cat-cta p  { font-size: 13px !important; }
+          .cat-cta-btn { padding: 13px 28px !important; font-size: 14px !important; width: 100% !important; justify-content: center !important; box-sizing: border-box !important; }
+          .cat-section { padding: 0 16px 48px !important; }
+        }
         @media(max-width:480px){
           .cat-grid { grid-template-columns: 1fr !important; }
-          .cat-hero { padding: 56px 16px 48px !important; }
-          .cat-hero-stats { flex-direction: column !important; border-radius: 16px !important; }
-          .cat-hero-stats > div { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.08) !important; padding: 14px 24px !important; }
-          .cat-hero-stats > div:last-child { border-bottom: none !important; }
           .cat-stats-grid { grid-template-columns: 1fr !important; }
-          .cat-search { padding: 16px !important; }
         }
       `}</style>
     </div>
