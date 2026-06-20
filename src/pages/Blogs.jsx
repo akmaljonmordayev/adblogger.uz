@@ -97,7 +97,7 @@ function BlogCard({ post, view = "grid" }) {
           overflow: "hidden", transition: "all .25s",
         }}>
           {/* thumb */}
-          <div style={{
+          <div className="blog-list-thumb" style={{
             width: 180, flexShrink: 0,
             background: post.coverImage ? `url(${post.coverImage}) center/cover` : `linear-gradient(${gr})`,
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -106,7 +106,7 @@ function BlogCard({ post, view = "grid" }) {
             {!post.coverImage && em}
           </div>
           {/* content */}
-          <div style={{ padding: "20px 20px 20px 0", flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div className="blog-list-content" style={{ padding: "20px 20px 20px 0", flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ background: cs.bg, color: cs.tc, border: `1px solid ${cs.border}`, fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 6 }}>
                 {CAT_LABEL[post.category] ?? post.category}
@@ -121,7 +121,7 @@ function BlogCard({ post, view = "grid" }) {
             <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.65, margin: 0, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
               {post.excerpt}
             </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: "auto" }}>
+            <div className="blog-list-meta" style={{ display: "flex", alignItems: "center", gap: 16, marginTop: "auto" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{
                   width: 26, height: 26, borderRadius: "50%",
@@ -617,6 +617,11 @@ export default function Blogs() {
         @media(max-width:1024px) { .blogs-grid { grid-template-columns: repeat(2,1fr) !important; } }
         @media(max-width:640px)  { .blogs-grid { grid-template-columns: 1fr !important; } }
         @media(max-width:480px)  { .pag-label { display: none; } }
+        @media(max-width:560px)  {
+          .blog-list-thumb { width: 110px !important; min-height: 110px !important; }
+          .blog-list-content { padding: 14px 14px 14px 0 !important; }
+          .blog-list-meta { display: none !important; }
+        }
       `}</style>
     </div>
   );

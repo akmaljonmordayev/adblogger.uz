@@ -101,7 +101,7 @@ export default function CategoriesPage() {
       />
 
       {/* ══════ HERO ══════ */}
-      <section style={{
+      <section className="cat-hero" style={{
         background: "linear-gradient(145deg,#1a0000 0%,#7f1d1d 35%,#dc2626 70%,#b91c1c 100%)",
         padding: "90px 32px 80px",
         position: "relative",
@@ -156,7 +156,7 @@ export default function CategoriesPage() {
           </p>
 
           {/* Stats row */}
-          <div style={{
+          <div className="cat-hero-stats" style={{
             display: "inline-flex", alignItems: "stretch",
             background: "rgba(0,0,0,0.25)", backdropFilter: "blur(20px)",
             border: "1px solid rgba(255,255,255,0.12)",
@@ -254,9 +254,9 @@ export default function CategoriesPage() {
               </div>
             </div>
 
-            <div style={{
+            <div className="cat-stats-grid" style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))",
+              gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))",
               gap: 14,
             }}>
               {topCategories.map((cat, i) => {
@@ -627,9 +627,16 @@ export default function CategoriesPage() {
         }
         @media(max-width:768px){
           .cat-grid { grid-template-columns: repeat(2,1fr) !important; }
+          .cat-stats-grid { grid-template-columns: repeat(auto-fill,minmax(220px,1fr)) !important; }
         }
         @media(max-width:480px){
           .cat-grid { grid-template-columns: 1fr !important; }
+          .cat-hero { padding: 56px 16px 48px !important; }
+          .cat-hero-stats { flex-direction: column !important; border-radius: 16px !important; }
+          .cat-hero-stats > div { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.08) !important; padding: 14px 24px !important; }
+          .cat-hero-stats > div:last-child { border-bottom: none !important; }
+          .cat-stats-grid { grid-template-columns: 1fr !important; }
+          .cat-search { padding: 16px !important; }
         }
       `}</style>
     </div>

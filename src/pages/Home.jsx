@@ -834,6 +834,12 @@ export default function Home() {
           .hp-platforms{grid-template-columns:1fr!important}
           .hp-stats{grid-template-columns:repeat(2,1fr)!important}
         }
+
+        @media(max-width:480px){
+          .hp-feats{grid-template-columns:1fr!important}
+          .hp-blogs{grid-template-columns:1fr!important}
+          .hp-steps{grid-template-columns:1fr!important}
+        }
       `}</style>
     </div>
   );

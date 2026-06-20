@@ -79,7 +79,7 @@ export default function Pricing() {
         }}>
           <LuZap size={12} /> NARX REJALARI
         </span>
-        <h1 style={{ fontSize: 38, fontWeight: 800, color: "#0f172a", lineHeight: 1.15, margin: "0 0 14px" }}>
+        <h1 style={{ fontSize: "clamp(26px,5vw,38px)", fontWeight: 800, color: "#0f172a", lineHeight: 1.15, margin: "0 0 14px" }}>
           O'z biznesingiz uchun<br />
           <span style={{ color: "#dc2626" }}>to'g'ri rejani tanlang</span>
         </h1>
@@ -89,11 +89,12 @@ export default function Pricing() {
       </div>
 
       {/* Plans */}
-      <div style={{
+      <div className="pricing-grid" style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
         gap: 20, maxWidth: 960, margin: "0 auto", padding: "0 20px 60px",
       }}>
+      <style>{`@media(max-width:560px){ .pricing-grid { grid-template-columns: 1fr !important; } }`}</style>
         {plans.map((plan) => (
           <div key={plan.name} style={{
             background: plan.popular ? "#0f172a" : "#fff",

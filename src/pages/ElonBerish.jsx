@@ -379,7 +379,7 @@ function BloggerForm({ onSubmit, loading }) {
       {/* Shaxsiy ma'lumot */}
       <div>
         <SectionTitle label="Shaxsiy ma'lumotlar" />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div className="eb-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           <Field label="Ism-familiya" required error={errors.name?.message}>
             <input
               {...register("name")}
@@ -464,7 +464,7 @@ function BloggerForm({ onSubmit, loading }) {
               )}
             />
           </Field>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+          <div className="eb-grid-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
             <Field label="Post narxi" required hint="(so'm)" error={errors.pricePost?.message}>
               <input
                 {...register("pricePost")}
@@ -535,7 +535,7 @@ function BusinessForm({ onSubmit, loading }) {
       {/* Kompaniya */}
       <div>
         <SectionTitle label="Kompaniya ma'lumotlari" color="#2563eb" />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div className="eb-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           <Field label="Kompaniya / Brend nomi" required error={errors.companyName?.message}>
             <input
               {...register("companyName")}
@@ -630,7 +630,7 @@ function BusinessForm({ onSubmit, loading }) {
               placeholder="Masalan: 20–35 yosh, Toshkent, oilali ayollar"
             />
           </Field>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+          <div className="eb-grid-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
             <Field label="Byudjet" required error={errors.budget?.message}>
               <select
                 {...register("budget")}
@@ -806,6 +806,14 @@ export default function ElonBerish() {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", maxWidth: 760, margin: "0 auto", paddingBottom: 60 }}>
+      <style>{`
+        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @media(max-width:640px) {
+          .eb-type-grid { grid-template-columns: 1fr !important; }
+          .eb-grid-2    { grid-template-columns: 1fr !important; }
+          .eb-grid-3    { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
       {/* ── Header ── */}
       <div style={{ marginBottom: 32 }}>
@@ -864,7 +872,7 @@ export default function ElonBerish() {
 
       {/* ── Step 1: Type select ── */}
       {step === 1 && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className="eb-type-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <button
             onClick={() => { setType("blogger"); setStep(2); }}
             style={{ padding: "36px 28px", borderRadius: 20, border: "2px solid #e5e7eb", background: "#fff", cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all 0.2s", display: "flex", flexDirection: "column", gap: 16 }}
