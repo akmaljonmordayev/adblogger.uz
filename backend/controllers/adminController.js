@@ -53,11 +53,11 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
       { $sort: { count: -1 } },
       { $limit: 6 },
     ]),
-    User.find({ role: 'business', applicationStatus: 'approved' })
+    User.find({ role: 'business' })
       .sort('-createdAt')
       .limit(5)
       .select('firstName lastName email createdAt'),
-    User.countDocuments({ role: 'business', applicationStatus: 'approved' }),
+    User.countDocuments({ role: 'business' }),
   ]);
 
   // Monthly registrations for current year
@@ -125,7 +125,7 @@ exports.getStatistics = catchAsync(async (req, res) => {
     monthlyAdsDist,
   ] = await Promise.all([
     Blogger.countDocuments({ isActive: true }),
-    User.countDocuments({ role: 'business', applicationStatus: 'approved' }),
+    User.countDocuments({ role: 'business' }),
     Ad.countDocuments(),
     BlogPost.countDocuments({ isPublished: true }),
     Campaign.countDocuments(),
