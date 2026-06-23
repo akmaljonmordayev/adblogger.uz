@@ -198,7 +198,7 @@ export default function Footer() {
             bloger bir joyda.
           </p>
 
-          <div className="flex gap-3 mt-4 flex-wrap">
+          <div className="grid grid-cols-3 gap-2 mt-4">
             <StatCard num={bloggerCount + "+"} label="Bloger" color="red" />
             <StatCard num={brandCount + "+"} label="Brend" color="yellow" />
             <StatCard num={dealCount + "+"} label="Bitim" color="red" />

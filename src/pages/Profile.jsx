@@ -1109,13 +1109,11 @@ export default function Profile() {
                   </FieldWrap>
                 )}
 
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginTop: bForm.platforms.length > 0 ? 0 : 0 }}>
-                  <FieldWrap>
-                    <Label><LuTrendingUp size={12} style={{ marginRight:4 }}/>Engagement rate (%)</Label>
-                    <input className="field-inp" style={inp()} type="number" step="0.1" value={bForm.engagementRate}
-                      onChange={e=>setBForm(p=>({...p,engagementRate:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="3.5"/>
-                  </FieldWrap>
-                </div>
+                <FieldWrap>
+                  <Label><LuTrendingUp size={12} style={{ marginRight:4 }}/>Engagement rate (%)</Label>
+                  <input className="field-inp" style={inp()} type="number" step="0.1" value={bForm.engagementRate}
+                    onChange={e=>setBForm(p=>({...p,engagementRate:e.target.value}))} onFocus={onFocus} onBlur={onBlur} placeholder="3.5"/>
+                </FieldWrap>
                 <div className="grid-2col" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
                   <FieldWrap>
                     <Label>Auditoriya yoshi</Label>

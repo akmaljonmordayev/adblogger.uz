@@ -122,32 +122,33 @@ export default function Notifications() {
   if (loading) return <PageLoader />;
 
   return (
-    <div style={{ fontFamily: "'Inter',sans-serif", maxWidth: 700, margin: "0 auto", padding: "0 20px 60px" }}>
+    <div style={{ fontFamily: "'Inter',sans-serif", maxWidth: 700, margin: "0 auto", padding: "0 16px 60px" }}>
       <SEO title="Bildirishnomalar" noindex />
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", margin: "0 0 4px", display: "flex", alignItems: "center", gap: 10 }}>
-            <LuBell size={22} style={{ color: "#dc2626" }} />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 10, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ fontSize: "clamp(18px,5vw,24px)", fontWeight: 800, color: "#0f172a", margin: "0 0 4px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <LuBell size={20} style={{ color: "#dc2626", flexShrink: 0 }} />
             Bildirishnomalar
             {unreadCount > 0 && (
               <span style={{
                 background: "#dc2626", color: "#fff",
-                fontSize: 12, fontWeight: 700, padding: "2px 8px",
-                borderRadius: 20, minWidth: 22, textAlign: "center",
+                fontSize: 11, fontWeight: 700, padding: "2px 7px",
+                borderRadius: 20, minWidth: 20, textAlign: "center",
               }}>{unreadCount}</span>
             )}
           </h1>
-          <p style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>Barcha yangiliklar shu yerda</p>
+          <p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>Barcha yangiliklar shu yerda</p>
         </div>
         {unreadCount > 0 && (
           <button onClick={markAllRead} style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "8px 16px", border: "1.5px solid #e2e8f0",
+            display: "flex", alignItems: "center", gap: 5,
+            padding: "7px 12px", border: "1.5px solid #e2e8f0",
             borderRadius: 10, background: "#fff", color: "#374151",
-            fontSize: 13, fontWeight: 600, cursor: "pointer",
+            fontSize: 12, fontWeight: 600, cursor: "pointer",
+            whiteSpace: "nowrap", flexShrink: 0,
           }}>
-            <LuCheckCheck size={14} /> Barchasini o'qildi
+            <LuCheckCheck size={13} /> Barchasini o'qildi
           </button>
         )}
       </div>
@@ -155,7 +156,7 @@ export default function Notifications() {
       {/* Filter tabs */}
       <div style={{
         display: "flex", background: "#f8fafc",
-        borderRadius: 10, padding: 3, marginBottom: 20,
+        borderRadius: 10, padding: 3, marginBottom: 16,
         border: "1px solid #f1f5f9", width: "fit-content",
       }}>
         {[
@@ -193,7 +194,7 @@ export default function Notifications() {
                 to={(n.link || "/bildirishnomalar").replace("/my-applications", "/mening-zayavkalarim")}
                 onClick={() => !n.read && markRead(n._id)}
                 style={{
-                  display: "flex", gap: 14, padding: "16px 18px",
+                  display: "flex", gap: 12, padding: "14px 14px",
                   background: n.read ? "#fff" : "#fef2f2",
                   border: `1.5px solid ${n.read ? "#e2e8f0" : "#fecaca"}`,
                   borderRadius: 14, textDecoration: "none",

@@ -127,7 +127,7 @@ export default function About() {
       />
 
       {/* ══ HERO ══ */}
-      <section style={{
+      <section className="about-hero" style={{
         background: "linear-gradient(135deg, #fff 0%, #fef2f2 50%, #fff 100%)",
         borderRadius: 20,
         padding: "72px 48px 80px",
@@ -249,7 +249,7 @@ export default function About() {
 
       {/* ══ STATS ══ */}
       <FadeIn>
-        <div style={{
+        <div className="about-stats-grid" style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
           gap: 16, marginBottom: 32,
@@ -378,7 +378,7 @@ export default function About() {
           border: "1px solid #f3f4f6",
           padding: "48px 40px", marginBottom: 32,
           boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
-        }}>
+        }} className="about-section-pad">
           <div style={{ textAlign: "center", marginBottom: 40 }}>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 7,
@@ -691,7 +691,7 @@ export default function About() {
           textAlign: "center",
           position: "relative",
           overflow: "hidden",
-        }}>
+        }} className="about-cta-pad">
           <div style={{
             position: "absolute", top: -60, left: "50%",
             transform: "translateX(-50%)",
@@ -780,9 +780,66 @@ export default function About() {
 
       {/* Responsive */}
       <style>{`
+        .about-stats-grid {
+          grid-template-columns: repeat(4, 1fr) !important;
+        }
+        @media (max-width: 900px) {
+          .about-stats-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
         @media (max-width: 768px) {
           .about-grid-2 {
             grid-template-columns: 1fr !important;
+          }
+          .about-hero {
+            padding: 36px 20px 44px !important;
+            border-radius: 16px !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+          }
+          .about-hero h1 {
+            font-size: clamp(26px, 7vw, 42px) !important;
+            word-break: break-word !important;
+          }
+          .about-hero p {
+            font-size: 15px !important;
+          }
+          .about-section-pad {
+            padding: 28px 20px !important;
+          }
+          .about-cta-pad {
+            padding: 36px 20px !important;
+          }
+          .about-stats-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .about-stats-grid > div {
+            padding: 18px 16px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .about-hero {
+            padding: 28px 16px 36px !important;
+            border-radius: 14px !important;
+          }
+          .about-hero h1 {
+            font-size: clamp(22px, 8vw, 36px) !important;
+            letter-spacing: -0.5px !important;
+          }
+          .about-section-pad {
+            padding: 20px 16px !important;
+          }
+          .about-cta-pad {
+            padding: 28px 16px !important;
+          }
+          .about-stats-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+          }
+          .about-stats-grid > div {
+            padding: 14px 12px !important;
+            gap: 10px !important;
           }
         }
       `}</style>

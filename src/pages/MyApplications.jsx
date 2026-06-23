@@ -1566,8 +1566,8 @@ export default function MyApplications() {
                   const unread=isBlogger?(order.bloggerUnread||0):(order.businessUnread||0);
                   return (
                     <div key={order._id} style={{position:"relative"}}
-                      onMouseEnter={e=>{ const btn=e.currentTarget.querySelector('.order-del-btn'); if(btn) btn.style.opacity="1"; }}
-                      onMouseLeave={e=>{ const btn=e.currentTarget.querySelector('.order-del-btn'); if(btn) btn.style.opacity="0"; }}
+                      onMouseEnter={e=>{ const btn=e.currentTarget.querySelector('.order-del-btn'); if(btn){btn.style.opacity="1";btn.style.pointerEvents="auto";} }}
+                      onMouseLeave={e=>{ const btn=e.currentTarget.querySelector('.order-del-btn'); if(btn){btn.style.opacity="0";btn.style.pointerEvents="none";} }}
                     >
                       <ConvRow
                         app={{...norm,ownerUnread:isBlogger?unread:0,applicantUnread:!isBlogger?unread:0}}
@@ -1585,6 +1585,7 @@ export default function MyApplications() {
                           background:"#FEF2F2",color:C.red,cursor:"pointer",
                           display:"flex",alignItems:"center",justifyContent:"center",
                           opacity:0,transition:"opacity .15s",zIndex:2,
+                          pointerEvents:"none",
                         }}
                       >
                         <LuTrash2 size={12}/>
@@ -1595,8 +1596,8 @@ export default function MyApplications() {
             ) : (
               list.map(app=>(
                 <div key={app._id} style={{position:"relative"}}
-                  onMouseEnter={e=>{ const btn=e.currentTarget.querySelector('.app-del-btn'); if(btn) btn.style.opacity="1"; }}
-                  onMouseLeave={e=>{ const btn=e.currentTarget.querySelector('.app-del-btn'); if(btn) btn.style.opacity="0"; }}
+                  onMouseEnter={e=>{ const btn=e.currentTarget.querySelector('.app-del-btn'); if(btn){btn.style.opacity="1";btn.style.pointerEvents="auto";} }}
+                  onMouseLeave={e=>{ const btn=e.currentTarget.querySelector('.app-del-btn'); if(btn){btn.style.opacity="0";btn.style.pointerEvents="none";} }}
                 >
                   <ConvRow app={app} myId={myId}
                     isActive={selected?._id===app._id}
@@ -1612,6 +1613,7 @@ export default function MyApplications() {
                       background:"#FEF2F2",color:C.red,cursor:"pointer",
                       display:"flex",alignItems:"center",justifyContent:"center",
                       opacity:0,transition:"opacity .15s",zIndex:2,
+                      pointerEvents:"none",
                     }}
                   >
                     <LuTrash2 size={12}/>

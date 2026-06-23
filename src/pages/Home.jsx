@@ -286,7 +286,7 @@ export default function Home() {
 
       {/* ══════ STATS BAR ══════ */}
       <section style={{ background:"#fff", borderBottom:"1px solid #f1f5f9" }}>
-        <div style={{ maxWidth:1280, margin:"0 auto", padding:"0 32px" }}>
+        <div className="hp-stats-bar-inner" style={{ maxWidth:1280, margin:"0 auto", padding:"0 32px" }}>
           <div className="hp-stats" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)" }}>
             {STATS.map((s, i) => (
               <div key={i} style={{
@@ -310,7 +310,7 @@ export default function Home() {
       </section>
 
       {/* ══════ PLATFORMS — real API ══════ */}
-      <section style={{
+      <section className="hp-plat-sec" style={{
         background:"linear-gradient(150deg,#060b18 0%,#0d1528 40%,#0a1020 100%)",
         padding:"96px 32px", position:"relative", overflow:"hidden",
       }}>
@@ -423,7 +423,7 @@ export default function Home() {
       </section>
 
       {/* ══════ FEATURES ══════ */}
-      <section style={{ padding:"96px 32px", maxWidth:1280, margin:"0 auto" }}>
+      <section className="hp-feat-sec" style={{ padding:"96px 32px", maxWidth:1280, margin:"0 auto" }}>
         <div style={{ textAlign:"center", marginBottom:60 }}>
           <Pill Icon={LuZap} color="#d97706" bg="rgba(217,119,6,0.08)" border="rgba(217,119,6,0.18)">Imkoniyatlar</Pill>
           <h2 style={{ ...S, fontWeight:900, fontSize:"clamp(28px,4vw,46px)", color:"#0f172a", margin:"0 0 14px", lineHeight:1.07, letterSpacing:"-1px" }}>
@@ -459,7 +459,7 @@ export default function Home() {
       </section>
 
       {/* ══════ HOW IT WORKS ══════ */}
-      <section style={{ background:"#fff", borderTop:"1px solid #f1f5f9", padding:"96px 32px" }}>
+      <section className="hp-steps-sec" style={{ background:"#fff", borderTop:"1px solid #f1f5f9", padding:"96px 32px" }}>
         <div style={{ maxWidth:1280, margin:"0 auto" }}>
           <div style={{ textAlign:"center", marginBottom:60 }}>
             <Pill Icon={LuClock} color="#2563eb" bg="rgba(37,99,235,0.08)" border="rgba(37,99,235,0.18)">Qanday ishlaydi?</Pill>
@@ -496,7 +496,7 @@ export default function Home() {
       </section>
 
       {/* ══════ TOP BLOGGERS ══════ */}
-      <section style={{ padding:"96px 32px", maxWidth:1280, margin:"0 auto" }}>
+      <section className="hp-bloggers-sec" style={{ padding:"96px 32px", maxWidth:1280, margin:"0 auto" }}>
         <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:52, gap:16, flexWrap:"wrap" }}>
           <div>
             <Pill Icon={LuFlame} color="#dc2626" bg="rgba(220,38,38,0.08)" border="rgba(220,38,38,0.18)">Top Blogerlar</Pill>
@@ -592,7 +592,7 @@ export default function Home() {
       </section>
 
       {/* ══════ TESTIMONIALS ══════ */}
-      <section style={{ background:"linear-gradient(145deg,#060b18 0%,#0d1528 40%,#0a1020 100%)", padding:"100px 32px", position:"relative", overflow:"hidden" }}>
+      <section className="hp-testim-sec" style={{ background:"linear-gradient(145deg,#060b18 0%,#0d1528 40%,#0a1020 100%)", padding:"100px 32px", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(rgba(255,255,255,0.025) 1px,transparent 1px)", backgroundSize:"32px 32px", pointerEvents:"none" }} />
         <div style={{ position:"absolute", top:-220, left:-220, width:640, height:640, borderRadius:"50%", background:"radial-gradient(circle,rgba(220,38,38,0.1) 0%,transparent 70%)", pointerEvents:"none" }} />
         <div style={{ position:"absolute", bottom:-220, right:-220, width:640, height:640, borderRadius:"50%", background:"radial-gradient(circle,rgba(124,58,237,0.08) 0%,transparent 70%)", pointerEvents:"none" }} />
@@ -640,7 +640,7 @@ export default function Home() {
       </section>
 
       {/* ══════ BLOG ══════ */}
-      <section style={{ padding:"96px 32px", maxWidth:1280, margin:"0 auto" }}>
+      <section className="hp-blog-sec" style={{ padding:"96px 32px", maxWidth:1280, margin:"0 auto" }}>
         <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:52, gap:16, flexWrap:"wrap" }}>
           <div>
             <Pill Icon={LuTrendingUp} color="#16a34a" bg="rgba(22,163,74,0.08)" border="rgba(22,163,74,0.18)">Blog</Pill>
@@ -714,8 +714,8 @@ export default function Home() {
       </section>
 
       {/* ══════ TRUST BAR ══════ */}
-      <section style={{ background:"#fff", borderTop:"1px solid #f1f5f9", borderBottom:"1px solid #f1f5f9", padding:"22px 32px" }}>
-        <div style={{ maxWidth:1280, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"center", gap:36, flexWrap:"wrap" }}>
+      <section className="hp-trust-sec" style={{ background:"#fff", borderTop:"1px solid #f1f5f9", borderBottom:"1px solid #f1f5f9", padding:"22px 32px" }}>
+        <div className="hp-trust-inner" style={{ maxWidth:1280, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"center", gap:36, flexWrap:"wrap" }}>
           {[
             {Icon:LuShield,color:"#16a34a",label:"SSL Himoyalangan"},
             {Icon:LuBadgeCheck,color:"#2563eb",label:"Tasdiqlangan Blogerlar"},
@@ -733,7 +733,7 @@ export default function Home() {
       </section>
 
       {/* ══════ CTA ══════ */}
-      <section style={{ padding:"96px 32px", maxWidth:1280, margin:"0 auto" }}>
+      <section className="hp-cta-sec" style={{ padding:"96px 32px", maxWidth:1280, margin:"0 auto" }}>
         <div className="hp-cta-section" style={{ background:"linear-gradient(135deg,#7f1d1d 0%,#dc2626 50%,#b91c1c 100%)", borderRadius:36, padding:"80px 72px", position:"relative", overflow:"hidden", textAlign:"center" }}>
           <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(rgba(255,255,255,0.05) 1px,transparent 1px)", backgroundSize:"28px 28px", pointerEvents:"none" }} />
           <div style={{ position:"absolute", top:"50%", right:-180, marginTop:-320, width:640, height:640, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.05)", pointerEvents:"none" }} />
@@ -795,6 +795,16 @@ export default function Home() {
             border-bottom:none!important;
           }
 
+          .hp-plat-sec{padding:52px 20px!important}
+          .hp-feat-sec{padding:52px 20px!important}
+          .hp-steps-sec{padding:52px 20px!important}
+          .hp-bloggers-sec{padding:52px 20px!important}
+          .hp-testim-sec{padding:52px 20px!important}
+          .hp-blog-sec{padding:52px 20px!important}
+          .hp-cta-sec{padding:52px 20px!important}
+          .hp-trust-sec{padding:14px 20px!important}
+          .hp-trust-inner{gap:12px 20px!important;justify-content:flex-start!important}
+
           .hp-platforms{grid-template-columns:1fr!important}
 
           .hp-steps{grid-template-columns:1fr!important}
@@ -827,6 +837,18 @@ export default function Home() {
             font-size:15px!important;
             box-sizing:border-box!important;
           }
+        }
+
+        @media(max-width:480px){
+          .hp-plat-sec{padding:40px 16px!important}
+          .hp-feat-sec{padding:40px 16px!important}
+          .hp-steps-sec{padding:40px 16px!important}
+          .hp-bloggers-sec{padding:40px 16px!important}
+          .hp-testim-sec{padding:40px 16px!important}
+          .hp-blog-sec{padding:40px 16px!important}
+          .hp-cta-sec{padding:40px 16px!important}
+          .hp-trust-sec{padding:12px 16px!important}
+          .hp-stats-bar-inner{padding:0 16px!important}
         }
 
         @media(max-width:540px){

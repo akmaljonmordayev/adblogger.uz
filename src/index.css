@@ -149,15 +149,28 @@ button {
     flex-direction: row !important;
     width: 100% !important;
     gap: 8px !important;
+    box-sizing: border-box !important;
   }
   .hero-stats > div {
-    flex: 1;
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
     flex-direction: column !important;
     align-items: center !important;
     gap: 6px !important;
-    padding: 10px 8px !important;
+    padding: 10px 6px !important;
     border-radius: 14px !important;
-    text-align: center;
+    text-align: center !important;
+    overflow: hidden !important;
+  }
+  .hero-stats > div > div {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .hero-stats > div > div > div:last-child {
+    font-size: 9.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
   .hero-ring {
     display: none !important;
@@ -179,8 +192,16 @@ button {
   .hero-ctrl {
     padding: 0 16px !important;
   }
+  .hero-stats {
+    gap: 5px !important;
+  }
+  .hero-stats > div {
+    padding: 8px 4px !important;
+    border-radius: 12px !important;
+    min-width: 0 !important;
+  }
   .hero-stats > div span:first-child {
-    font-size: 20px !important;
+    font-size: 18px !important;
   }
   .hero-btns button {
     font-size: 13px !important;
