@@ -323,13 +323,16 @@ export default function AdminStatistics() {
       fill: PALETTE[i] ?? "#6b7280",
     })), [raw]);
 
-  /* User role pie */
-  const roleData = useMemo(() =>
-    (raw?.userRoleDist ?? []).map((r, i) => ({
-      name: r._id === "blogger" ? "Bloggerlar" : r._id === "business" ? "Biznesmenlar" : r._id,
-      value: r.count,
-      fill: PALETTE[i] ?? "#6b7280",
-    })), [raw]);
+  /* User role pie — use same source as stat cards (overview) for consistency */
+  const roleData = useMemo(() => {
+    const bloggers    = raw?.overview?.totalBloggers    ?? 0;
+    const businessmen = raw?.overview?.totalBusinessmen ?? 0;
+    if (!bloggers && !businessmen) return [];
+    return [
+      { name: "Biznesmenlar", value: businessmen, fill: "#dc2626" },
+      { name: "Bloggerlar",   value: bloggers,    fill: "#2563eb" },
+    ];
+  }, [raw?.overview?.totalBloggers, raw?.overview?.totalBusinessmen]);
 
   /* Ad status pie */
   const adStatusData = useMemo(() => {
