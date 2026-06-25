@@ -281,15 +281,16 @@ export default function About() {
               }}>
                 <Icon size={24} />
               </div>
-              <div>
-                <div style={{
+              <div style={{ minWidth: 0 }}>
+                <div className="about-stats-num" style={{
                   fontFamily: "'Syne', sans-serif",
                   fontSize: 30, fontWeight: 800,
                   color: "#111827", lineHeight: 1,
+                  whiteSpace: "nowrap",
                 }}>
                   <Counter end={end} suffix={suffix} />
                 </div>
-                <div style={{ fontSize: 12, color: "#9ca3af", fontWeight: 500, marginTop: 4 }}>
+                <div style={{ fontSize: 12, color: "#9ca3af", fontWeight: 500, marginTop: 4, wordBreak: "break-word" }}>
                   {label}
                 </div>
               </div>
@@ -813,9 +814,21 @@ export default function About() {
           }
           .about-stats-grid {
             grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
           }
           .about-stats-grid > div {
-            padding: 18px 16px !important;
+            padding: 18px 14px !important;
+            gap: 12px !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+          }
+          .about-stats-grid > div > div:first-child {
+            width: 44px !important;
+            height: 44px !important;
+            flex-shrink: 0 !important;
+          }
+          .about-stats-num {
+            font-size: 24px !important;
           }
         }
         @media (max-width: 480px) {
@@ -835,11 +848,24 @@ export default function About() {
           }
           .about-stats-grid {
             grid-template-columns: repeat(2, 1fr) !important;
-            gap: 10px !important;
+            gap: 8px !important;
           }
           .about-stats-grid > div {
-            padding: 14px 12px !important;
-            gap: 10px !important;
+            padding: 14px 10px !important;
+            gap: 8px !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+          }
+          .about-stats-grid > div > div:first-child {
+            width: 38px !important;
+            height: 38px !important;
+            border-radius: 10px !important;
+            flex-shrink: 0 !important;
+          }
+          .about-stats-num {
+            font-size: 22px !important;
           }
         }
       `}</style>

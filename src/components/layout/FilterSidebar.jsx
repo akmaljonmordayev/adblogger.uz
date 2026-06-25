@@ -346,7 +346,7 @@ function UserSelector({ users = [], selectedUser, onSelect }) {
 /* ═══════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════ */
-export default function FilterSidebar({ onApplyFilter, usersList = [], initialCategory = null }) {
+export default function FilterSidebar({ onApplyFilter, usersList = [], initialCategory = null, onClose }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [filters, setFilters] = useState({
     category: initialCategory ? [initialCategory] : [],
@@ -455,24 +455,45 @@ export default function FilterSidebar({ onApplyFilter, usersList = [], initialCa
             </div>
           </div>
 
-          {activeCount > 0 && (
-            <button
-              onClick={reset}
-              style={{
-                display: "flex", alignItems: "center", gap: 5,
-                background: "rgba(255,255,255,0.15)",
-                border: "1px solid rgba(255,255,255,0.25)",
-                borderRadius: 8, padding: "5px 10px",
-                color: "#fff", fontSize: 11, fontWeight: 600,
-                cursor: "pointer", transition: "background 0.15s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.25)"}
-              onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
-            >
-              <LuRotateCcw size={11} />
-              Tozalash
-            </button>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {activeCount > 0 && (
+              <button
+                onClick={reset}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  background: "rgba(255,255,255,0.15)",
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  borderRadius: 8, padding: "5px 10px",
+                  color: "#fff", fontSize: 11, fontWeight: 600,
+                  cursor: "pointer", transition: "background 0.15s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.25)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
+              >
+                <LuRotateCcw size={11} />
+                Tozalash
+              </button>
+            )}
+            {onClose && (
+              <button
+                onClick={onClose}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 30, height: 30,
+                  background: "rgba(255,255,255,0.15)",
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  borderRadius: 8,
+                  color: "#fff",
+                  cursor: "pointer", transition: "background 0.15s",
+                  flexShrink: 0,
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
+              >
+                <LuX size={15} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ── Body ── */}
