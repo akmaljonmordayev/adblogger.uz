@@ -289,19 +289,19 @@ export default function Home() {
         <div className="hp-stats-bar-inner" style={{ maxWidth:1280, margin:"0 auto", padding:"0 32px" }}>
           <div className="hp-stats" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)" }}>
             {STATS.map((s, i) => (
-              <div key={i} style={{
+              <div key={i} className="hp-stat-item" style={{
                 display:"flex", alignItems:"center", gap:16,
                 padding:"26px 20px",
                 borderRight: i<3 ? "1px solid #f1f5f9" : "none",
               }}>
-                <div style={{ width:48, height:48, borderRadius:14, flexShrink:0, background:s.bg, color:s.color, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <div className="hp-stat-icon" style={{ width:48, height:48, borderRadius:14, flexShrink:0, background:s.bg, color:s.color, display:"flex", alignItems:"center", justifyContent:"center" }}>
                   <s.Icon size={21} strokeWidth={1.8} />
                 </div>
-                <div>
-                  <div style={{ ...S, fontWeight:900, fontSize:28, color:s.color, lineHeight:1 }}>
+                <div className="hp-stat-text">
+                  <div className="hp-stat-num" style={{ ...S, fontWeight:900, fontSize:28, color:s.color, lineHeight:1 }}>
                     <Counter end={s.end} suffix={s.suffix} />
                   </div>
-                  <div style={{ fontSize:11.5, color:"#94a3b8", marginTop:3, fontWeight:500, whiteSpace:"pre-line", lineHeight:1.4 }}>{s.label}</div>
+                  <div className="hp-stat-label" style={{ fontSize:11.5, color:"#94a3b8", marginTop:3, fontWeight:500, whiteSpace:"pre-line", lineHeight:1.4 }}>{s.label}</div>
                 </div>
               </div>
             ))}
@@ -782,17 +782,37 @@ export default function Home() {
         }
 
         @media(max-width:768px){
-          .hp-stats{grid-template-columns:repeat(2,1fr)!important}
-          .hp-stats > div{
+          /* Stats — kreativ card dizayn */
+          .hp-stats-bar-inner{padding:16px!important}
+          .hp-stats{
+            grid-template-columns:repeat(2,1fr)!important;
+            gap:10px!important;
+          }
+          .hp-stat-item{
+            flex-direction:column!important;
+            align-items:flex-start!important;
+            gap:10px!important;
+            padding:18px 16px!important;
             border-right:none!important;
-            border-bottom:1px solid #f1f5f9;
-            padding:16px 12px!important;
-          }
-          .hp-stats > div:nth-child(odd){
-            border-right:1px solid #f1f5f9!important;
-          }
-          .hp-stats > div:nth-last-child(-n+2){
             border-bottom:none!important;
+            border-radius:18px!important;
+            background:linear-gradient(145deg,#fff 0%,#f8fafc 100%)!important;
+            border:1.5px solid #f1f5f9!important;
+            box-shadow:0 2px 12px rgba(0,0,0,0.04)!important;
+          }
+          .hp-stat-icon{
+            width:40px!important;
+            height:40px!important;
+            border-radius:12px!important;
+          }
+          .hp-stat-num{
+            font-size:26px!important;
+            white-space:nowrap!important;
+          }
+          .hp-stat-label{
+            font-size:11px!important;
+            white-space:normal!important;
+            line-height:1.3!important;
           }
 
           .hp-plat-sec{padding:52px 20px!important}
@@ -848,7 +868,10 @@ export default function Home() {
           .hp-blog-sec{padding:40px 16px!important}
           .hp-cta-sec{padding:40px 16px!important}
           .hp-trust-sec{padding:12px 16px!important}
-          .hp-stats-bar-inner{padding:0 16px!important}
+          .hp-stat-item{padding:14px 13px!important;border-radius:14px!important}
+          .hp-stat-icon{width:36px!important;height:36px!important;border-radius:10px!important}
+          .hp-stat-num{font-size:22px!important}
+          .hp-stat-label{font-size:10.5px!important}
         }
 
         @media(max-width:540px){

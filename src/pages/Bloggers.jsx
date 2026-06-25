@@ -234,7 +234,7 @@ export default function Blogger() {
       {/* Mobile drawer overlay */}
       {isFilterOpen && (
         <div onClick={() => setIsFilterOpen(false)} style={{
-          position: "fixed", inset: 0, zIndex: 200,
+          position: "fixed", inset: 0, zIndex: 1100,
           background: "rgba(15,23,42,0.5)", backdropFilter: "blur(3px)",
         }} />
       )}
@@ -242,33 +242,19 @@ export default function Blogger() {
       {/* Mobile drawer */}
       <div className="bl-mobile-drawer" style={{
         position: "fixed", top: 0, right: 0, bottom: 0,
-        width: 320, zIndex: 201,
+        width: 320, zIndex: 1101,
         transform: isFilterOpen ? "translateX(0)" : "translateX(110%)",
         transition: "transform 0.32s cubic-bezier(0.4,0,0.2,1)",
         background: "#f8fafc", overflowY: "auto",
         boxShadow: "-8px 0 40px rgba(0,0,0,0.12)",
         display: "flex", flexDirection: "column",
       }}>
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "16px 16px 12px", borderBottom: "1px solid #e2e8f0",
-          background: "#fff", flexShrink: 0,
-        }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Filtrlar</span>
-          <button onClick={() => setIsFilterOpen(false)} style={{
-            background: "#f8fafc", border: "1.5px solid #e2e8f0",
-            borderRadius: 8, width: 30, height: 30,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", color: "#64748b", marginTop: 100,
-          }}>
-            <LuX size={15} />
-          </button>
-        </div>
         <div style={{ padding: 12 }}>
           <FilterSidebar
             onApplyFilter={(f, u) => { applyFilters(f, u); setIsFilterOpen(false); }}
             usersList={allRef.current}
             initialCategory={categoryFromQS}
+            onClose={() => setIsFilterOpen(false)}
           />
         </div>
       </div>

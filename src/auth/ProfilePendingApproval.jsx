@@ -40,8 +40,8 @@ export default function ProfilePendingApproval() {
 
     checkStatus();
 
-    // Poll every 30 seconds
-    const interval = setInterval(checkStatus, 30000);
+    // Poll every 10 seconds for faster detection
+    const interval = setInterval(checkStatus, 10000);
     return () => clearInterval(interval);
   }, [userId]);
 
@@ -54,18 +54,23 @@ export default function ProfilePendingApproval() {
     return () => clearInterval(interval);
   }, [status]);
 
+  // Auto-navigate when status becomes APPROVED (via socket OR polling)
+  useEffect(() => {
+    if (status !== STATUS.APPROVED) return;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await api.get("/auth/me");
+        setUser(res.data.data);
+      } catch { /* ignore */ }
+      navigate("/");
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [status, navigate, setUser]);
+
   // WebSocket — listen for admin's real-time decision on profile
   useSocket(userId ? `user_${userId}` : null, {
     profile_approved: () => {
       setStatus(STATUS.APPROVED);
-      // Refresh user data then navigate home after delay
-      setTimeout(async () => {
-        try {
-          const res = await api.get("/auth/me");
-          setUser(res.data.data);
-        } catch { /* ignore */ }
-        navigate("/");
-      }, 2000);
     },
     profile_rejected: ({ reason }) => {
       setRejectionReason(reason || "");
@@ -106,7 +111,7 @@ export default function ProfilePendingApproval() {
             Bosh sahifaga o'tilmoqda{dots}
           </p>
           <div style={{ height: 4, background: "#e5e7eb", borderRadius: 99, overflow: "hidden" }}>
-            <div style={{ height: "100%", background: "#22c55e", borderRadius: 99, animation: "fill 2s linear forwards" }} />
+            <div style={{ height: "100%", background: "#22c55e", borderRadius: 99, animation: "fill 2.5s linear forwards" }} />
           </div>
         </div>
         <style>{`@keyframes fill { from { width: 0% } to { width: 100% } }`}</style>
