@@ -415,12 +415,13 @@ export default function BloggerDetail() {
         api.get(`/bloggers/${id}`),
         api.get(`/bloggers/${id}/reviews`),
       ]);
-      return { blogger: bRes.data.data, reviews: rRes.data.data || [] };
+      return { blogger: bRes.data.data, contractStats: bRes.data.contractStats || { total: 0, signed: 0, cancelled: 0 }, reviews: rRes.data.data || [] };
     },
     staleTime: 5 * 60 * 1000,
     enabled: !!id,
   });
   const blogger = _qData?.blogger;
+  const contractStats = _qData?.contractStats ?? { total: 0, signed: 0, cancelled: 0 };
   useEffect(() => {
     if (_qData?.reviews) setReviews(_qData.reviews);
   }, [_qData]);
@@ -1156,6 +1157,43 @@ export default function BloggerDetail() {
                   <span style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{s.value}</span>
                 </div>
               ))}
+            </div>
+
+            {/* Contract Stats card */}
+            <div style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 20, padding: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", marginBottom: 14 }}>Shartnoma statistikasi</div>
+              {[
+                { label: "Yuborilgan shartnomalar", value: contractStats.total,     color: "#2563eb" },
+                { label: "Imzolangan",              value: contractStats.signed,    color: "#16a34a" },
+                { label: "Bekor qilingan",          value: contractStats.cancelled, color: "#dc2626" },
+              ].map((s, i, arr) => (
+                <div key={s.label} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "10px 0",
+                  borderBottom: i < arr.length - 1 ? "1px solid #f1f5f9" : "none",
+                }}>
+                  <span style={{ fontSize: 12, color: "#64748b" }}>{s.label}</span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: s.color }}>{s.value}</span>
+                </div>
+              ))}
+              {contractStats.total > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: "#94a3b8" }}>Imzolash darajasi</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#16a34a" }}>
+                      {Math.round((contractStats.signed / contractStats.total) * 100)}%
+                    </span>
+                  </div>
+                  <div style={{ height: 5, background: "#e5e7eb", borderRadius: 99, overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%",
+                      width: `${Math.round((contractStats.signed / contractStats.total) * 100)}%`,
+                      background: "linear-gradient(90deg,#16a34a,#22c55e)",
+                      borderRadius: 99,
+                    }} />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

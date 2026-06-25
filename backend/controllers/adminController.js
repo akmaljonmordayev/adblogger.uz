@@ -1,10 +1,12 @@
 const User = require('../models/User');
 const Blogger = require('../models/Blogger');
+const Business = require('../models/Business');
 const Ad = require('../models/Ad');
 const BlogPost = require('../models/BlogPost');
 const Campaign = require('../models/Campaign');
 const Contact = require('../models/Contact');
 const Notification = require('../models/Notification');
+const BloggerOrder = require('../models/BloggerOrder');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const { generateToken } = require('../utils/generateToken');
@@ -29,6 +31,9 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
     categoryBreakdown,
     recentBusinesses,
     totalBusinessmen,
+    totalSignedContracts,
+    totalCancelledContracts,
+    totalContractsSent,
   ] = await Promise.all([
     User.countDocuments({ role: { $ne: 'admin' }, applicationStatus: 'approved' }),
     Blogger.countDocuments({ isActive: true }),
@@ -58,6 +63,9 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
       .limit(5)
       .select('firstName lastName email createdAt'),
     User.countDocuments({ role: 'business' }),
+    BloggerOrder.countDocuments({ contractSigned: true }),
+    BloggerOrder.countDocuments({ status: 'cancelled' }),
+    BloggerOrder.countDocuments({}),
   ]);
 
   // Monthly registrations for current year
@@ -83,6 +91,9 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
         completedCampaigns,
         pendingApplications,
         totalBusinessmen,
+        totalSignedContracts,
+        totalCancelledContracts,
+        totalContractsSent,
       },
       recentUsers,
       recentAds,
@@ -123,6 +134,10 @@ exports.getStatistics = catchAsync(async (req, res) => {
     userRoleDist,
     topBloggers,
     monthlyAdsDist,
+    totalOrdersSent,
+    totalOrdersSigned,
+    totalOrdersCancelled,
+    monthlyContracts,
   ] = await Promise.all([
     Blogger.countDocuments({ isActive: true }),
     User.countDocuments({ role: 'business' }),
@@ -178,6 +193,14 @@ exports.getStatistics = catchAsync(async (req, res) => {
       { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 } } },
       { $sort: { '_id.year': 1, '_id.month': 1 } },
     ]),
+    // Contract stats
+    BloggerOrder.countDocuments({}),
+    BloggerOrder.countDocuments({ contractSigned: true }),
+    BloggerOrder.countDocuments({ status: 'cancelled' }),
+    BloggerOrder.aggregate([
+      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, sent: { $sum: 1 }, signed: { $sum: { $cond: ['$contractSigned', 1, 0] } } } },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ]),
   ]);
 
   res.status(200).json({
@@ -200,6 +223,8 @@ exports.getStatistics = catchAsync(async (req, res) => {
       userRoleDist,
       topBloggers,
       monthlyAdsDist,
+      contractStats: { total: totalOrdersSent, signed: totalOrdersSigned, cancelled: totalOrdersCancelled },
+      monthlyContracts,
     },
   });
 });

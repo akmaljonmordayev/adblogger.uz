@@ -319,15 +319,19 @@ export default function AdminDashboard() {
   const hour = clock.getHours();
   const greeting = hour < 12 ? "Xayrli tong" : hour < 18 ? "Xayrli kun" : "Xayrli kech";
 
+  const signRate = s.totalContractsSent
+    ? Math.round(((s.totalSignedContracts ?? 0) / s.totalContractsSent) * 100)
+    : 0;
+
   const STATS_CFG = [
-    { icon: FiUsers,        label: "Biznesmenlar", value: s.totalBusinessmen,         sub: `Tasdiqlangan biznesmenlar`, color: "red",    trendUp: true,  href: "/admin/businessmen"        },
-    { icon: FiActivity,     label: "Bloggerlar",        value: s.totalBloggers,      sub: "Faol blogerlar",                              color: "blue",   trendUp: true,  href: "/admin/bloggers"     },
-    { icon: FiLayers,       label: "E'lonlar",           value: s.totalAds,           sub: `${s.pendingAds ?? 0} ta ko'rib chiqilmoqda`,  color: "sky",    trendUp: true,  href: "/admin/ads"          },
-    { icon: FiCalendar,     label: "Kampaniyalar",       value: s.totalCampaigns,     sub: `${s.completedCampaigns ?? 0} ta yakunlangan`, color: "green",  trendUp: true,  href: "/admin/ads"          },
-    { icon: FiStar,         label: "Blog postlar",       value: s.totalBlogs,         sub: "Nashr etilgan",                               color: "violet", trendUp: true,  href: "/admin/blogs"        },
-    { icon: FiAlertCircle,  label: "Kutilayotgan e'lon", value: s.pendingAds,         sub: "Ko'rib chiqish kerak",                         color: "amber",  trendUp: false, href: "/admin/ads"          },
-    { icon: FiMessageSquare,label: "Yangi xabarlar",    value: s.newContacts,        sub: "Javob berilmagan",                            color: "sky",    trendUp: false, href: "/admin/contact"      },
-    { icon: FiCheckCircle,  label: "Yakunlangan",        value: s.completedCampaigns, sub: "Muvaffaqiyatli kampaniyalar",                 color: "green",  trendUp: true,  href: "/admin/ads"          },
+    { icon: FiUsers,        label: "Biznesmenlar",       value: s.totalBusinessmen,      sub: `Tasdiqlangan biznesmenlar`,                   color: "red",    trendUp: true,  href: "/admin/businessmen" },
+    { icon: FiActivity,     label: "Bloggerlar",         value: s.totalBloggers,         sub: "Faol blogerlar",                              color: "blue",   trendUp: true,  href: "/admin/bloggers"    },
+    { icon: FiLayers,       label: "E'lonlar",           value: s.totalAds,              sub: `${s.pendingAds ?? 0} ta ko'rib chiqilmoqda`,  color: "sky",    trendUp: true,  href: "/admin/ads"         },
+    { icon: FiCalendar,     label: "Kampaniyalar",       value: s.totalCampaigns,        sub: `${s.completedCampaigns ?? 0} ta yakunlangan`, color: "green",  trendUp: true,  href: "/admin/ads"         },
+    { icon: FiStar,         label: "Blog postlar",       value: s.totalBlogs,            sub: "Nashr etilgan",                               color: "violet", trendUp: true,  href: "/admin/blogs"       },
+    { icon: FiCheckCircle,  label: "Imzolangan shartnom",value: s.totalSignedContracts,  sub: `${s.totalContractsSent ?? 0} ta yuborilgan`,  color: "green",  trendUp: true,  href: "/admin/statistics"  },
+    { icon: FiAlertCircle,  label: "Bekor shartnomalar", value: s.totalCancelledContracts,sub: "Rad etilgan shartnomalar",                  color: "amber",  trendUp: false, href: "/admin/statistics"  },
+    { icon: FiMessageSquare,label: "Yangi xabarlar",     value: s.newContacts,           sub: "Javob berilmagan",                            color: "sky",    trendUp: false, href: "/admin/contact"     },
   ];
 
   // Completion rate
@@ -438,6 +442,14 @@ export default function AdminDashboard() {
                 color: T.redBr,
                 urgent: (s.newContacts ?? 0) > 0,
                 href: "/admin/contact",
+              },
+              {
+                label: "Shartnoma imzolash darajasi",
+                value: loading ? null : `${signRate}%`,
+                sub: `${s.totalSignedContracts ?? 0} / ${s.totalContractsSent ?? 0} shartnoma`,
+                pct: signRate,
+                color: "#16a34a",
+                href: "/admin/statistics",
               },
             ].map((item, i) => (
               <div key={i} className="flex flex-col gap-1.5" onClick={() => navigate(item.href)}
