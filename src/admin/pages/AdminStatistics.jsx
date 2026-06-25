@@ -279,7 +279,8 @@ export default function AdminStatistics() {
   const { data: raw, isLoading: loading, refetch } = useQuery({
     queryKey: ["admin-statistics"],
     queryFn: adminStatisticsService.getStats,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   /* Monthly registrations — last 12 months */

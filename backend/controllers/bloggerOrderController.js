@@ -423,18 +423,17 @@ exports.cancelContract = catchAsync(async (req, res, next) => {
   const isBlogger = myId === String(order.blogger);
   const otherId   = isBlogger ? order.business : order.blogger;
 
-  // Increment cancelledContracts for the cancelling party
-  if (isBlogger) {
-    await Blogger.findOneAndUpdate(
-      { user: req.user._id },
+  // Increment cancelledContracts for BOTH parties (blogger profile + business profile)
+  await Promise.all([
+    Blogger.findOneAndUpdate(
+      { user: order.blogger },
       { $inc: { 'stats.cancelledContracts': 1 } }
-    );
-  } else {
-    await Business.findOneAndUpdate(
-      { user: req.user._id },
+    ),
+    Business.findOneAndUpdate(
+      { user: order.business },
       { $inc: { 'stats.cancelledContracts': 1 } }
-    );
-  }
+    ),
+  ]);
 
   const cancellerName = req.user.firstName + ' ' + req.user.lastName;
 
