@@ -1070,11 +1070,12 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
           />
         )}
 
-        {/* Chat locked state */}
-        {!app._isOrder && ["pending","read"].includes(app.status) ? (
+        {/* Chat locked state — application pending OR order not yet signed */}
+        {(!app._isOrder && ["pending","read"].includes(app.status)) || (app._isOrder && !contractSigned && !contractCancelled) ? (
           <div style={{
             display:"flex",flexDirection:"column",alignItems:"center",
             justifyContent:"center",gap:12,padding:"32px 20px",
+            flexShrink:0,
           }}>
             <div style={{
               width:52,height:52,borderRadius:"50%",
@@ -1085,12 +1086,17 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
             </div>
             <div style={{textAlign:"center"}}>
               <p style={{fontSize:14,fontWeight:700,color:C.sub,margin:"0 0 5px"}}>
-                {isOwner ? "Zayavkani qabul qiling" : "Javob kutilmoqda..."}
+                {app._isOrder
+                  ? "Shartnoma imzolanmagan"
+                  : isOwner ? "Zayavkani qabul qiling" : "Javob kutilmoqda..."
+                }
               </p>
               <p style={{fontSize:12.5,color:C.dim,margin:0,lineHeight:1.5}}>
-                {isOwner
-                  ? "Qabul qilganingizdan keyin chat ochiladi"
-                  : "Qabul qilingandan so'ng chat ochiladi"
+                {app._isOrder
+                  ? "Shartnoma imzolangandan so'ng chat ochiladi"
+                  : isOwner
+                    ? "Qabul qilganingizdan keyin chat ochiladi"
+                    : "Qabul qilingandan so'ng chat ochiladi"
                 }
               </p>
             </div>
@@ -1169,8 +1175,8 @@ function ChatPanel({ app, myId, onStatusChange, onBack, type="application", serv
         </div>
       )}
 
-      {/* Input — only when accepted (or order type) */}
-      {!isBlocked && (app._isOrder || ["accepted","in_progress","completed"].includes(app.status)) && (
+      {/* Input — only when accepted (or order with signed contract) */}
+      {!isBlocked && ((app._isOrder && contractSigned) || ["accepted","in_progress","completed"].includes(app.status)) && (
         <div style={{
           padding:"10px 14px",borderTop:`1px solid ${C.border}`,
           display:"flex",gap:8,alignItems:"flex-end",flexShrink:0,
@@ -1418,7 +1424,7 @@ export default function MyApplications() {
   .ma-convrow { display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer; transition:all .15s; border-left:3px solid transparent; position:relative; }
   .ma-convrow:hover { background:#FAFBFC; border-left-color:#FFCDD2; }
   .ma-convrow.active { background:linear-gradient(90deg,#FFF5F5,#FFF8F8); border-left-color:#E53935; }
-  .contract-card { margin:16px auto; width:calc(100% - 32px); max-width:480px; border-radius:18px; overflow:hidden; box-shadow:0 6px 28px rgba(0,0,0,.08); background:#fff; }
+  .contract-card { margin:16px auto; width:calc(100% - 32px); max-width:480px; border-radius:18px; overflow:hidden; box-shadow:0 6px 28px rgba(0,0,0,.08); background:#fff; flex-shrink:0; }
   .chat-header { padding:12px 18px; background:#fff; border-bottom:1px solid #EDEEF0; display:flex; align-items:center; gap:12px; flex-shrink:0; z-index:2; box-shadow:0 1px 0 rgba(0,0,0,.04); }
   .chat-header-actions { display:flex; align-items:center; gap:6px; flex-wrap:nowrap; }
   .chat-status-btn { padding:5px 10px; font-size:11px; font-weight:700; border-radius:9px; cursor:pointer; display:flex; align-items:center; gap:3px; white-space:nowrap; }
