@@ -243,7 +243,8 @@ export default function AdminDashboard() {
   const { data: apiStats, isLoading: loading, refetch: fetchStats } = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: adminDashboardService.getStats,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   useEffect(() => { const t = setInterval(() => setClock(new Date()), 1000); return () => clearInterval(t); }, []);
