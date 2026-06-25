@@ -7,6 +7,7 @@ import {
   PiRssDuotone, PiBriefcaseDuotone,
   PiMegaphoneSimpleDuotone, PiArticleDuotone, PiCalendarDotsDuotone,
   PiEnvelopeDuotone, PiStarDuotone, PiArrowsClockwiseDuotone,
+  PiHandshakeDuotone, PiSealCheckDuotone, PiXCircleDuotone, PiPaperPlaneTiltDuotone,
 } from "react-icons/pi";
 
 /* ─ tokens ─ */
@@ -360,13 +361,16 @@ export default function AdminStatistics() {
 
   const o = raw?.overview ?? {};
 
+  const cs = raw?.contractStats ?? {};
+  const signRate = cs.total ? Math.round((cs.signed / cs.total) * 100) : 0;
+
   const STAT_CARDS = [
-    { icon: PiRssDuotone,             label: "Bloggerlar",   value: o.totalBloggers,    sub: "Faol bloggerlar",   color: "#7c3aed" },
-    { icon: PiBriefcaseDuotone,       label: "Biznesmenlar", value: o.totalBusinessmen, sub: "Tasdiqlangan",      color: "#dc2626" },
-    { icon: PiMegaphoneSimpleDuotone, label: "E'lonlar",      value: o.totalAds,         sub: "Jami e'lonlar",     color: "#2563eb" },
-    { icon: PiArticleDuotone,         label: "Blog postlar", value: o.totalBlogs,       sub: "Nashr etilgan",     color: "#16a34a" },
-    { icon: PiCalendarDotsDuotone,    label: "Kampaniyalar", value: o.totalCampaigns,   sub: "Jami kampaniyalar", color: "#d97706" },
-    { icon: PiEnvelopeDuotone,        label: "Xabarlar",     value: o.totalContacts,    sub: "Jami murojaatlar",  color: "#0891b2" },
+    { icon: PiRssDuotone,             label: "Bloggerlar",        value: o.totalBloggers,    sub: "Faol bloggerlar",        color: "#7c3aed" },
+    { icon: PiBriefcaseDuotone,       label: "Biznesmenlar",      value: o.totalBusinessmen, sub: "Tasdiqlangan",           color: "#dc2626" },
+    { icon: PiPaperPlaneTiltDuotone,  label: "Yuborilgan shartno",value: cs.total,           sub: "Jami yuborilgan",        color: "#2563eb" },
+    { icon: PiSealCheckDuotone,       label: "Imzolangan shartno",value: cs.signed,          sub: `${signRate}% imzolash`,  color: "#16a34a" },
+    { icon: PiXCircleDuotone,         label: "Bekor shartnomalar",value: cs.cancelled,       sub: "Rad etilgan",            color: "#dc2626" },
+    { icon: PiEnvelopeDuotone,        label: "Xabarlar",          value: o.totalContacts,    sub: "Jami murojaatlar",       color: "#0891b2" },
   ];
 
   return (
@@ -411,6 +415,42 @@ export default function AdminStatistics() {
           </Section>
           <Section icon={PiChartBarDuotone} title="Kategoriya taqsimoti" sub="Bloggerlar bo'yicha kategoriyalar">
             <HBarChart data={categoryData} />
+          </Section>
+        </div>
+
+        {/* Contract Stats Row */}
+        <div style={{ marginBottom: 16 }}>
+          <Section icon={PiHandshakeDuotone} title="Shartnoma statistikasi" sub="Yuborilgan, imzolangan va bekor qilingan shartnomalar">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 20 }}>
+              {[
+                { label: "Yuborilgan", value: cs.total ?? 0, color: "#2563eb", bg: "#eff6ff", icon: PiPaperPlaneTiltDuotone },
+                { label: "Imzolangan", value: cs.signed ?? 0, color: "#16a34a", bg: "#f0fdf4", icon: PiSealCheckDuotone },
+                { label: "Bekor qilingan", value: cs.cancelled ?? 0, color: "#dc2626", bg: "#fef2f2", icon: PiXCircleDuotone },
+              ].map(({ label, value, color, bg, icon: Icon }) => (
+                <div key={label} style={{ background: bg, borderRadius: 14, padding: "20px 22px", display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: color + "20", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Icon size={22} style={{ color }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 26, fontWeight: 900, color, lineHeight: 1 }}>{loading ? "—" : value}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: color + "99", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Sign rate bar */}
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.muted }}>Imzolash darajasi</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: "#16a34a" }}>{signRate}%</span>
+              </div>
+              <div style={{ height: 8, background: "#e5e7eb", borderRadius: 99, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${signRate}%`, background: "linear-gradient(90deg,#16a34a,#22c55e)", borderRadius: 99, transition: "width 0.8s ease" }} />
+              </div>
+              <div style={{ fontSize: 11, color: T.dim, marginTop: 4 }}>
+                {cs.signed ?? 0} ta imzolangan / {cs.total ?? 0} ta yuborilgan
+              </div>
+            </div>
           </Section>
         </div>
 

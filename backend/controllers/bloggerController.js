@@ -1,4 +1,6 @@
+const mongoose = require('mongoose');
 const Blogger = require('../models/Blogger');
+const BloggerOrder = require('../models/BloggerOrder');
 const User = require('../models/User');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
@@ -36,12 +38,20 @@ exports.getAllBloggers = catchAsync(async (req, res) => {
 
 // GET /api/v1/bloggers/:id
 exports.getBlogger = catchAsync(async (req, res, next) => {
-  const blogger = await Blogger.findById(req.params.id)
-    .populate('user', 'firstName lastName avatar email phone');
+  const [blogger, contractStatsArr] = await Promise.all([
+    Blogger.findById(req.params.id)
+      .populate('user', 'firstName lastName avatar email phone'),
+    BloggerOrder.aggregate([
+      { $match: { bloggerProfile: new mongoose.Types.ObjectId(req.params.id) } },
+      { $group: { _id: null, total: { $sum: 1 }, signed: { $sum: { $cond: ['$contractSigned', 1, 0] } }, cancelled: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] } } } },
+    ]),
+  ]);
 
   if (!blogger) return next(new AppError('Blogger topilmadi.', 404));
 
-  res.status(200).json({ success: true, data: blogger });
+  const contractStats = contractStatsArr[0] || { total: 0, signed: 0, cancelled: 0 };
+
+  res.status(200).json({ success: true, data: blogger, contractStats });
 });
 
 // GET /api/v1/bloggers/my-profile  (authenticated blogger)

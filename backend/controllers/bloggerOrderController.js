@@ -1,5 +1,6 @@
 const BloggerOrder = require('../models/BloggerOrder');
 const Blogger      = require('../models/Blogger');
+const Business     = require('../models/Business');
 const User         = require('../models/User');
 const ChatMessage  = require('../models/ChatMessage');
 const Notification = require('../models/Notification');
@@ -369,11 +370,17 @@ exports.signContract = catchAsync(async (req, res, next) => {
   // Blogger hamkorlik +1
   await Blogger.findOneAndUpdate(
     { user: req.user._id },
-    { $inc: { 'stats.collaborations': 1, 'stats.totalCampaigns': 1 } }
+    { $inc: { 'stats.collaborations': 1, 'stats.totalCampaigns': 1, 'stats.totalContracts': 1 } }
   );
 
   // Business hamkorlik +1
   await User.findByIdAndUpdate(order.business, { $inc: { collaborations: 1 } });
+
+  // Business totalContracts +1
+  await Business.findOneAndUpdate(
+    { user: order.business },
+    { $inc: { 'stats.totalContracts': 1 } }
+  );
 
   const notif = await Notification.create({
     user:  order.business,
@@ -415,6 +422,19 @@ exports.cancelContract = catchAsync(async (req, res, next) => {
   const myId      = String(req.user._id);
   const isBlogger = myId === String(order.blogger);
   const otherId   = isBlogger ? order.business : order.blogger;
+
+  // Increment cancelledContracts for the cancelling party
+  if (isBlogger) {
+    await Blogger.findOneAndUpdate(
+      { user: req.user._id },
+      { $inc: { 'stats.cancelledContracts': 1 } }
+    );
+  } else {
+    await Business.findOneAndUpdate(
+      { user: req.user._id },
+      { $inc: { 'stats.cancelledContracts': 1 } }
+    );
+  }
 
   const cancellerName = req.user.firstName + ' ' + req.user.lastName;
 

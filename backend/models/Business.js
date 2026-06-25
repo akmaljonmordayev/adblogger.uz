@@ -41,6 +41,8 @@ const businessSchema = new mongoose.Schema(
       totalCampaigns:     { type: Number, default: 0 },
       activeCampaigns:    { type: Number, default: 0 },
       totalSpent:         { type: Number, default: 0 },
+      totalContracts:     { type: Number, default: 0 },
+      cancelledContracts: { type: Number, default: 0 },
     },
 
     isVerified: { type: Boolean, default: false },
