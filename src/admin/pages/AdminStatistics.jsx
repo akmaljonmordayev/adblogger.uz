@@ -363,7 +363,7 @@ export default function AdminStatistics() {
   const o = raw?.overview ?? {};
 
   const cs = raw?.contractStats ?? {};
-  const signRate = cs.total ? Math.round((cs.signed / cs.total) * 100) : 0;
+  const signRate = cs.signRate ?? 0;
 
   const STAT_CARDS = [
     { icon: PiRssDuotone,             label: "Bloggerlar",        value: o.totalBloggers,    sub: "Faol bloggerlar",        color: "#7c3aed" },

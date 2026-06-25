@@ -77,6 +77,11 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
     { $sort: { _id: 1 } },
   ]);
 
+  const nonCancelledContracts = totalContractsSent - totalCancelledContracts;
+  const dashboardSignRate = nonCancelledContracts > 0
+    ? Math.round((totalSignedContracts / nonCancelledContracts) * 100)
+    : 0;
+
   res.status(200).json({
     success: true,
     data: {
@@ -94,6 +99,7 @@ exports.getDashboardStats = catchAsync(async (req, res) => {
         totalSignedContracts,
         totalCancelledContracts,
         totalContractsSent,
+        signRate: dashboardSignRate,
       },
       recentUsers,
       recentAds,
@@ -223,7 +229,14 @@ exports.getStatistics = catchAsync(async (req, res) => {
       userRoleDist,
       topBloggers,
       monthlyAdsDist,
-      contractStats: { total: totalOrdersSent, signed: totalOrdersSigned, cancelled: totalOrdersCancelled },
+      contractStats: {
+        total: totalOrdersSent,
+        signed: totalOrdersSigned,
+        cancelled: totalOrdersCancelled,
+        signRate: (totalOrdersSent - totalOrdersCancelled) > 0
+          ? Math.round((totalOrdersSigned / (totalOrdersSent - totalOrdersCancelled)) * 100)
+          : 0,
+      },
       monthlyContracts,
     },
   });

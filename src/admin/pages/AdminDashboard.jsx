@@ -320,9 +320,7 @@ export default function AdminDashboard() {
   const hour = clock.getHours();
   const greeting = hour < 12 ? "Xayrli tong" : hour < 18 ? "Xayrli kun" : "Xayrli kech";
 
-  const signRate = s.totalContractsSent
-    ? Math.round(((s.totalSignedContracts ?? 0) / s.totalContractsSent) * 100)
-    : 0;
+  const signRate = s.signRate ?? 0;
 
   const STATS_CFG = [
     { icon: FiUsers,        label: "Biznesmenlar",       value: s.totalBusinessmen,      sub: `Tasdiqlangan biznesmenlar`,                   color: "red",    trendUp: true,  href: "/admin/businessmen" },
@@ -447,7 +445,7 @@ export default function AdminDashboard() {
               {
                 label: "Shartnoma imzolash darajasi",
                 value: loading ? null : `${signRate}%`,
-                sub: `${s.totalSignedContracts ?? 0} / ${s.totalContractsSent ?? 0} shartnoma`,
+                sub: `${s.totalSignedContracts ?? 0} / ${(s.totalContractsSent ?? 0) - (s.totalCancelledContracts ?? 0)} faol shartnoma`,
                 pct: signRate,
                 color: "#16a34a",
                 href: "/admin/statistics",
